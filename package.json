@@ -1,0 +1,11 @@
+{
+  "name": "geoxl",
+  "version": "1.0.0",
+  "description": "Geotechnical Excel custom functions (GEOXL.*) translated from the GeoEXCEL LAMBDA library v0.13",
+  "scripts": {
+    "build": "python3 tools/make_wrappers.py library/GeoEXCEL_v0.13.txt src/wrappers.js && cat src/helpers.js src/core.js src/wrappers.js > docs/functions.js && custom-functions-metadata generate docs/functions.js docs/functions.json",
+    "test": "node tests/test.js"
+  },
+  "devDependencies": { "custom-functions-metadata": "^1.5.0" },
+  "license": "MIT"
+}

@@ -1,0 +1,4821 @@
+{
+    "allowCustomDataForDataTypeAny": true,
+    "functions": [
+        {
+            "description": "* / comment; Excel shows it as the function description. // Angles are in degrees unless stated otherwise. Use consistent units throughout. // 0.11 (2026-10-16): version() added; pressure_shear_moment_anchor local r renamed profileRows; // Stress2024.xlsx checked: its 3 LAMBDAs are already in the library as // Stress_Mohr, stress_Mohr_pole, stress_Mohrcircle (same formulas). // 0.12 (2026-10-16): classify_ASTM2487 added (ASTM D2487 flowchart workbook). // 0.13 (2026-10-16): tree_lines and tree_path removed; the flowchart workbook now draws paths with plain formulas. /** Library version and release date, as text. Use =GeoEXCEL.version() to check which version is installed.",
+            "id": "VERSION",
+            "name": "VERSION",
+            "parameters": [],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Ultimate bearing pressure combining N factors with shape, depth and inclination factors. Inputs: coh, phi (deg), q surcharge, gam unit weight, B, L, D footing width/length/depth, H, V loads, author (terzaghi, prandtl, meyerhof, hansen, vesic, ec7).",
+            "id": "BEARING_CAPACITY",
+            "name": "BEARING_CAPACITY",
+            "parameters": [
+                {
+                    "description": "Cohesion",
+                    "dimensionality": "matrix",
+                    "name": "coh",
+                    "type": "any"
+                },
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "q",
+                    "dimensionality": "matrix",
+                    "name": "q",
+                    "type": "any"
+                },
+                {
+                    "description": "gam",
+                    "dimensionality": "matrix",
+                    "name": "gam",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "Length",
+                    "dimensionality": "matrix",
+                    "name": "L",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "D",
+                    "type": "any"
+                },
+                {
+                    "description": "H",
+                    "dimensionality": "matrix",
+                    "name": "H",
+                    "type": "any"
+                },
+                {
+                    "description": "V",
+                    "dimensionality": "matrix",
+                    "name": "V",
+                    "type": "any"
+                },
+                {
+                    "description": "Method name (text)",
+                    "dimensionality": "matrix",
+                    "name": "author",
+                    "type": "any"
+                },
+                {
+                    "description": "A_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "A_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Depth factors {dc; dq; dγ} for the selected bearing method. Inputs: DB = D/B, phi (deg), author.",
+            "id": "BEARING_DEPTHFACTORS",
+            "name": "BEARING_DEPTHFACTORS",
+            "parameters": [
+                {
+                    "description": "DB",
+                    "dimensionality": "matrix",
+                    "name": "DB",
+                    "type": "any"
+                },
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "Method name (text)",
+                    "dimensionality": "matrix",
+                    "name": "author",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Bearing capacity factors {Nc; Nq; Nγ} for the selected method. Inputs: phi (deg), author_.",
+            "id": "BEARING_FACTORS",
+            "name": "BEARING_FACTORS",
+            "parameters": [
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "Method name (text)",
+                    "dimensionality": "matrix",
+                    "name": "author_",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Load inclination factors {ic; iq; iγ}. Inputs: H, V horizontal/vertical loads, BL = B/L, phi (deg), coh, author, optional A_ area (default 1).",
+            "id": "BEARING_INCLINATIONFACTORS",
+            "name": "BEARING_INCLINATIONFACTORS",
+            "parameters": [
+                {
+                    "description": "H",
+                    "dimensionality": "matrix",
+                    "name": "H",
+                    "type": "any"
+                },
+                {
+                    "description": "V",
+                    "dimensionality": "matrix",
+                    "name": "V",
+                    "type": "any"
+                },
+                {
+                    "description": "BL",
+                    "dimensionality": "matrix",
+                    "name": "BL",
+                    "type": "any"
+                },
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "Cohesion",
+                    "dimensionality": "matrix",
+                    "name": "coh",
+                    "type": "any"
+                },
+                {
+                    "description": "Method name (text)",
+                    "dimensionality": "matrix",
+                    "name": "author",
+                    "type": "any"
+                },
+                {
+                    "description": "A_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "A_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Bearing factor Nq for the selected method (row 2 of bearing_factors). Inputs: Phi (deg), author_.",
+            "id": "BEARING_NQ",
+            "name": "BEARING_NQ",
+            "parameters": [
+                {
+                    "description": "Phi",
+                    "dimensionality": "matrix",
+                    "name": "Phi",
+                    "type": "any"
+                },
+                {
+                    "description": "Method name (text)",
+                    "dimensionality": "matrix",
+                    "name": "author_",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Shape factors {sc; sq; sγ} for the selected method. Inputs: BL = B/L, phi (deg), author, opt_ (any value selects the alternative Terzaghi sγ).",
+            "id": "BEARING_SHAPEFACTORS",
+            "name": "BEARING_SHAPEFACTORS",
+            "parameters": [
+                {
+                    "description": "BL",
+                    "dimensionality": "matrix",
+                    "name": "BL",
+                    "type": "any"
+                },
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "Method name (text)",
+                    "dimensionality": "matrix",
+                    "name": "author",
+                    "type": "any"
+                },
+                {
+                    "description": "opt_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "opt_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Skempton Nc for undrained bearing (polynomial fit). Inputs: DB = D/B (capped at 6), BL = B/L.",
+            "id": "BEARING_SKEMPTON",
+            "name": "BEARING_SKEMPTON",
+            "parameters": [
+                {
+                    "description": "DB",
+                    "dimensionality": "matrix",
+                    "name": "DB",
+                    "type": "any"
+                },
+                {
+                    "description": "BL",
+                    "dimensionality": "matrix",
+                    "name": "BL",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "AASHTO soil classification with group index, as text. Inputs: % passing No.10, No.40, No.200 (enter 40 for 40%), LL_, PL_.",
+            "id": "CLASSIFY_AASHTO",
+            "name": "CLASSIFY_AASHTO",
+            "parameters": [
+                {
+                    "description": "pf10_",
+                    "dimensionality": "matrix",
+                    "name": "pf10_",
+                    "type": "any"
+                },
+                {
+                    "description": "pf40_",
+                    "dimensionality": "matrix",
+                    "name": "pf40_",
+                    "type": "any"
+                },
+                {
+                    "description": "pf200_",
+                    "dimensionality": "matrix",
+                    "name": "pf200_",
+                    "type": "any"
+                },
+                {
+                    "description": "LL_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "LL_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "PL_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "PL_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "USCS symbol with ASTM group name from a two-column lookup table (symbol | descriptions). Inputs: list, % passing No.4 and No.200, optional Cu, Cc, LL, PL, organic.",
+            "id": "CLASSIFY_ASTM",
+            "name": "CLASSIFY_ASTM",
+            "parameters": [
+                {
+                    "description": "list (table)",
+                    "dimensionality": "matrix",
+                    "name": "list",
+                    "type": "any"
+                },
+                {
+                    "description": "pf4_",
+                    "dimensionality": "matrix",
+                    "name": "pf4_",
+                    "type": "any"
+                },
+                {
+                    "description": "pf200_",
+                    "dimensionality": "matrix",
+                    "name": "pf200_",
+                    "type": "any"
+                },
+                {
+                    "description": "Cu_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "Cu_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "Cc_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "Cc_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "LL_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "LL_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "PL_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "PL_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "organic_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "organic_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Fine-grained soil symbol from the plasticity chart (CL, CH, ML, MH, OL, OH, CL & ML). Inputs: LL, PL in %, optional organic (0 = inorganic).",
+            "id": "CLASSIFY_PLASTICITY",
+            "name": "CLASSIFY_PLASTICITY",
+            "parameters": [
+                {
+                    "description": "LL",
+                    "dimensionality": "matrix",
+                    "name": "LL",
+                    "type": "any"
+                },
+                {
+                    "description": "PL",
+                    "dimensionality": "matrix",
+                    "name": "PL",
+                    "type": "any"
+                },
+                {
+                    "description": "organic (optional)",
+                    "dimensionality": "matrix",
+                    "name": "organic",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "USCS group symbol from gradation and plasticity. Inputs: % passing No.4 and No.200, optional Cu = D60/D10, Cc = D30²/(D10·D60), LL, PL, organic.",
+            "id": "CLASSIFY_USC",
+            "name": "CLASSIFY_USC",
+            "parameters": [
+                {
+                    "description": "pf4_",
+                    "dimensionality": "matrix",
+                    "name": "pf4_",
+                    "type": "any"
+                },
+                {
+                    "description": "pf200_",
+                    "dimensionality": "matrix",
+                    "name": "pf200_",
+                    "type": "any"
+                },
+                {
+                    "description": "Cu_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "Cu_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "Cc_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "Cc_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "LL_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "LL_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "PL_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "PL_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "organic_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "organic_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Square-root-of-time analysis of a consolidation test: Cv, d0, d100, drainage length and compression ratios. Inputs: time and dial-reading columns, fitting window ta–tb, initial height hi.",
+            "id": "CONSOLIDATION_TEST",
+            "name": "CONSOLIDATION_TEST",
+            "parameters": [
+                {
+                    "description": "Tarray (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "Tarray",
+                    "type": "any"
+                },
+                {
+                    "description": "Xarray (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "Xarray",
+                    "type": "any"
+                },
+                {
+                    "description": "ta",
+                    "dimensionality": "matrix",
+                    "name": "ta",
+                    "type": "any"
+                },
+                {
+                    "description": "tb",
+                    "dimensionality": "matrix",
+                    "name": "tb",
+                    "type": "any"
+                },
+                {
+                    "description": "hi",
+                    "dimensionality": "matrix",
+                    "name": "hi",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Time factor Tv from average degree of consolidation U (fraction, 0 ≤ U < 1), approximate formula.",
+            "id": "CONSOLIDATION_TV",
+            "name": "CONSOLIDATION_TV",
+            "parameters": [
+                {
+                    "description": "U",
+                    "dimensionality": "matrix",
+                    "name": "U",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Average degree of consolidation U (fraction) from time factor tv by Fourier series. case_: uniform (default), triangular_top, triangular_bottom, vshape, saw, sine, parabolic, circular.",
+            "id": "CONSOLIDATION_U",
+            "name": "CONSOLIDATION_U",
+            "parameters": [
+                {
+                    "description": "tv (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "tv",
+                    "type": "any"
+                },
+                {
+                    "description": "case_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "case_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Excess pore pressure ratio u/u0 along normalized depth at time factor tv. Inputs: Xarray (z/H column), tv, case_ (same cases as consolidation_U).",
+            "id": "CONSOLIDATION_UX",
+            "name": "CONSOLIDATION_UX",
+            "parameters": [
+                {
+                    "description": "Xarray (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "Xarray",
+                    "type": "any"
+                },
+                {
+                    "description": "tv",
+                    "dimensionality": "matrix",
+                    "name": "tv",
+                    "type": "any"
+                },
+                {
+                    "description": "case_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "case_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Average degree of consolidation U (fraction) from tv, closed-form approximation.",
+            "id": "CONSOLIDATION_U_APPROXIMATE",
+            "name": "CONSOLIDATION_U_APPROXIMATE",
+            "parameters": [
+                {
+                    "description": "tv",
+                    "dimensionality": "matrix",
+                    "name": "tv",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Average consolidation U for a load applied linearly over construction time factor tc. Inputs: tv, tc.",
+            "id": "CONSOLIDATION_U_VARIABLE",
+            "name": "CONSOLIDATION_U_VARIABLE",
+            "parameters": [
+                {
+                    "description": "tv",
+                    "dimensionality": "matrix",
+                    "name": "tv",
+                    "type": "any"
+                },
+                {
+                    "description": "tc",
+                    "dimensionality": "matrix",
+                    "name": "tc",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Cosine of an angle in degrees.",
+            "id": "COSD",
+            "name": "COSD",
+            "parameters": [
+                {
+                    "description": "X",
+                    "dimensionality": "matrix",
+                    "name": "X",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Coulomb trial wedge with cohesion: {W; R; P; Cs; Cw; z0; K}. Inputs: t wedge angle (radians), phi, alpha wall, beta slope, delta (deg), g unit weight, h wall height, optional coh_.",
+            "id": "COULOMB_COHESIVEFORCES",
+            "name": "COULOMB_COHESIVEFORCES",
+            "parameters": [
+                {
+                    "description": "t",
+                    "dimensionality": "matrix",
+                    "name": "t",
+                    "type": "any"
+                },
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "Angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "alpha",
+                    "type": "any"
+                },
+                {
+                    "description": "Angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "beta",
+                    "type": "any"
+                },
+                {
+                    "description": "Wall friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "delta",
+                    "type": "any"
+                },
+                {
+                    "description": "Unit weight",
+                    "dimensionality": "matrix",
+                    "name": "g",
+                    "type": "any"
+                },
+                {
+                    "description": "Height",
+                    "dimensionality": "matrix",
+                    "name": "h",
+                    "type": "any"
+                },
+                {
+                    "description": "coh_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "coh_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Coulomb trial wedge forces {W; R; P; K} for slip angle t (radians). Inputs: phi, alpha wall (90 = vertical), beta slope, delta (deg), g, h.",
+            "id": "COULOMB_FORCES",
+            "name": "COULOMB_FORCES",
+            "parameters": [
+                {
+                    "description": "t",
+                    "dimensionality": "matrix",
+                    "name": "t",
+                    "type": "any"
+                },
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "Angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "alpha",
+                    "type": "any"
+                },
+                {
+                    "description": "Angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "beta",
+                    "type": "any"
+                },
+                {
+                    "description": "Wall friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "delta",
+                    "type": "any"
+                },
+                {
+                    "description": "Unit weight",
+                    "dimensionality": "matrix",
+                    "name": "g",
+                    "type": "any"
+                },
+                {
+                    "description": "Height",
+                    "dimensionality": "matrix",
+                    "name": "h",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Coulomb earth pressure coefficient. Inputs: phi, alpha, beta, delta (deg); passive: omit for Ka, any value for Kp.",
+            "id": "COULOMB_K",
+            "name": "COULOMB_K",
+            "parameters": [
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "Angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "alpha",
+                    "type": "any"
+                },
+                {
+                    "description": "Angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "beta",
+                    "type": "any"
+                },
+                {
+                    "description": "Wall friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "delta",
+                    "type": "any"
+                },
+                {
+                    "description": "passive (optional)",
+                    "dimensionality": "matrix",
+                    "name": "passive",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Critical Coulomb wedge by golden-section search: {slip angle (deg); W; R; P; K}. Inputs: a_, b_ (any values on first call), phi, alpha, beta, delta, g, h.",
+            "id": "COULOMB_MAXIMUM",
+            "name": "COULOMB_MAXIMUM",
+            "parameters": [
+                {
+                    "description": "a_",
+                    "dimensionality": "matrix",
+                    "name": "a_",
+                    "type": "any"
+                },
+                {
+                    "description": "b_",
+                    "dimensionality": "matrix",
+                    "name": "b_",
+                    "type": "any"
+                },
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "Angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "alpha",
+                    "type": "any"
+                },
+                {
+                    "description": "Angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "beta",
+                    "type": "any"
+                },
+                {
+                    "description": "Wall friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "delta",
+                    "type": "any"
+                },
+                {
+                    "description": "Unit weight",
+                    "dimensionality": "matrix",
+                    "name": "g",
+                    "type": "any"
+                },
+                {
+                    "description": "Height",
+                    "dimensionality": "matrix",
+                    "name": "h",
+                    "type": "any"
+                },
+                {
+                    "description": "iter_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "iter_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Critical Coulomb slip angle (deg), closed form. Inputs: phi, alpha, beta, delta (deg).",
+            "id": "COULOMB_THETA",
+            "name": "COULOMB_THETA",
+            "parameters": [
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "Angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "alpha",
+                    "type": "any"
+                },
+                {
+                    "description": "Angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "beta",
+                    "type": "any"
+                },
+                {
+                    "description": "Wall friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "delta",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Intersections {x, y} of a sampled curve with the line y = slope·x + intercept. Inputs: Xarray, Yarray columns, slope, intercept.",
+            "id": "CUTLINE",
+            "name": "CUTLINE",
+            "parameters": [
+                {
+                    "description": "Xarray (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "Xarray",
+                    "type": "any"
+                },
+                {
+                    "description": "Yarray (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "Yarray",
+                    "type": "any"
+                },
+                {
+                    "description": "slope",
+                    "dimensionality": "matrix",
+                    "name": "slope",
+                    "type": "any"
+                },
+                {
+                    "description": "intercept",
+                    "dimensionality": "matrix",
+                    "name": "intercept",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Normalized radius r/z of a circular load giving vertical stress ratio s (0 ≤ s < 1). Used to build influence charts.",
+            "id": "ELASTIC_CIRCULAR_RADIUS",
+            "name": "ELASTIC_CIRCULAR_RADIUS",
+            "parameters": [
+                {
+                    "description": "s",
+                    "dimensionality": "matrix",
+                    "name": "s",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Stress ratios {sz, sr} under the centre of a uniformly loaded circle. Inputs: rValue load radius, z depth, optional nu_ (default 0.3). Multiply by the load pressure.",
+            "id": "ELASTIC_CIRCULAR_STRESS",
+            "name": "ELASTIC_CIRCULAR_STRESS",
+            "parameters": [
+                {
+                    "description": "rValue",
+                    "dimensionality": "matrix",
+                    "name": "rValue",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "z",
+                    "type": "any"
+                },
+                {
+                    "description": "nu_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "nu_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Vertical stress influence factor under an embankment (Osterberg). Inputs: b1z = b1/z, b2z = b2/z (b2z ≠ 0).",
+            "id": "ELASTIC_EMBANKMENT",
+            "name": "ELASTIC_EMBANKMENT",
+            "parameters": [
+                {
+                    "description": "b1z",
+                    "dimensionality": "matrix",
+                    "name": "b1z",
+                    "type": "any"
+                },
+                {
+                    "description": "b2z",
+                    "dimensionality": "matrix",
+                    "name": "b2z",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Janbu μ0 settlement factor from digitized chart. Inputs: DB = D/B, LB = L/B (1, 2, 5, 10, 20, 50, 100 or 200).",
+            "id": "ELASTIC_JANBU_MU0",
+            "name": "ELASTIC_JANBU_MU0",
+            "parameters": [
+                {
+                    "description": "DB",
+                    "dimensionality": "matrix",
+                    "name": "DB",
+                    "type": "any"
+                },
+                {
+                    "description": "LB",
+                    "dimensionality": "matrix",
+                    "name": "LB",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Janbu μ1 settlement factor from digitized chart. Inputs: LB (chart abscissa), DB curve selector (\"circle\", 1, 2, 5, 10, 20, 50 or 100).",
+            "id": "ELASTIC_JANBU_MU1",
+            "name": "ELASTIC_JANBU_MU1",
+            "parameters": [
+                {
+                    "description": "LB",
+                    "dimensionality": "matrix",
+                    "name": "LB",
+                    "type": "any"
+                },
+                {
+                    "description": "DB (text)",
+                    "dimensionality": "matrix",
+                    "name": "DB",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Stresses {sx, sy, sxy} per unit vertical line load (Flamant). Inputs: x horizontal offset, y depth. Multiply by the line load.",
+            "id": "ELASTIC_LINELOAD",
+            "name": "ELASTIC_LINELOAD",
+            "parameters": [
+                {
+                    "description": "x",
+                    "dimensionality": "matrix",
+                    "name": "x",
+                    "type": "any"
+                },
+                {
+                    "description": "y",
+                    "dimensionality": "matrix",
+                    "name": "y",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Stresses {sx, sy, sxy} per unit horizontal line load. Inputs: x horizontal offset, y depth. Multiply by the line load.",
+            "id": "ELASTIC_LINELOAD_HORIZONTAL",
+            "name": "ELASTIC_LINELOAD_HORIZONTAL",
+            "parameters": [
+                {
+                    "description": "x",
+                    "dimensionality": "matrix",
+                    "name": "x",
+                    "type": "any"
+                },
+                {
+                    "description": "y",
+                    "dimensionality": "matrix",
+                    "name": "y",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Newmark influence factor under the corner of a uniformly loaded rectangle. Inputs: m = B/z, n = L/z.",
+            "id": "ELASTIC_NEWMARK_FACTOR",
+            "name": "ELASTIC_NEWMARK_FACTOR",
+            "parameters": [
+                {
+                    "description": "m",
+                    "dimensionality": "matrix",
+                    "name": "m",
+                    "type": "any"
+                },
+                {
+                    "description": "n",
+                    "dimensionality": "matrix",
+                    "name": "n",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Vertical stress factor at any point (x_, y_, z_) under a loaded rectangle by superposition of corner factors. pt: 4 corners, opposite corners in rows 1 and 3.",
+            "id": "ELASTIC_NEWMARK_STRESS",
+            "name": "ELASTIC_NEWMARK_STRESS",
+            "parameters": [
+                {
+                    "description": "x_",
+                    "dimensionality": "matrix",
+                    "name": "x_",
+                    "type": "any"
+                },
+                {
+                    "description": "y_",
+                    "dimensionality": "matrix",
+                    "name": "y_",
+                    "type": "any"
+                },
+                {
+                    "description": "z_",
+                    "dimensionality": "matrix",
+                    "name": "z_",
+                    "type": "any"
+                },
+                {
+                    "description": "pt (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "pt",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Stresses {sz, sr, st, srz} per unit point load (Boussinesq). Inputs: rValue radial offset, z depth, optional nu_ (default 0.3).",
+            "id": "ELASTIC_POINTLOAD",
+            "name": "ELASTIC_POINTLOAD",
+            "parameters": [
+                {
+                    "description": "rValue",
+                    "dimensionality": "matrix",
+                    "name": "rValue",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "z",
+                    "type": "any"
+                },
+                {
+                    "description": "nu_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "nu_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Vertical stress factor under a point (x, y) at depth z for a uniformly loaded polygon, by integration over 1° sectors. pts: polygon vertices (two columns).",
+            "id": "ELASTIC_SECTOR",
+            "name": "ELASTIC_SECTOR",
+            "parameters": [
+                {
+                    "description": "x",
+                    "dimensionality": "matrix",
+                    "name": "x",
+                    "type": "any"
+                },
+                {
+                    "description": "y",
+                    "dimensionality": "matrix",
+                    "name": "y",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "z",
+                    "type": "any"
+                },
+                {
+                    "description": "pts (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "pts",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Helper for elastic_sector: contribution of one ray. Input: row with angle (radians) followed by flattened polygon coordinates.",
+            "id": "ELASTIC_SECTOR_ROW",
+            "name": "ELASTIC_SECTOR_ROW",
+            "parameters": [
+                {
+                    "description": "txy (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "txy",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Vertical stress contribution of an annular sector between radii ra and rb at depth z. dt: angular weight (sector angle / 2π).",
+            "id": "ELASTIC_SECTOR_SLICE",
+            "name": "ELASTIC_SECTOR_SLICE",
+            "parameters": [
+                {
+                    "description": "ra",
+                    "dimensionality": "matrix",
+                    "name": "ra",
+                    "type": "any"
+                },
+                {
+                    "description": "rb",
+                    "dimensionality": "matrix",
+                    "name": "rb",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "z",
+                    "type": "any"
+                },
+                {
+                    "description": "dt",
+                    "dimensionality": "matrix",
+                    "name": "dt",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Stress ratios {sy, sx, sxy} under a uniform strip load. Inputs: B full width, x offset from centre, y depth. Multiply by the pressure.",
+            "id": "ELASTIC_STRIPLOAD",
+            "name": "ELASTIC_STRIPLOAD",
+            "parameters": [
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "x",
+                    "dimensionality": "matrix",
+                    "name": "x",
+                    "type": "any"
+                },
+                {
+                    "description": "y",
+                    "dimensionality": "matrix",
+                    "name": "y",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Stress ratios {sy, sx, sxy} under a triangular strip load. Inputs: B loaded width, x offset, y depth. Multiply by the maximum pressure.",
+            "id": "ELASTIC_TRIANGLE",
+            "name": "ELASTIC_TRIANGLE",
+            "parameters": [
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "x",
+                    "dimensionality": "matrix",
+                    "name": "x",
+                    "type": "any"
+                },
+                {
+                    "description": "y",
+                    "dimensionality": "matrix",
+                    "name": "y",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Interpolate y at X from (Xa, Ya); X may be a column. Xa may be increasing or decreasing. mode: \"linear\" (default), \"logx\", \"logy\", \"logxy\". outside: omitted = #N/A, \"extrapolate\", \"clamp\".",
+            "id": "INTERPOLATE",
+            "name": "INTERPOLATE",
+            "parameters": [
+                {
+                    "description": "X",
+                    "dimensionality": "matrix",
+                    "name": "X",
+                    "type": "any"
+                },
+                {
+                    "description": "Xa (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "Xa",
+                    "type": "any"
+                },
+                {
+                    "description": "Ya (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "Ya",
+                    "type": "any"
+                },
+                {
+                    "description": "mode (optional)",
+                    "dimensionality": "matrix",
+                    "name": "mode",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "outside (optional)",
+                    "dimensionality": "matrix",
+                    "name": "outside",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Intersections {x, y} of a polygon with the infinite line through pt at angle t (radians). Returns {0, 0} if none.",
+            "id": "INTERSECTION_POLYGON_LINE",
+            "name": "INTERSECTION_POLYGON_LINE",
+            "parameters": [
+                {
+                    "description": "polygon (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "polygon",
+                    "type": "any"
+                },
+                {
+                    "description": "pt (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "pt",
+                    "type": "any"
+                },
+                {
+                    "description": "t",
+                    "dimensionality": "matrix",
+                    "name": "t",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Sorted distances from pt to the polygon boundary along a ray at angle t (radians).",
+            "id": "INTERSECTION_POLYGON_RAY",
+            "name": "INTERSECTION_POLYGON_RAY",
+            "parameters": [
+                {
+                    "description": "polygon (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "polygon",
+                    "type": "any"
+                },
+                {
+                    "description": "pt (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "pt",
+                    "type": "any"
+                },
+                {
+                    "description": "t",
+                    "dimensionality": "matrix",
+                    "name": "t",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Teaching example of golden-section minimization of x³ + 5x² − 10x on [A, B].",
+            "id": "MINIMUM",
+            "name": "MINIMUM",
+            "parameters": [
+                {
+                    "description": "A",
+                    "dimensionality": "matrix",
+                    "name": "A",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "iter_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "iter_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Alias of polygon_area_centroid: centroid and area of a polygon.",
+            "id": "POLYGON_CENTROIDAREA",
+            "name": "POLYGON_CENTROIDAREA",
+            "parameters": [
+                {
+                    "description": "polygon (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "polygon",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Weight and moment {W, M} of a polygonal block about point Pt. Inputs: XY vertices, g unit weight, Pt {x, y}. Per unit thickness.",
+            "id": "POLYGON_WEIGHTMOMENT",
+            "name": "POLYGON_WEIGHTMOMENT",
+            "parameters": [
+                {
+                    "description": "XY (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "XY",
+                    "type": "any"
+                },
+                {
+                    "description": "Unit weight",
+                    "dimensionality": "matrix",
+                    "name": "g",
+                    "type": "any"
+                },
+                {
+                    "description": "Pt (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "Pt",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Resultant force and moment {F, M} of a piecewise-linear pressure profile about depth d0. Inputs: d depth column, p pressure column, d0.",
+            "id": "PRESSURE_FORCEMOMENT",
+            "name": "PRESSURE_FORCEMOMENT",
+            "parameters": [
+                {
+                    "description": "d (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "d",
+                    "type": "any"
+                },
+                {
+                    "description": "p (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "p",
+                    "type": "any"
+                },
+                {
+                    "description": "d0",
+                    "dimensionality": "matrix",
+                    "name": "d0",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Rankine active coefficient for a sloping backfill. Inputs: phi, beta (deg).",
+            "id": "RANKINE_K",
+            "name": "RANKINE_K",
+            "parameters": [
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "Angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "beta",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Rankine stresses on a wall from the Mohr circle (labelled table). Inputs: phi, coh, alpha wall angle, beta slope (deg), gz vertical stress, passive (omit = active).",
+            "id": "RANKINE_STRESS",
+            "name": "RANKINE_STRESS",
+            "parameters": [
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "Cohesion",
+                    "dimensionality": "matrix",
+                    "name": "coh",
+                    "type": "any"
+                },
+                {
+                    "description": "Angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "alpha",
+                    "type": "any"
+                },
+                {
+                    "description": "Angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "beta",
+                    "type": "any"
+                },
+                {
+                    "description": "gz",
+                    "dimensionality": "matrix",
+                    "name": "gz",
+                    "type": "any"
+                },
+                {
+                    "description": "passive (optional)",
+                    "dimensionality": "matrix",
+                    "name": "passive",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Sine of an angle in degrees.",
+            "id": "SIND",
+            "name": "SIND",
+            "parameters": [
+                {
+                    "description": "X",
+                    "dimensionality": "matrix",
+                    "name": "X",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Allowable bearing pressure from SPT N averaged between D and D + B. Inputs: z, N columns (or scalar N), B, D (m), author: bowles, meyerhof, terzaghi.",
+            "id": "SPT_BEARING",
+            "name": "SPT_BEARING",
+            "parameters": [
+                {
+                    "description": "Depth (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "z",
+                    "type": "any"
+                },
+                {
+                    "description": "N (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "N",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "D",
+                    "type": "any"
+                },
+                {
+                    "description": "Method name (text)",
+                    "dimensionality": "matrix",
+                    "name": "author",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Burland–Burbidge settlement from SPT. Inputs: z, N columns, q pressure, B width, optional LB = L/B, D_ depth, H layer thickness, sc preconsolidation pressure.",
+            "id": "SPT_BURLANDBURBIDGE_SETTLEMENT",
+            "name": "SPT_BURLANDBURBIDGE_SETTLEMENT",
+            "parameters": [
+                {
+                    "description": "Depth (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "z",
+                    "type": "any"
+                },
+                {
+                    "description": "N (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "N",
+                    "type": "any"
+                },
+                {
+                    "description": "q",
+                    "dimensionality": "matrix",
+                    "name": "q",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "LB (optional)",
+                    "dimensionality": "matrix",
+                    "name": "LB",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "D_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "D_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "H (optional)",
+                    "dimensionality": "matrix",
+                    "name": "H",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "sc (optional)",
+                    "dimensionality": "matrix",
+                    "name": "sc",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "SPT overburden correction CN = 10/√σ'v (kPa), capped at 2.",
+            "id": "SPT_CORRECTION_DEPTH",
+            "name": "SPT_CORRECTION_DEPTH",
+            "parameters": [
+                {
+                    "description": "s",
+                    "dimensionality": "matrix",
+                    "name": "s",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Friction angle (deg) from SPT N. author: peck, schmertman (needs s and pa), hatanaka (needs s, in kPa).",
+            "id": "SPT_CORRELATION_FRICTION",
+            "name": "SPT_CORRELATION_FRICTION",
+            "parameters": [
+                {
+                    "description": "N",
+                    "dimensionality": "matrix",
+                    "name": "N",
+                    "type": "any"
+                },
+                {
+                    "description": "Method name (text)",
+                    "dimensionality": "matrix",
+                    "name": "author",
+                    "type": "any"
+                },
+                {
+                    "description": "s (optional)",
+                    "dimensionality": "matrix",
+                    "name": "s",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "Atmospheric pressure (optional)",
+                    "dimensionality": "matrix",
+                    "name": "pa",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Resultant force, moment and point of application of normal/shear stresses varying linearly along segment AB. Inputs: A, B {x, y}; sa, sb {normal, shear}.",
+            "id": "STRESS_FORCEMOMENT",
+            "name": "STRESS_FORCEMOMENT",
+            "parameters": [
+                {
+                    "description": "A (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "A",
+                    "type": "any"
+                },
+                {
+                    "description": "Width (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "sa (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "sa",
+                    "type": "any"
+                },
+                {
+                    "description": "sb (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "sb",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Normal and shear stress {s, t} on a plane at angle alpha (deg) using the Mohr circle pole. Inputs: sa, ta pole stresses, alpha, sm circle centre.",
+            "id": "STRESS_MOHR",
+            "name": "STRESS_MOHR",
+            "parameters": [
+                {
+                    "description": "sa",
+                    "dimensionality": "matrix",
+                    "name": "sa",
+                    "type": "any"
+                },
+                {
+                    "description": "ta",
+                    "dimensionality": "matrix",
+                    "name": "ta",
+                    "type": "any"
+                },
+                {
+                    "description": "Angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "alpha",
+                    "type": "any"
+                },
+                {
+                    "description": "sm",
+                    "dimensionality": "matrix",
+                    "name": "sm",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Mohr–Coulomb failure circle through a known stress (sa, ta) on plane A (deg): centre, radius, pole, principal and failure stresses. passive: omit = active.",
+            "id": "STRESS_MOHR_FAILURE",
+            "name": "STRESS_MOHR_FAILURE",
+            "parameters": [
+                {
+                    "description": "sa",
+                    "dimensionality": "matrix",
+                    "name": "sa",
+                    "type": "any"
+                },
+                {
+                    "description": "ta",
+                    "dimensionality": "matrix",
+                    "name": "ta",
+                    "type": "any"
+                },
+                {
+                    "description": "A",
+                    "dimensionality": "matrix",
+                    "name": "A",
+                    "type": "any"
+                },
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "Cohesion",
+                    "dimensionality": "matrix",
+                    "name": "coh",
+                    "type": "any"
+                },
+                {
+                    "description": "passive (optional)",
+                    "dimensionality": "matrix",
+                    "name": "passive",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Mohr circle and pole from stresses on two perpendicular planes: centre, radius, pole, principal stresses. Inputs: sa, ta on plane A (deg), sb normal stress on the perpendicular plane.",
+            "id": "STRESS_MOHR_POLE",
+            "name": "STRESS_MOHR_POLE",
+            "parameters": [
+                {
+                    "description": "sa",
+                    "dimensionality": "matrix",
+                    "name": "sa",
+                    "type": "any"
+                },
+                {
+                    "description": "ta",
+                    "dimensionality": "matrix",
+                    "name": "ta",
+                    "type": "any"
+                },
+                {
+                    "description": "A",
+                    "dimensionality": "matrix",
+                    "name": "A",
+                    "type": "any"
+                },
+                {
+                    "description": "sb",
+                    "dimensionality": "matrix",
+                    "name": "sb",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Plotting points {σ, τ} of a Mohr circle with centre sm and radius rValue (header + 21 points).",
+            "id": "STRESS_MOHRCIRCLE",
+            "name": "STRESS_MOHRCIRCLE",
+            "parameters": [
+                {
+                    "description": "sm",
+                    "dimensionality": "matrix",
+                    "name": "sm",
+                    "type": "any"
+                },
+                {
+                    "description": "rValue",
+                    "dimensionality": "matrix",
+                    "name": "rValue",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Tangent of an angle in degrees.",
+            "id": "TAND",
+            "name": "TAND",
+            "parameters": [
+                {
+                    "description": "X",
+                    "dimensionality": "matrix",
+                    "name": "X",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Plotting coordinates of stress vectors along segment ptA–ptB (rows separated by #N/A). Inputs: sigA, sigB {normal, shear}, M divisions, s display scale.",
+            "id": "VECTOR_LINE",
+            "name": "VECTOR_LINE",
+            "parameters": [
+                {
+                    "description": "ptA (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "ptA",
+                    "type": "any"
+                },
+                {
+                    "description": "ptB (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "ptB",
+                    "type": "any"
+                },
+                {
+                    "description": "sigA (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "sigA",
+                    "type": "any"
+                },
+                {
+                    "description": "sigB (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "sigB",
+                    "type": "any"
+                },
+                {
+                    "description": "M",
+                    "dimensionality": "matrix",
+                    "name": "M",
+                    "type": "any"
+                },
+                {
+                    "description": "s",
+                    "dimensionality": "matrix",
+                    "name": "s",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Hydrostatic pore pressure at depth below the water table (0 above it). Optional unitWeight, default 9.81 kN/m³.",
+            "id": "WATER_PRESSURE",
+            "name": "WATER_PRESSURE",
+            "parameters": [
+                {
+                    "description": "depth",
+                    "dimensionality": "matrix",
+                    "name": "depth",
+                    "type": "any"
+                },
+                {
+                    "description": "waterTableDepth",
+                    "dimensionality": "matrix",
+                    "name": "waterTableDepth",
+                    "type": "any"
+                },
+                {
+                    "description": "unitWeight (optional)",
+                    "dimensionality": "matrix",
+                    "name": "unitWeight",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Strip-load stress ratios in the order {sx, sy, sxy} (retaining-wall convention). Inputs: B full width, X offset, Y depth.",
+            "id": "ELASTIC_STRIPLOAD_XY",
+            "name": "ELASTIC_STRIPLOAD_XY",
+            "parameters": [
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "X",
+                    "dimensionality": "matrix",
+                    "name": "X",
+                    "type": "any"
+                },
+                {
+                    "description": "Y",
+                    "dimensionality": "matrix",
+                    "name": "Y",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Plotting points of a circle or arc (header + n+1 points). Inputs: pt centre {x, y}, rValue radius, optional ta_, tb_ start/end angles (deg), n_ points (default 100).",
+            "id": "CIRCLE",
+            "name": "CIRCLE",
+            "parameters": [
+                {
+                    "description": "pt (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "pt",
+                    "type": "any"
+                },
+                {
+                    "description": "rValue",
+                    "dimensionality": "matrix",
+                    "name": "rValue",
+                    "type": "any"
+                },
+                {
+                    "description": "ta_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "ta_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "tb_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "tb_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "n_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "n_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "LCPC CPT pile parameters {category, kc, β, qs max (MPa)}. Inputs: qc (MPa), soil (clay, silt, sand, gravel, chalk), pile (drilled, cast, steel, concrete).",
+            "id": "CLASSIFY_CPT_LCPC",
+            "name": "CLASSIFY_CPT_LCPC",
+            "parameters": [
+                {
+                    "description": "qc",
+                    "dimensionality": "matrix",
+                    "name": "qc",
+                    "type": "any"
+                },
+                {
+                    "description": "Soil type (text)",
+                    "dimensionality": "matrix",
+                    "name": "soil",
+                    "type": "any"
+                },
+                {
+                    "description": "Pile type (text)",
+                    "dimensionality": "matrix",
+                    "name": "pile",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "LCPC pressuremeter pile parameters {kp, shaft-friction curve number}. Inputs: pl limit pressure (MPa), soil (clay … rock), pile installation type.",
+            "id": "CLASSIFY_PMT_LCPC",
+            "name": "CLASSIFY_PMT_LCPC",
+            "parameters": [
+                {
+                    "description": "pl",
+                    "dimensionality": "matrix",
+                    "name": "pl",
+                    "type": "any"
+                },
+                {
+                    "description": "Soil type (text)",
+                    "dimensionality": "matrix",
+                    "name": "soil",
+                    "type": "any"
+                },
+                {
+                    "description": "Pile type (text)",
+                    "dimensionality": "matrix",
+                    "name": "pile",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Average CPT qc below a footing: D to D + 1.5B (meyerhof) or D to D + B (robertson). Inputs: z, qc columns, D, B, author.",
+            "id": "CPT_AVERAGE_QC",
+            "name": "CPT_AVERAGE_QC",
+            "parameters": [
+                {
+                    "description": "Depth (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "z",
+                    "type": "any"
+                },
+                {
+                    "description": "qc (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "qc",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "D",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "Method name (text)",
+                    "dimensionality": "matrix",
+                    "name": "author",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Meyerhof CPT bearing factor with water-table corrections Cw1, Cw2. Inputs: B, D, dw water depth, optional m (any value selects the 12.19 divisor).",
+            "id": "CPT_BEARING_MEYERHOF_K",
+            "name": "CPT_BEARING_MEYERHOF_K",
+            "parameters": [
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "D",
+                    "type": "any"
+                },
+                {
+                    "description": "dw",
+                    "dimensionality": "matrix",
+                    "name": "dw",
+                    "type": "any"
+                },
+                {
+                    "description": "m (optional)",
+                    "dimensionality": "matrix",
+                    "name": "m",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Robertson CPT bearing factor k from chart fits. Inputs: B, D, shape (square, circular), density (dense, loose).",
+            "id": "CPT_BEARING_ROBERTSON_K",
+            "name": "CPT_BEARING_ROBERTSON_K",
+            "parameters": [
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "D",
+                    "type": "any"
+                },
+                {
+                    "description": "shape (text)",
+                    "dimensionality": "matrix",
+                    "name": "shape",
+                    "type": "any"
+                },
+                {
+                    "description": "density (text)",
+                    "dimensionality": "matrix",
+                    "name": "density",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Friction angle (deg) from CPT qc. Inputs: z depth, qc, g unit weight (consistent units), author_: robertson, kulhawy, ricceri, lee.",
+            "id": "CPT_FRICTION_ANGLE",
+            "name": "CPT_FRICTION_ANGLE",
+            "parameters": [
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "z",
+                    "type": "any"
+                },
+                {
+                    "description": "qc",
+                    "dimensionality": "matrix",
+                    "name": "qc",
+                    "type": "any"
+                },
+                {
+                    "description": "Unit weight",
+                    "dimensionality": "matrix",
+                    "name": "g",
+                    "type": "any"
+                },
+                {
+                    "description": "Method name (text)",
+                    "dimensionality": "matrix",
+                    "name": "author_",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Layer thicknesses from an Olsen SCN profile (header + thickness, SCN+3). Input: cpt table with depth in column 1 and SCN in column 6.",
+            "id": "CPT_OLSEN_LAYERS",
+            "name": "CPT_OLSEN_LAYERS",
+            "parameters": [
+                {
+                    "description": "cpt (table)",
+                    "dimensionality": "matrix",
+                    "name": "cpt",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Olsen soil classification number (SCN) for a CPT profile: {Qn, Fr, SCN, name}. Inputs: dqs (depth, qc, fs), pa, n exponent, g, gw, dw.",
+            "id": "CPT_OLSEN_SCN",
+            "name": "CPT_OLSEN_SCN",
+            "parameters": [
+                {
+                    "description": "dqs (table)",
+                    "dimensionality": "matrix",
+                    "name": "dqs",
+                    "type": "any"
+                },
+                {
+                    "description": "Atmospheric pressure",
+                    "dimensionality": "matrix",
+                    "name": "pa",
+                    "type": "any"
+                },
+                {
+                    "description": "n",
+                    "dimensionality": "matrix",
+                    "name": "n",
+                    "type": "any"
+                },
+                {
+                    "description": "Unit weight",
+                    "dimensionality": "matrix",
+                    "name": "g",
+                    "type": "any"
+                },
+                {
+                    "description": "gw",
+                    "dimensionality": "matrix",
+                    "name": "gw",
+                    "type": "any"
+                },
+                {
+                    "description": "dw",
+                    "dimensionality": "matrix",
+                    "name": "dw",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Helper for CPT_Olsen_SCN: zone index (1–7) for one point. Inputs: Qt normalized tip resistance, Fr friction ratio (%).",
+            "id": "CPT_OLSEN_SCN_ROW",
+            "name": "CPT_OLSEN_SCN_ROW",
+            "parameters": [
+                {
+                    "description": "Qt",
+                    "dimensionality": "matrix",
+                    "name": "Qt",
+                    "type": "any"
+                },
+                {
+                    "description": "Fr",
+                    "dimensionality": "matrix",
+                    "name": "Fr",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Boundary curve A–H of the Robertson CPT classification chart: Qt at friction ratio x_ (%). sel: letter of the curve.",
+            "id": "CPT_ROBERTSON_CLASSIFICATION_CHART",
+            "name": "CPT_ROBERTSON_CLASSIFICATION_CHART",
+            "parameters": [
+                {
+                    "description": "x_",
+                    "dimensionality": "matrix",
+                    "name": "x_",
+                    "type": "any"
+                },
+                {
+                    "description": "sel (text)",
+                    "dimensionality": "matrix",
+                    "name": "sel",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Layer thicknesses from Robertson SBT and SBT(Ic) profiles. Input: cpt table with depth in column 1, SBT in column 6, SBT(Ic) in column 9.",
+            "id": "CPT_ROBERTSON_LAYERS",
+            "name": "CPT_ROBERTSON_LAYERS",
+            "parameters": [
+                {
+                    "description": "cpt (table)",
+                    "dimensionality": "matrix",
+                    "name": "cpt",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Robertson soil behaviour type for a CPT profile: {Qn, Fr, SBT, name, Ic, SBT(Ic), name}. Inputs: dqs (depth, qc, fs), pa, n exponent, g, gw, dw.",
+            "id": "CPT_ROBERTSON_SBT",
+            "name": "CPT_ROBERTSON_SBT",
+            "parameters": [
+                {
+                    "description": "dqs (table)",
+                    "dimensionality": "matrix",
+                    "name": "dqs",
+                    "type": "any"
+                },
+                {
+                    "description": "Atmospheric pressure",
+                    "dimensionality": "matrix",
+                    "name": "pa",
+                    "type": "any"
+                },
+                {
+                    "description": "n",
+                    "dimensionality": "matrix",
+                    "name": "n",
+                    "type": "any"
+                },
+                {
+                    "description": "Unit weight",
+                    "dimensionality": "matrix",
+                    "name": "g",
+                    "type": "any"
+                },
+                {
+                    "description": "gw",
+                    "dimensionality": "matrix",
+                    "name": "gw",
+                    "type": "any"
+                },
+                {
+                    "description": "dw",
+                    "dimensionality": "matrix",
+                    "name": "dw",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Helper for CPT_Robertson_SBT: SBT zone (1–9, 0 = outside chart) for one point. Inputs: Qt_, Fr_ (%).",
+            "id": "CPT_ROBERTSON_SBT_ROW",
+            "name": "CPT_ROBERTSON_SBT_ROW",
+            "parameters": [
+                {
+                    "description": "Qt_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "Qt_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "Fr_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "Fr_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Schmertmann settlement from a CPT profile (total settlement + layer table). Inputs: zqc (depth, qc), k = E/qc, B, D, L, qn net pressure, g unit weight.",
+            "id": "CPT_SETTLEMENT",
+            "name": "CPT_SETTLEMENT",
+            "parameters": [
+                {
+                    "description": "zqc (table)",
+                    "dimensionality": "matrix",
+                    "name": "zqc",
+                    "type": "any"
+                },
+                {
+                    "description": "k",
+                    "dimensionality": "matrix",
+                    "name": "k",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "D",
+                    "type": "any"
+                },
+                {
+                    "description": "Length",
+                    "dimensionality": "matrix",
+                    "name": "L",
+                    "type": "any"
+                },
+                {
+                    "description": "qn",
+                    "dimensionality": "matrix",
+                    "name": "qn",
+                    "type": "any"
+                },
+                {
+                    "description": "Unit weight",
+                    "dimensionality": "matrix",
+                    "name": "g",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Schmertmann strain influence factor Iz at depth z (accepts a column). Inputs: z, B, D, L, qn net pressure, g unit weight.",
+            "id": "CPT_SETTLEMENT_IZ",
+            "name": "CPT_SETTLEMENT_IZ",
+            "parameters": [
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "z",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "D",
+                    "type": "any"
+                },
+                {
+                    "description": "Length",
+                    "dimensionality": "matrix",
+                    "name": "L",
+                    "type": "any"
+                },
+                {
+                    "description": "qn",
+                    "dimensionality": "matrix",
+                    "name": "qn",
+                    "type": "any"
+                },
+                {
+                    "description": "Unit weight",
+                    "dimensionality": "matrix",
+                    "name": "g",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Perpendicular distances from point M {x, y} to the line through each segment of polyline pl.",
+            "id": "DISTANCE_POINT_POLYLINE",
+            "name": "DISTANCE_POINT_POLYLINE",
+            "parameters": [
+                {
+                    "description": "M (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "M",
+                    "type": "any"
+                },
+                {
+                    "description": "pl (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "pl",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Bilinear interpolation in a 2-D table. Inputs: x, Y query; XY table with x values in row 1 and y values in column 1 (ascending).",
+            "id": "INTERPOLATE_TABLE",
+            "name": "INTERPOLATE_TABLE",
+            "parameters": [
+                {
+                    "description": "x",
+                    "dimensionality": "matrix",
+                    "name": "x",
+                    "type": "any"
+                },
+                {
+                    "description": "Y",
+                    "dimensionality": "matrix",
+                    "name": "Y",
+                    "type": "any"
+                },
+                {
+                    "description": "XY (table)",
+                    "dimensionality": "matrix",
+                    "name": "XY",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Intersection points {x, y} of a polyline with a circle. Inputs: pline vertices, center {x, y}, radius.",
+            "id": "INTERSECTION_POLYLINE_CIRCLE",
+            "name": "INTERSECTION_POLYLINE_CIRCLE",
+            "parameters": [
+                {
+                    "description": "pline (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "pline",
+                    "type": "any"
+                },
+                {
+                    "description": "center (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "center",
+                    "type": "any"
+                },
+                {
+                    "description": "radius",
+                    "dimensionality": "matrix",
+                    "name": "radius",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Intersections of polyline pl with polyline ql: {parameter, x, y}. Optional m keeps the m points with the largest x.",
+            "id": "INTERSECTION_POLYLINE_POLYLINE",
+            "name": "INTERSECTION_POLYLINE_POLYLINE",
+            "parameters": [
+                {
+                    "description": "pl (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "pl",
+                    "type": "any"
+                },
+                {
+                    "description": "ql (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "ql",
+                    "type": "any"
+                },
+                {
+                    "description": "m (optional)",
+                    "dimensionality": "matrix",
+                    "name": "m",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Helper for intersection_polyline_polyline: segment parameter of the intersection between one segment and a polyline. Input: flattened row (segment, then polyline).",
+            "id": "INTERSECTION_SEGMENT_POLYLINE",
+            "name": "INTERSECTION_SEGMENT_POLYLINE",
+            "parameters": [
+                {
+                    "description": "row (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "row",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Intersection {x, y} of a log spiral (centre pt, radius rValue, angle phi) with segment AB_ by Newton iteration.",
+            "id": "INTERSECTION_SPIRAL_SEGMENT",
+            "name": "INTERSECTION_SPIRAL_SEGMENT",
+            "parameters": [
+                {
+                    "description": "AB_ (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "AB_",
+                    "type": "any"
+                },
+                {
+                    "description": "pt (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "pt",
+                    "type": "any"
+                },
+                {
+                    "description": "rValue",
+                    "dimensionality": "matrix",
+                    "name": "rValue",
+                    "type": "any"
+                },
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "x_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "x_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "iter_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "iter_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Broms lateral capacity of a short pile in cohesionless soil: {V; depth of max moment; Mmax}. Inputs: D embedment, phi, g, B diameter, e load eccentricity.",
+            "id": "LATERALPILE_BROMS_COHESIONLESS",
+            "name": "LATERALPILE_BROMS_COHESIONLESS",
+            "parameters": [
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "D",
+                    "type": "any"
+                },
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "Unit weight",
+                    "dimensionality": "matrix",
+                    "name": "g",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "e",
+                    "dimensionality": "matrix",
+                    "name": "e",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Broms short pile in cohesive soil: {required D; rotation depth Dr; depth of max moment; Mmax}. Inputs: V load, e eccentricity, Su, B diameter.",
+            "id": "LATERALPILE_BROMS_COHESIVE",
+            "name": "LATERALPILE_BROMS_COHESIVE",
+            "parameters": [
+                {
+                    "description": "V",
+                    "dimensionality": "matrix",
+                    "name": "V",
+                    "type": "any"
+                },
+                {
+                    "description": "e",
+                    "dimensionality": "matrix",
+                    "name": "e",
+                    "type": "any"
+                },
+                {
+                    "description": "Su",
+                    "dimensionality": "matrix",
+                    "name": "Su",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Reaction, shear and moment diagrams along a Broms short pile in cohesionless soil (header + 100 points). Inputs: D, phi, g, B, e.",
+            "id": "LATERALPILE_COHESIONLESS_REACTION_SHEAR_MOMENT",
+            "name": "LATERALPILE_COHESIONLESS_REACTION_SHEAR_MOMENT",
+            "parameters": [
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "D",
+                    "type": "any"
+                },
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "Unit weight",
+                    "dimensionality": "matrix",
+                    "name": "g",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "e",
+                    "dimensionality": "matrix",
+                    "name": "e",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Reaction, shear and moment diagrams along a Broms short pile in cohesive soil. Inputs: V, e, Su, B, optional D_ and Dr_ (default from Broms).",
+            "id": "LATERALPILE_COHESIVE_REACTION_SHEAR_MOMENT",
+            "name": "LATERALPILE_COHESIVE_REACTION_SHEAR_MOMENT",
+            "parameters": [
+                {
+                    "description": "V",
+                    "dimensionality": "matrix",
+                    "name": "V",
+                    "type": "any"
+                },
+                {
+                    "description": "e",
+                    "dimensionality": "matrix",
+                    "name": "e",
+                    "type": "any"
+                },
+                {
+                    "description": "Su",
+                    "dimensionality": "matrix",
+                    "name": "Su",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "D_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "D_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "Dr_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "Dr_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Plotting points of a log spiral r = rValue·exp(−θ·tanφ). Inputs: pt centre, rValue, phi (deg), optional ta_, tb_ angles (deg), n_ points (default 100).",
+            "id": "LOGSPIRAL",
+            "name": "LOGSPIRAL",
+            "parameters": [
+                {
+                    "description": "pt (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "pt",
+                    "type": "any"
+                },
+                {
+                    "description": "rValue",
+                    "dimensionality": "matrix",
+                    "name": "rValue",
+                    "type": "any"
+                },
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "ta_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "ta_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "tb_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "tb_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "n_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "n_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Schmertmann CPT pile capacity: ultimate, shaft, tip, average fs and qc. Inputs: table (z, qc, fs, optional soil), A tip area, p perimeter, L length, pile (steel, concrete, timber).",
+            "id": "PILE_CAPACITY_CPT_SCHMERTMAN",
+            "name": "PILE_CAPACITY_CPT_SCHMERTMAN",
+            "parameters": [
+                {
+                    "description": "z_qc_fs_soil (table)",
+                    "dimensionality": "matrix",
+                    "name": "z_qc_fs_soil",
+                    "type": "any"
+                },
+                {
+                    "description": "A",
+                    "dimensionality": "matrix",
+                    "name": "A",
+                    "type": "any"
+                },
+                {
+                    "description": "p",
+                    "dimensionality": "matrix",
+                    "name": "p",
+                    "type": "any"
+                },
+                {
+                    "description": "Length",
+                    "dimensionality": "matrix",
+                    "name": "L",
+                    "type": "any"
+                },
+                {
+                    "description": "Pile type (text)",
+                    "dimensionality": "matrix",
+                    "name": "pile",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Shaft resistance by the α method. Inputs: z, Su columns, pa atmospheric pressure, p perimeter, L length, author (terzaghi, reese).",
+            "id": "PILE_SHAFT_ALPHA",
+            "name": "PILE_SHAFT_ALPHA",
+            "parameters": [
+                {
+                    "description": "Depth (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "z",
+                    "type": "any"
+                },
+                {
+                    "description": "Su (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "Su",
+                    "type": "any"
+                },
+                {
+                    "description": "Atmospheric pressure",
+                    "dimensionality": "matrix",
+                    "name": "pa",
+                    "type": "any"
+                },
+                {
+                    "description": "p",
+                    "dimensionality": "matrix",
+                    "name": "p",
+                    "type": "any"
+                },
+                {
+                    "description": "Length",
+                    "dimensionality": "matrix",
+                    "name": "L",
+                    "type": "any"
+                },
+                {
+                    "description": "Method name (text)",
+                    "dimensionality": "matrix",
+                    "name": "author",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Adhesion factor α. Inputs: Su = Su/pa (normalized), author (terzaghi, reese).",
+            "id": "PILE_SIDEFRICTION_ALPHA",
+            "name": "PILE_SIDEFRICTION_ALPHA",
+            "parameters": [
+                {
+                    "description": "Su",
+                    "dimensionality": "matrix",
+                    "name": "Su",
+                    "type": "any"
+                },
+                {
+                    "description": "Method name (text)",
+                    "dimensionality": "matrix",
+                    "name": "author",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "λ coefficient for pile shaft friction (Vijayvergiya–Focht chart fit). Input: D_ pile length in m (or ft if ft is supplied).",
+            "id": "PILE_SIDEFRICTION_LAMBDA",
+            "name": "PILE_SIDEFRICTION_LAMBDA",
+            "parameters": [
+                {
+                    "description": "D_",
+                    "dimensionality": "matrix",
+                    "name": "D_",
+                    "type": "any"
+                },
+                {
+                    "description": "ft (optional)",
+                    "dimensionality": "matrix",
+                    "name": "ft",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Meyerhof ultimate tip pressure. Inputs: pa atmospheric pressure, cValue cohesion, phi (deg).",
+            "id": "PILE_TIP_MEYERHOF",
+            "name": "PILE_TIP_MEYERHOF",
+            "parameters": [
+                {
+                    "description": "Atmospheric pressure",
+                    "dimensionality": "matrix",
+                    "name": "pa",
+                    "type": "any"
+                },
+                {
+                    "description": "cValue",
+                    "dimensionality": "matrix",
+                    "name": "cValue",
+                    "type": "any"
+                },
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Meyerhof pile tip factors {Nq; Nc} for phi (deg).",
+            "id": "PILE_TIP_MEYERHOF_FACTOR",
+            "name": "PILE_TIP_MEYERHOF_FACTOR",
+            "parameters": [
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Vesic ultimate tip pressure with reduced rigidity index: {qu; Nq; Nc; Irr; σm}. Inputs: sv vertical stress, pa, cValue cohesion, optional phi_ (deg), Dr_ relative density.",
+            "id": "PILE_TIP_VESIC",
+            "name": "PILE_TIP_VESIC",
+            "parameters": [
+                {
+                    "description": "sv",
+                    "dimensionality": "matrix",
+                    "name": "sv",
+                    "type": "any"
+                },
+                {
+                    "description": "Atmospheric pressure",
+                    "dimensionality": "matrix",
+                    "name": "pa",
+                    "type": "any"
+                },
+                {
+                    "description": "cValue",
+                    "dimensionality": "matrix",
+                    "name": "cValue",
+                    "type": "any"
+                },
+                {
+                    "description": "phi_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "phi_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "Dr_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "Dr_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Vesic pile tip factors {Nq; Nc}. Inputs: phi (deg), Ir rigidity index.",
+            "id": "PILE_TIP_VESIC_FACTOR",
+            "name": "PILE_TIP_VESIC_FACTOR",
+            "parameters": [
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "Ir",
+                    "dimensionality": "matrix",
+                    "name": "Ir",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Ménard rheological factor α. Inputs: soil (peat, clay, silt, sand, gravel, rock), Epl = E/pl ratio.",
+            "id": "PMT_ALPHA",
+            "name": "PMT_ALPHA",
+            "parameters": [
+                {
+                    "description": "Soil type (text)",
+                    "dimensionality": "matrix",
+                    "name": "soil",
+                    "type": "any"
+                },
+                {
+                    "description": "Epl",
+                    "dimensionality": "matrix",
+                    "name": "Epl",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Equivalent limit pressure ple (geometric mean from D to D + 1.5B) and equivalent embedment De: {ple; De}. Inputs: z, pl columns, B, D.",
+            "id": "PMT_BEARING_LIMITPRESSURE",
+            "name": "PMT_BEARING_LIMITPRESSURE",
+            "parameters": [
+                {
+                    "description": "Depth (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "z",
+                    "type": "any"
+                },
+                {
+                    "description": "pl (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "pl",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "D",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Ménard ultimate bearing pressure from pressuremeter data. Inputs: z, pl columns, B, D, L, soil category (I, II, III, IIIA), g unit weight.",
+            "id": "PMT_BEARING_MENARD",
+            "name": "PMT_BEARING_MENARD",
+            "parameters": [
+                {
+                    "description": "Depth (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "z",
+                    "type": "any"
+                },
+                {
+                    "description": "pl (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "pl",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "D",
+                    "type": "any"
+                },
+                {
+                    "description": "Length",
+                    "dimensionality": "matrix",
+                    "name": "L",
+                    "type": "any"
+                },
+                {
+                    "description": "Soil type (text)",
+                    "dimensionality": "matrix",
+                    "name": "soil",
+                    "type": "any"
+                },
+                {
+                    "description": "Unit weight",
+                    "dimensionality": "matrix",
+                    "name": "g",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Ménard bearing factor k, interpolated between strip and square. Inputs: H = De/(B/2), BL = B/L, soil category (I, II, III, IIIA).",
+            "id": "PMT_BEARING_MENARD_K",
+            "name": "PMT_BEARING_MENARD_K",
+            "parameters": [
+                {
+                    "description": "H",
+                    "dimensionality": "matrix",
+                    "name": "H",
+                    "type": "any"
+                },
+                {
+                    "description": "BL",
+                    "dimensionality": "matrix",
+                    "name": "BL",
+                    "type": "any"
+                },
+                {
+                    "description": "Soil type (text)",
+                    "dimensionality": "matrix",
+                    "name": "soil",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Plotting lines of the 16 Ménard sub-layers below a footing. Inputs: B, D.",
+            "id": "PMT_LAYERS",
+            "name": "PMT_LAYERS",
+            "parameters": [
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "D",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Step-profile plotting coordinates from depth/value columns. Inputs: x depths, y values.",
+            "id": "STEPPROFILE",
+            "name": "STEPPROFILE",
+            "parameters": [
+                {
+                    "description": "x (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "x",
+                    "type": "any"
+                },
+                {
+                    "description": "y (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "y",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Alias of stepProfile for SPT profiles.",
+            "id": "SPT_STEPPROFILE",
+            "name": "SPT_STEPPROFILE",
+            "parameters": [
+                {
+                    "description": "x (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "x",
+                    "type": "any"
+                },
+                {
+                    "description": "y (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "y",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Alias of stepProfile for CPT profiles.",
+            "id": "CPT_STEPPROFILE",
+            "name": "CPT_STEPPROFILE",
+            "parameters": [
+                {
+                    "description": "x (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "x",
+                    "type": "any"
+                },
+                {
+                    "description": "y (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "y",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Alias of stepProfile for pressuremeter profiles.",
+            "id": "PMT_STAIRCASE",
+            "name": "PMT_STAIRCASE",
+            "parameters": [
+                {
+                    "description": "x (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "x",
+                    "type": "any"
+                },
+                {
+                    "description": "y (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "y",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Centroid and area of a polygon: {\"Centroid =\", xc, yc; \"Area =\", A, \"\"}. Input: vertices in two columns (first vertex may be repeated).",
+            "id": "POLYGON_AREA_CENTROID",
+            "name": "POLYGON_AREA_CENTROID",
+            "parameters": [
+                {
+                    "description": "polygon (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "polygon",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "TRUE if point (x, y) lies below exactly one edge of the polygon (xa, ya) — vertical ray test.",
+            "id": "POLYGON_INSIDE",
+            "name": "POLYGON_INSIDE",
+            "parameters": [
+                {
+                    "description": "x",
+                    "dimensionality": "matrix",
+                    "name": "x",
+                    "type": "any"
+                },
+                {
+                    "description": "y",
+                    "dimensionality": "matrix",
+                    "name": "y",
+                    "type": "any"
+                },
+                {
+                    "description": "xa (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "xa",
+                    "type": "any"
+                },
+                {
+                    "description": "ya (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "ya",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Linear interpolation of y at X along a polyline (two columns), searching for the segment starting at or below X. Used for root finding.",
+            "id": "POLYLINE_SUBDIVIDE",
+            "name": "POLYLINE_SUBDIVIDE",
+            "parameters": [
+                {
+                    "description": "X",
+                    "dimensionality": "matrix",
+                    "name": "X",
+                    "type": "any"
+                },
+                {
+                    "description": "polyline (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "polyline",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Schmertmann strain influence factor at depth z. Inputs: Imax, B, za footing depth, optional BL_ (0 = square, 1 = strip).",
+            "id": "SETTLEMENT_SCHMERTMAN_FACTOR",
+            "name": "SETTLEMENT_SCHMERTMAN_FACTOR",
+            "parameters": [
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "z",
+                    "type": "any"
+                },
+                {
+                    "description": "Imax",
+                    "dimensionality": "matrix",
+                    "name": "Imax",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "za",
+                    "dimensionality": "matrix",
+                    "name": "za",
+                    "type": "any"
+                },
+                {
+                    "description": "BL_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "BL_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Factor of safety of a circular slip in undrained clay (φ = 0) using sector geometry. Inputs: pline ground surface, center, radius, cu, unit weight, detail (any value for details).",
+            "id": "SLOPE_CIRCLE_COHESIVE",
+            "name": "SLOPE_CIRCLE_COHESIVE",
+            "parameters": [
+                {
+                    "description": "pline (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "pline",
+                    "type": "any"
+                },
+                {
+                    "description": "center (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "center",
+                    "type": "any"
+                },
+                {
+                    "description": "radius",
+                    "dimensionality": "matrix",
+                    "name": "radius",
+                    "type": "any"
+                },
+                {
+                    "description": "cu",
+                    "dimensionality": "matrix",
+                    "name": "cu",
+                    "type": "any"
+                },
+                {
+                    "description": "unitweight",
+                    "dimensionality": "matrix",
+                    "name": "unitweight",
+                    "type": "any"
+                },
+                {
+                    "description": "detail (optional)",
+                    "dimensionality": "matrix",
+                    "name": "detail",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Geometry of the soil mass above a circular slip: centroid, entry/exit points and angles, area. Inputs: pl ground polyline, center, radius.",
+            "id": "SLOPE_CIRCLE_POLYLINE",
+            "name": "SLOPE_CIRCLE_POLYLINE",
+            "parameters": [
+                {
+                    "description": "pl (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "pl",
+                    "type": "any"
+                },
+                {
+                    "description": "center (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "center",
+                    "type": "any"
+                },
+                {
+                    "description": "radius",
+                    "dimensionality": "matrix",
+                    "name": "radius",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Factor of safety of a circular slip in undrained clay using polygon geometry. Inputs: pline, center, radius, cu, unit weight, detail (any value for details).",
+            "id": "SLOPE_CIRCLE_POLYLINE_COHESIVE",
+            "name": "SLOPE_CIRCLE_POLYLINE_COHESIVE",
+            "parameters": [
+                {
+                    "description": "pline (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "pline",
+                    "type": "any"
+                },
+                {
+                    "description": "center (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "center",
+                    "type": "any"
+                },
+                {
+                    "description": "radius",
+                    "dimensionality": "matrix",
+                    "name": "radius",
+                    "type": "any"
+                },
+                {
+                    "description": "cu",
+                    "dimensionality": "matrix",
+                    "name": "cu",
+                    "type": "any"
+                },
+                {
+                    "description": "unitweight",
+                    "dimensionality": "matrix",
+                    "name": "unitweight",
+                    "type": "any"
+                },
+                {
+                    "description": "detail (optional)",
+                    "dimensionality": "matrix",
+                    "name": "detail",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Friction circle method (c–φ soil): factor of safety and force polygon (labelled table). Inputs: pline, pt circle centre, rValue radius, coh, phi, g, opt_ (any value: alternative Taylor factor).",
+            "id": "SLOPE_FRICTION_CIRCLE",
+            "name": "SLOPE_FRICTION_CIRCLE",
+            "parameters": [
+                {
+                    "description": "pline (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "pline",
+                    "type": "any"
+                },
+                {
+                    "description": "pt (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "pt",
+                    "type": "any"
+                },
+                {
+                    "description": "rValue",
+                    "dimensionality": "matrix",
+                    "name": "rValue",
+                    "type": "any"
+                },
+                {
+                    "description": "Cohesion",
+                    "dimensionality": "matrix",
+                    "name": "coh",
+                    "type": "any"
+                },
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "Unit weight",
+                    "dimensionality": "matrix",
+                    "name": "g",
+                    "type": "any"
+                },
+                {
+                    "description": "opt_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "opt_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Helper for slope_friction_circle: cohesion factor of safety for a trial frictional FS (accepts a column of FS).",
+            "id": "SLOPE_FRICTION_CIRCLE_FCT",
+            "name": "SLOPE_FRICTION_CIRCLE_FCT",
+            "parameters": [
+                {
+                    "description": "FS",
+                    "dimensionality": "matrix",
+                    "name": "FS",
+                    "type": "any"
+                },
+                {
+                    "description": "f",
+                    "dimensionality": "matrix",
+                    "name": "f",
+                    "type": "any"
+                },
+                {
+                    "description": "Cohesion",
+                    "dimensionality": "matrix",
+                    "name": "coh",
+                    "type": "any"
+                },
+                {
+                    "description": "w",
+                    "dimensionality": "matrix",
+                    "name": "w",
+                    "type": "any"
+                },
+                {
+                    "description": "kr",
+                    "dimensionality": "matrix",
+                    "name": "kr",
+                    "type": "any"
+                },
+                {
+                    "description": "rValue",
+                    "dimensionality": "matrix",
+                    "name": "rValue",
+                    "type": "any"
+                },
+                {
+                    "description": "OD",
+                    "dimensionality": "matrix",
+                    "name": "OD",
+                    "type": "any"
+                },
+                {
+                    "description": "DM",
+                    "dimensionality": "matrix",
+                    "name": "DM",
+                    "type": "any"
+                },
+                {
+                    "description": "Angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "alpha",
+                    "type": "any"
+                },
+                {
+                    "description": "Lc",
+                    "dimensionality": "matrix",
+                    "name": "Lc",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Taylor friction-circle radius factor k for central angle t (radians). opt = 1 selects the alternative formula.",
+            "id": "SLOPE_FRICTION_CIRCLE_TAYLOR",
+            "name": "SLOPE_FRICTION_CIRCLE_TAYLOR",
+            "parameters": [
+                {
+                    "description": "t",
+                    "dimensionality": "matrix",
+                    "name": "t",
+                    "type": "any"
+                },
+                {
+                    "description": "opt",
+                    "dimensionality": "matrix",
+                    "name": "opt",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Residual FS − FSc for the friction circle method (same inputs as slope_friction_circle_fct).",
+            "id": "SLOPE_FRICTION_FS",
+            "name": "SLOPE_FRICTION_FS",
+            "parameters": [
+                {
+                    "description": "FS",
+                    "dimensionality": "matrix",
+                    "name": "FS",
+                    "type": "any"
+                },
+                {
+                    "description": "f",
+                    "dimensionality": "matrix",
+                    "name": "f",
+                    "type": "any"
+                },
+                {
+                    "description": "Cohesion",
+                    "dimensionality": "matrix",
+                    "name": "coh",
+                    "type": "any"
+                },
+                {
+                    "description": "w",
+                    "dimensionality": "matrix",
+                    "name": "w",
+                    "type": "any"
+                },
+                {
+                    "description": "kr",
+                    "dimensionality": "matrix",
+                    "name": "kr",
+                    "type": "any"
+                },
+                {
+                    "description": "rValue",
+                    "dimensionality": "matrix",
+                    "name": "rValue",
+                    "type": "any"
+                },
+                {
+                    "description": "a",
+                    "dimensionality": "matrix",
+                    "name": "a",
+                    "type": "any"
+                },
+                {
+                    "description": "DM",
+                    "dimensionality": "matrix",
+                    "name": "DM",
+                    "type": "any"
+                },
+                {
+                    "description": "Angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "alpha",
+                    "type": "any"
+                },
+                {
+                    "description": "ab",
+                    "dimensionality": "matrix",
+                    "name": "ab",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Log-spiral slip surface: factor of safety, centroid, weight, entry/exit points, resisting and driving moments. Inputs: pl ground polyline, pt spiral centre, rValue, phi, coh, g.",
+            "id": "SLOPE_LOGSPIRAL",
+            "name": "SLOPE_LOGSPIRAL",
+            "parameters": [
+                {
+                    "description": "pl (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "pl",
+                    "type": "any"
+                },
+                {
+                    "description": "pt (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "pt",
+                    "type": "any"
+                },
+                {
+                    "description": "rValue",
+                    "dimensionality": "matrix",
+                    "name": "rValue",
+                    "type": "any"
+                },
+                {
+                    "description": "Friction angle (degrees)",
+                    "dimensionality": "matrix",
+                    "name": "phi",
+                    "type": "any"
+                },
+                {
+                    "description": "Cohesion",
+                    "dimensionality": "matrix",
+                    "name": "coh",
+                    "type": "any"
+                },
+                {
+                    "description": "Unit weight",
+                    "dimensionality": "matrix",
+                    "name": "g",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Alias of SPT_correction_depth: overburden correction CN, capped at 2.",
+            "id": "SPT_DEPTHCORRECTION",
+            "name": "SPT_DEPTHCORRECTION",
+            "parameters": [
+                {
+                    "description": "s",
+                    "dimensionality": "matrix",
+                    "name": "s",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Friction angle (deg) from SPT N. Optional spa_ = σ'v/pa (default 1), author_: peck (default), schmertman, hatanaka.",
+            "id": "SPT_FRICTIONANGLE",
+            "name": "SPT_FRICTIONANGLE",
+            "parameters": [
+                {
+                    "description": "N",
+                    "dimensionality": "matrix",
+                    "name": "N",
+                    "type": "any"
+                },
+                {
+                    "description": "spa_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "spa_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "Method name (optional)",
+                    "dimensionality": "matrix",
+                    "name": "author_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Staircase table: each x repeated twice with y shifted one row, for step plots. Inputs: x, y columns.",
+            "id": "STEP_TABLE",
+            "name": "STEP_TABLE",
+            "parameters": [
+                {
+                    "description": "x (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "x",
+                    "type": "any"
+                },
+                {
+                    "description": "y (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "y",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Intersections {x, y} of a closed polygon with the line through M at angle t (radians). Returns {0, 0} if none.",
+            "id": "INTERSECTION_POLYGON_LINE_SLOPE",
+            "name": "INTERSECTION_POLYGON_LINE_SLOPE",
+            "parameters": [
+                {
+                    "description": "polyline (two-column x, y list)",
+                    "dimensionality": "matrix",
+                    "name": "polyline",
+                    "type": "any"
+                },
+                {
+                    "description": "M (point {x, y})",
+                    "dimensionality": "matrix",
+                    "name": "M",
+                    "type": "any"
+                },
+                {
+                    "description": "t",
+                    "dimensionality": "matrix",
+                    "name": "t",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Grain-size analysis: {D10; D30; D60; Cu; Cc; % clay; % silt; % sand; % gravel}. Inputs: d diameters (mm), p percent passing (any order).",
+            "id": "GRAINSIZEANALYSIS",
+            "name": "GRAINSIZEANALYSIS",
+            "parameters": [
+                {
+                    "description": "d (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "d",
+                    "type": "any"
+                },
+                {
+                    "description": "p (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "p",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Pile capacity in clay by the α method with tip 9·Su·A: {ultimate; shaft; tip}. Inputs: zSu (depth, Su), pa, a tip area, p perimeter, L, author (terzaghi, reese), optional D_ top depth.",
+            "id": "PILE_CAPACITY_ALPHA",
+            "name": "PILE_CAPACITY_ALPHA",
+            "parameters": [
+                {
+                    "description": "zSu (table)",
+                    "dimensionality": "matrix",
+                    "name": "zSu",
+                    "type": "any"
+                },
+                {
+                    "description": "Atmospheric pressure",
+                    "dimensionality": "matrix",
+                    "name": "pa",
+                    "type": "any"
+                },
+                {
+                    "description": "a",
+                    "dimensionality": "matrix",
+                    "name": "a",
+                    "type": "any"
+                },
+                {
+                    "description": "p",
+                    "dimensionality": "matrix",
+                    "name": "p",
+                    "type": "any"
+                },
+                {
+                    "description": "Length",
+                    "dimensionality": "matrix",
+                    "name": "L",
+                    "type": "any"
+                },
+                {
+                    "description": "Method name (text)",
+                    "dimensionality": "matrix",
+                    "name": "author",
+                    "type": "any"
+                },
+                {
+                    "description": "D_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "D_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "LCPC (Bustamante–Gianeselli) CPT pile capacity: ultimate, shaft, tip, average qc at tip, average qs, kc. Inputs: table (z, qc, soil), a tip area, p perimeter, L, pile type.",
+            "id": "PILE_CAPACITY_CPT_LCPC",
+            "name": "PILE_CAPACITY_CPT_LCPC",
+            "parameters": [
+                {
+                    "description": "z_qc_soil (table)",
+                    "dimensionality": "matrix",
+                    "name": "z_qc_soil",
+                    "type": "any"
+                },
+                {
+                    "description": "a",
+                    "dimensionality": "matrix",
+                    "name": "a",
+                    "type": "any"
+                },
+                {
+                    "description": "p",
+                    "dimensionality": "matrix",
+                    "name": "p",
+                    "type": "any"
+                },
+                {
+                    "description": "Length",
+                    "dimensionality": "matrix",
+                    "name": "L",
+                    "type": "any"
+                },
+                {
+                    "description": "Pile type (text)",
+                    "dimensionality": "matrix",
+                    "name": "pile",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Fellenius β-method pile capacity: {ultimate; shaft; tip}. Inputs: table (z, phi, σ'v, soil), a tip area, p perimeter, L, optional D_ top depth.",
+            "id": "PILE_CAPACITY_FELLENIUS",
+            "name": "PILE_CAPACITY_FELLENIUS",
+            "parameters": [
+                {
+                    "description": "z_phi_sv_soil (table)",
+                    "dimensionality": "matrix",
+                    "name": "z_phi_sv_soil",
+                    "type": "any"
+                },
+                {
+                    "description": "a",
+                    "dimensionality": "matrix",
+                    "name": "a",
+                    "type": "any"
+                },
+                {
+                    "description": "p",
+                    "dimensionality": "matrix",
+                    "name": "p",
+                    "type": "any"
+                },
+                {
+                    "description": "Length",
+                    "dimensionality": "matrix",
+                    "name": "L",
+                    "type": "any"
+                },
+                {
+                    "description": "D_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "D_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "LCPC pressuremeter pile capacity: {ultimate; shaft; tip}. Inputs: table (z, pl, σv, soil), a tip area, p perimeter, L, pile type.",
+            "id": "PILE_CAPACITY_PMT_LCPC",
+            "name": "PILE_CAPACITY_PMT_LCPC",
+            "parameters": [
+                {
+                    "description": "z_pl_sv_soil (table)",
+                    "dimensionality": "matrix",
+                    "name": "z_pl_sv_soil",
+                    "type": "any"
+                },
+                {
+                    "description": "a",
+                    "dimensionality": "matrix",
+                    "name": "a",
+                    "type": "any"
+                },
+                {
+                    "description": "p",
+                    "dimensionality": "matrix",
+                    "name": "p",
+                    "type": "any"
+                },
+                {
+                    "description": "Length",
+                    "dimensionality": "matrix",
+                    "name": "L",
+                    "type": "any"
+                },
+                {
+                    "description": "Pile type (text)",
+                    "dimensionality": "matrix",
+                    "name": "pile",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Meyerhof SPT pile capacity: ultimate, shaft, tip, average N along shaft and at tip. Inputs: zN (depth, N), pa, a tip area, p perimeter, L, disp (any value = displacement pile).",
+            "id": "PILE_CAPACITY_SPT_MEYERHOF",
+            "name": "PILE_CAPACITY_SPT_MEYERHOF",
+            "parameters": [
+                {
+                    "description": "zN (table)",
+                    "dimensionality": "matrix",
+                    "name": "zN",
+                    "type": "any"
+                },
+                {
+                    "description": "Atmospheric pressure",
+                    "dimensionality": "matrix",
+                    "name": "pa",
+                    "type": "any"
+                },
+                {
+                    "description": "a",
+                    "dimensionality": "matrix",
+                    "name": "a",
+                    "type": "any"
+                },
+                {
+                    "description": "p",
+                    "dimensionality": "matrix",
+                    "name": "p",
+                    "type": "any"
+                },
+                {
+                    "description": "Length",
+                    "dimensionality": "matrix",
+                    "name": "L",
+                    "type": "any"
+                },
+                {
+                    "description": "disp (optional)",
+                    "dimensionality": "matrix",
+                    "name": "disp",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Shaft capacity by the λ method: capacity, λ, average Su and σ'v. Inputs: table (z, Su, σ'v), p perimeter, L (m, or ft if ft is supplied).",
+            "id": "PILE_SHAFT_LAMBDA",
+            "name": "PILE_SHAFT_LAMBDA",
+            "parameters": [
+                {
+                    "description": "z_Su_sv (table)",
+                    "dimensionality": "matrix",
+                    "name": "z_Su_sv",
+                    "type": "any"
+                },
+                {
+                    "description": "p",
+                    "dimensionality": "matrix",
+                    "name": "p",
+                    "type": "any"
+                },
+                {
+                    "description": "Length",
+                    "dimensionality": "matrix",
+                    "name": "L",
+                    "type": "any"
+                },
+                {
+                    "description": "ft (optional)",
+                    "dimensionality": "matrix",
+                    "name": "ft",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "LCPC unit shaft friction (MPa) from limit pressure pl (MPa) on curve i (1–7). Accepts columns.",
+            "id": "PMT_SHAFTFRICTION",
+            "name": "PMT_SHAFTFRICTION",
+            "parameters": [
+                {
+                    "description": "pl",
+                    "dimensionality": "matrix",
+                    "name": "pl",
+                    "type": "any"
+                },
+                {
+                    "description": "i",
+                    "dimensionality": "matrix",
+                    "name": "i",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "LCPC unit shaft friction (MPa) from limit pressure pl (MPa) on curve \"q1\" … \"q7\".",
+            "id": "PMT_PILE_SHAFTFRICTION",
+            "name": "PMT_PILE_SHAFTFRICTION",
+            "parameters": [
+                {
+                    "description": "pl",
+                    "dimensionality": "matrix",
+                    "name": "pl",
+                    "type": "any"
+                },
+                {
+                    "description": "classi (text)",
+                    "dimensionality": "matrix",
+                    "name": "classi",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Ménard shape coefficients λc, λd for L/B. opt_: \"v\" = λc, \"d\" = λd, omitted = {λc; λd}. Returns 0 if L/B < 1.",
+            "id": "PMT_SETTLEMENT_LAMBDA",
+            "name": "PMT_SETTLEMENT_LAMBDA",
+            "parameters": [
+                {
+                    "description": "LB",
+                    "dimensionality": "matrix",
+                    "name": "LB",
+                    "type": "any"
+                },
+                {
+                    "description": "opt_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "opt_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Alias of PMT_settlement_lambda: Ménard shape coefficients {λc; λd} for L/B.",
+            "id": "PMT_LAMBDA",
+            "name": "PMT_LAMBDA",
+            "parameters": [
+                {
+                    "description": "LB",
+                    "dimensionality": "matrix",
+                    "name": "LB",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Ménard equivalent moduli Ec, Ed and limit pressure from 16 sub-layers below a footing (labelled table + layer values). Inputs: yEpl (depth, E, pl), B, D.",
+            "id": "PMT_MODULI",
+            "name": "PMT_MODULI",
+            "parameters": [
+                {
+                    "description": "yEpl (table)",
+                    "dimensionality": "matrix",
+                    "name": "yEpl",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "D",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Eurocode 7 pressuremeter bearing pressure: {qu; ple; k}. Inputs: z, pl columns, B, D, L, soil (\"clay silt\", \"sand gravel\", \"chalk\"), g unit weight.",
+            "id": "PMT_BEARING_EUROCODE",
+            "name": "PMT_BEARING_EUROCODE",
+            "parameters": [
+                {
+                    "description": "Depth (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "z",
+                    "type": "any"
+                },
+                {
+                    "description": "pl (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "pl",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "D",
+                    "type": "any"
+                },
+                {
+                    "description": "Length",
+                    "dimensionality": "matrix",
+                    "name": "L",
+                    "type": "any"
+                },
+                {
+                    "description": "Soil type (text)",
+                    "dimensionality": "matrix",
+                    "name": "soil",
+                    "type": "any"
+                },
+                {
+                    "description": "Unit weight",
+                    "dimensionality": "matrix",
+                    "name": "g",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Eurocode 7 pressuremeter bearing factor k. Inputs: B, L, D embedment, pl limit pressure (MPa), soil_ (\"clay silt\", \"sand gravel\", \"chalk\").",
+            "id": "PMT_BEARING_EUROCODE_K",
+            "name": "PMT_BEARING_EUROCODE_K",
+            "parameters": [
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "Length",
+                    "dimensionality": "matrix",
+                    "name": "L",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "D",
+                    "type": "any"
+                },
+                {
+                    "description": "pl",
+                    "dimensionality": "matrix",
+                    "name": "pl",
+                    "type": "any"
+                },
+                {
+                    "description": "soil_ (text)",
+                    "dimensionality": "matrix",
+                    "name": "soil_",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Ménard settlement {sc; sd; total} from given moduli. Inputs: q net pressure, Ec, Ed, B, LB = L/B, ac, ad rheological factors, optional B0_ reference width (default 1).",
+            "id": "PMT_SETTLEMENT_BASIC",
+            "name": "PMT_SETTLEMENT_BASIC",
+            "parameters": [
+                {
+                    "description": "q",
+                    "dimensionality": "matrix",
+                    "name": "q",
+                    "type": "any"
+                },
+                {
+                    "description": "Ec",
+                    "dimensionality": "matrix",
+                    "name": "Ec",
+                    "type": "any"
+                },
+                {
+                    "description": "Ed",
+                    "dimensionality": "matrix",
+                    "name": "Ed",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "LB",
+                    "dimensionality": "matrix",
+                    "name": "LB",
+                    "type": "any"
+                },
+                {
+                    "description": "ac",
+                    "dimensionality": "matrix",
+                    "name": "ac",
+                    "type": "any"
+                },
+                {
+                    "description": "ad",
+                    "dimensionality": "matrix",
+                    "name": "ad",
+                    "type": "any"
+                },
+                {
+                    "description": "B0_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "B0_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Ménard settlement from a pressuremeter profile (labelled table: total, volumetric, deviatoric, α, λ, moduli). Inputs: q, yEpl (depth, E, pl), B, D, L, soil, ft_ (units flag).",
+            "id": "PMT_SETTLEMENT",
+            "name": "PMT_SETTLEMENT",
+            "parameters": [
+                {
+                    "description": "q",
+                    "dimensionality": "matrix",
+                    "name": "q",
+                    "type": "any"
+                },
+                {
+                    "description": "yEpl (table)",
+                    "dimensionality": "matrix",
+                    "name": "yEpl",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "D",
+                    "type": "any"
+                },
+                {
+                    "description": "Length",
+                    "dimensionality": "matrix",
+                    "name": "L",
+                    "type": "any"
+                },
+                {
+                    "description": "Soil type (text)",
+                    "dimensionality": "matrix",
+                    "name": "soil",
+                    "type": "any"
+                },
+                {
+                    "description": "ft_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "ft_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Shear and moment from a piecewise-linear pressure profile. Columns: depth, pressure, shear, moment. k = subdivisions per segment.",
+            "id": "SHEARMOMENT",
+            "name": "SHEARMOMENT",
+            "parameters": [
+                {
+                    "description": "d (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "d",
+                    "type": "any"
+                },
+                {
+                    "description": "p (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "p",
+                    "type": "any"
+                },
+                {
+                    "description": "k",
+                    "dimensionality": "matrix",
+                    "name": "k",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Shear and moment diagram without header (depth, pressure, shear, moment). Inputs: d, p columns, optional n subdivisions (default 20).",
+            "id": "BEAM",
+            "name": "BEAM",
+            "parameters": [
+                {
+                    "description": "d (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "d",
+                    "type": "any"
+                },
+                {
+                    "description": "p (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "p",
+                    "type": "any"
+                },
+                {
+                    "description": "n (optional)",
+                    "dimensionality": "matrix",
+                    "name": "n",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Shear and moment diagram with header (depth, pressure, shear, moment). Inputs: d, p columns, optional n subdivisions (default 20).",
+            "id": "PRESSURE_SHEAR_MOMENT",
+            "name": "PRESSURE_SHEAR_MOMENT",
+            "parameters": [
+                {
+                    "description": "d (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "d",
+                    "type": "any"
+                },
+                {
+                    "description": "p (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "p",
+                    "type": "any"
+                },
+                {
+                    "description": "n (optional)",
+                    "dimensionality": "matrix",
+                    "name": "n",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Shear and moment diagram with an anchor force Ta at depth da (sheet-pile walls). Inputs: d, p columns, da, Ta, optional n subdivisions (default 20).",
+            "id": "PRESSURE_SHEAR_MOMENT_ANCHOR",
+            "name": "PRESSURE_SHEAR_MOMENT_ANCHOR",
+            "parameters": [
+                {
+                    "description": "d (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "d",
+                    "type": "any"
+                },
+                {
+                    "description": "p (column of values)",
+                    "dimensionality": "matrix",
+                    "name": "p",
+                    "type": "any"
+                },
+                {
+                    "description": "da",
+                    "dimensionality": "matrix",
+                    "name": "da",
+                    "type": "any"
+                },
+                {
+                    "description": "Ta",
+                    "dimensionality": "matrix",
+                    "name": "Ta",
+                    "type": "any"
+                },
+                {
+                    "description": "n (optional)",
+                    "dimensionality": "matrix",
+                    "name": "n",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "Allowable bearing pressure from a single SPT N value. Inputs: N, B, D (m), author: bowles, meyerhof, terzaghi.",
+            "id": "SPT_BEARING_DIRECT",
+            "name": "SPT_BEARING_DIRECT",
+            "parameters": [
+                {
+                    "description": "N",
+                    "dimensionality": "matrix",
+                    "name": "N",
+                    "type": "any"
+                },
+                {
+                    "description": "Width",
+                    "dimensionality": "matrix",
+                    "name": "B",
+                    "type": "any"
+                },
+                {
+                    "description": "Depth",
+                    "dimensionality": "matrix",
+                    "name": "D",
+                    "type": "any"
+                },
+                {
+                    "description": "Method name (text)",
+                    "dimensionality": "matrix",
+                    "name": "author",
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        },
+        {
+            "description": "ASTM D2487 group symbol and group name {symbol, name}. Inputs: % passing No. 4 and No. 200, optional Cu, Cc, LL, PL, LL oven-dried/LL not dried (blank = inorganic).",
+            "id": "CLASSIFY_ASTM2487",
+            "name": "CLASSIFY_ASTM2487",
+            "parameters": [
+                {
+                    "description": "pf4",
+                    "dimensionality": "matrix",
+                    "name": "pf4",
+                    "type": "any"
+                },
+                {
+                    "description": "pf200",
+                    "dimensionality": "matrix",
+                    "name": "pf200",
+                    "type": "any"
+                },
+                {
+                    "description": "cu_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "cu_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "cc_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "cc_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "ll_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "ll_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "pl_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "pl_",
+                    "optional": true,
+                    "type": "any"
+                },
+                {
+                    "description": "ratio_ (optional)",
+                    "dimensionality": "matrix",
+                    "name": "ratio_",
+                    "optional": true,
+                    "type": "any"
+                }
+            ],
+            "result": {
+                "dimensionality": "matrix"
+            }
+        }
+    ]
+}

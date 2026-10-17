@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>geoXL functions</title>
+<style>
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#5f6368;--line:#e3e3e3;--accent:#1f4e79}
+@media (prefers-color-scheme: dark){:root{--bg:#16181b;--fg:#e8e8e8;--muted:#a0a4aa;--line:#2c3036;--accent:#7fb2e5}}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:24px 16px}
+h1{font-size:26px;margin:0 0 4px} p{color:var(--muted);margin:0 0 16px}
+input{width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);font-size:15px;margin-bottom:12px}
+table{width:100%;border-collapse:collapse} td{border-top:1px solid var(--line);padding:8px 6px;vertical-align:top}
+code{color:var(--accent);font-size:13px;word-break:break-word} td:first-child{width:42%}
+</style></head><body><main>
+<h1>geoXL</h1>
+<p>145 geotechnical functions for Excel, translated from the GeoEXCEL LAMBDA library v0.13. Type <code>=GEOXL.</code> in a cell to see them.</p>
+<input id="q" type="search" placeholder="Filter functions (e.g. bearing, pile, Mohr)…" aria-label="Filter functions">
+<table id="t"><tbody>
+<tr><td><code>=GEOXL.BEAM(d, p, [n])</code></td><td>Shear and moment diagram without header (depth, pressure, shear, moment). Inputs: d, p columns, optional n subdivisions (default 20).</td></tr>
+<tr><td><code>=GEOXL.BEARING_CAPACITY(coh, phi, q, gam, B, L, D, H, V, author, [A_])</code></td><td>Ultimate bearing pressure combining N factors with shape, depth and inclination factors. Inputs: coh, phi (deg), q surcharge, gam unit weight, B, L, D footing width/length/depth, H, V loads, author (terzaghi, prandtl, meyerhof, hansen, vesic, ec7).</td></tr>
+<tr><td><code>=GEOXL.BEARING_DEPTHFACTORS(DB, phi, author)</code></td><td>Depth factors {dc; dq; dγ} for the selected bearing method. Inputs: DB = D/B, phi (deg), author.</td></tr>
+<tr><td><code>=GEOXL.BEARING_FACTORS(phi, author_)</code></td><td>Bearing capacity factors {Nc; Nq; Nγ} for the selected method. Inputs: phi (deg), author_.</td></tr>
+<tr><td><code>=GEOXL.BEARING_INCLINATIONFACTORS(H, V, BL, phi, coh, author, [A_])</code></td><td>Load inclination factors {ic; iq; iγ}. Inputs: H, V horizontal/vertical loads, BL = B/L, phi (deg), coh, author, optional A_ area (default 1).</td></tr>
+<tr><td><code>=GEOXL.BEARING_NQ(Phi, author_)</code></td><td>Bearing factor Nq for the selected method (row 2 of bearing_factors). Inputs: Phi (deg), author_.</td></tr>
+<tr><td><code>=GEOXL.BEARING_SHAPEFACTORS(BL, phi, author, [opt_])</code></td><td>Shape factors {sc; sq; sγ} for the selected method. Inputs: BL = B/L, phi (deg), author, opt_ (any value selects the alternative Terzaghi sγ).</td></tr>
+<tr><td><code>=GEOXL.BEARING_SKEMPTON(DB, BL)</code></td><td>Skempton Nc for undrained bearing (polynomial fit). Inputs: DB = D/B (capped at 6), BL = B/L.</td></tr>
+<tr><td><code>=GEOXL.CIRCLE(pt, rValue, [ta_], [tb_], [n_])</code></td><td>Plotting points of a circle or arc (header + n+1 points). Inputs: pt centre {x, y}, rValue radius, optional ta_, tb_ start/end angles (deg), n_ points (default 100).</td></tr>
+<tr><td><code>=GEOXL.CLASSIFY_AASHTO(pf10_, pf40_, pf200_, [LL_], [PL_])</code></td><td>AASHTO soil classification with group index, as text. Inputs: % passing No.10, No.40, No.200 (enter 40 for 40%), LL_, PL_.</td></tr>
+<tr><td><code>=GEOXL.CLASSIFY_ASTM(list, pf4_, pf200_, [Cu_], [Cc_], [LL_], [PL_], [organic_])</code></td><td>USCS symbol with ASTM group name from a two-column lookup table (symbol | descriptions). Inputs: list, % passing No.4 and No.200, optional Cu, Cc, LL, PL, organic.</td></tr>
+<tr><td><code>=GEOXL.CLASSIFY_ASTM2487(pf4, pf200, [cu_], [cc_], [ll_], [pl_], [ratio_])</code></td><td>ASTM D2487 group symbol and group name {symbol, name}. Inputs: % passing No. 4 and No. 200, optional Cu, Cc, LL, PL, LL oven-dried/LL not dried (blank = inorganic).</td></tr>
+<tr><td><code>=GEOXL.CLASSIFY_CPT_LCPC(qc, soil, pile)</code></td><td>LCPC CPT pile parameters {category, kc, β, qs max (MPa)}. Inputs: qc (MPa), soil (clay, silt, sand, gravel, chalk), pile (drilled, cast, steel, concrete).</td></tr>
+<tr><td><code>=GEOXL.CLASSIFY_PLASTICITY(LL, PL, [organic])</code></td><td>Fine-grained soil symbol from the plasticity chart (CL, CH, ML, MH, OL, OH, CL &amp; ML). Inputs: LL, PL in %, optional organic (0 = inorganic).</td></tr>
+<tr><td><code>=GEOXL.CLASSIFY_PMT_LCPC(pl, soil, pile)</code></td><td>LCPC pressuremeter pile parameters {kp, shaft-friction curve number}. Inputs: pl limit pressure (MPa), soil (clay … rock), pile installation type.</td></tr>
+<tr><td><code>=GEOXL.CLASSIFY_USC(pf4_, pf200_, [Cu_], [Cc_], [LL_], [PL_], [organic_])</code></td><td>USCS group symbol from gradation and plasticity. Inputs: % passing No.4 and No.200, optional Cu = D60/D10, Cc = D30²/(D10·D60), LL, PL, organic.</td></tr>
+<tr><td><code>=GEOXL.CONSOLIDATION_TEST(Tarray, Xarray, ta, tb, hi)</code></td><td>Square-root-of-time analysis of a consolidation test: Cv, d0, d100, drainage length and compression ratios. Inputs: time and dial-reading columns, fitting window ta–tb, initial height hi.</td></tr>
+<tr><td><code>=GEOXL.CONSOLIDATION_TV(U)</code></td><td>Time factor Tv from average degree of consolidation U (fraction, 0 ≤ U &lt; 1), approximate formula.</td></tr>
+<tr><td><code>=GEOXL.CONSOLIDATION_U(tv, [case_])</code></td><td>Average degree of consolidation U (fraction) from time factor tv by Fourier series. case_: uniform (default), triangular_top, triangular_bottom, vshape, saw, sine, parabolic, circular.</td></tr>
+<tr><td><code>=GEOXL.CONSOLIDATION_UX(Xarray, tv, [case_])</code></td><td>Excess pore pressure ratio u/u0 along normalized depth at time factor tv. Inputs: Xarray (z/H column), tv, case_ (same cases as consolidation_U).</td></tr>
+<tr><td><code>=GEOXL.CONSOLIDATION_U_APPROXIMATE(tv)</code></td><td>Average degree of consolidation U (fraction) from tv, closed-form approximation.</td></tr>
+<tr><td><code>=GEOXL.CONSOLIDATION_U_VARIABLE(tv, tc)</code></td><td>Average consolidation U for a load applied linearly over construction time factor tc. Inputs: tv, tc.</td></tr>
+<tr><td><code>=GEOXL.COSD(X)</code></td><td>Cosine of an angle in degrees.</td></tr>
+<tr><td><code>=GEOXL.COULOMB_COHESIVEFORCES(t, phi, alpha, beta, delta, g, h, [coh_])</code></td><td>Coulomb trial wedge with cohesion: {W; R; P; Cs; Cw; z0; K}. Inputs: t wedge angle (radians), phi, alpha wall, beta slope, delta (deg), g unit weight, h wall height, optional coh_.</td></tr>
+<tr><td><code>=GEOXL.COULOMB_FORCES(t, phi, alpha, beta, delta, g, h)</code></td><td>Coulomb trial wedge forces {W; R; P; K} for slip angle t (radians). Inputs: phi, alpha wall (90 = vertical), beta slope, delta (deg), g, h.</td></tr>
+<tr><td><code>=GEOXL.COULOMB_K(phi, alpha, beta, delta, [passive])</code></td><td>Coulomb earth pressure coefficient. Inputs: phi, alpha, beta, delta (deg); passive: omit for Ka, any value for Kp.</td></tr>
+<tr><td><code>=GEOXL.COULOMB_MAXIMUM(a_, b_, phi, alpha, beta, delta, g, h, [iter_])</code></td><td>Critical Coulomb wedge by golden-section search: {slip angle (deg); W; R; P; K}. Inputs: a_, b_ (any values on first call), phi, alpha, beta, delta, g, h.</td></tr>
+<tr><td><code>=GEOXL.COULOMB_THETA(phi, alpha, beta, delta)</code></td><td>Critical Coulomb slip angle (deg), closed form. Inputs: phi, alpha, beta, delta (deg).</td></tr>
+<tr><td><code>=GEOXL.CPT_AVERAGE_QC(z, qc, D, B, author)</code></td><td>Average CPT qc below a footing: D to D + 1.5B (meyerhof) or D to D + B (robertson). Inputs: z, qc columns, D, B, author.</td></tr>
+<tr><td><code>=GEOXL.CPT_BEARING_MEYERHOF_K(B, D, dw, [m])</code></td><td>Meyerhof CPT bearing factor with water-table corrections Cw1, Cw2. Inputs: B, D, dw water depth, optional m (any value selects the 12.19 divisor).</td></tr>
+<tr><td><code>=GEOXL.CPT_BEARING_ROBERTSON_K(B, D, shape, density)</code></td><td>Robertson CPT bearing factor k from chart fits. Inputs: B, D, shape (square, circular), density (dense, loose).</td></tr>
+<tr><td><code>=GEOXL.CPT_FRICTION_ANGLE(z, qc, g, author_)</code></td><td>Friction angle (deg) from CPT qc. Inputs: z depth, qc, g unit weight (consistent units), author_: robertson, kulhawy, ricceri, lee.</td></tr>
+<tr><td><code>=GEOXL.CPT_OLSEN_LAYERS(cpt)</code></td><td>Layer thicknesses from an Olsen SCN profile (header + thickness, SCN+3). Input: cpt table with depth in column 1 and SCN in column 6.</td></tr>
+<tr><td><code>=GEOXL.CPT_OLSEN_SCN(dqs, pa, n, g, gw, dw)</code></td><td>Olsen soil classification number (SCN) for a CPT profile: {Qn, Fr, SCN, name}. Inputs: dqs (depth, qc, fs), pa, n exponent, g, gw, dw.</td></tr>
+<tr><td><code>=GEOXL.CPT_OLSEN_SCN_ROW(Qt, Fr)</code></td><td>Helper for CPT_Olsen_SCN: zone index (1–7) for one point. Inputs: Qt normalized tip resistance, Fr friction ratio (%).</td></tr>
+<tr><td><code>=GEOXL.CPT_ROBERTSON_CLASSIFICATION_CHART(x_, sel)</code></td><td>Boundary curve A–H of the Robertson CPT classification chart: Qt at friction ratio x_ (%). sel: letter of the curve.</td></tr>
+<tr><td><code>=GEOXL.CPT_ROBERTSON_LAYERS(cpt)</code></td><td>Layer thicknesses from Robertson SBT and SBT(Ic) profiles. Input: cpt table with depth in column 1, SBT in column 6, SBT(Ic) in column 9.</td></tr>
+<tr><td><code>=GEOXL.CPT_ROBERTSON_SBT(dqs, pa, n, g, gw, dw)</code></td><td>Robertson soil behaviour type for a CPT profile: {Qn, Fr, SBT, name, Ic, SBT(Ic), name}. Inputs: dqs (depth, qc, fs), pa, n exponent, g, gw, dw.</td></tr>
+<tr><td><code>=GEOXL.CPT_ROBERTSON_SBT_ROW([Qt_], [Fr_])</code></td><td>Helper for CPT_Robertson_SBT: SBT zone (1–9, 0 = outside chart) for one point. Inputs: Qt_, Fr_ (%).</td></tr>
+<tr><td><code>=GEOXL.CPT_SETTLEMENT(zqc, k, B, D, L, qn, g)</code></td><td>Schmertmann settlement from a CPT profile (total settlement + layer table). Inputs: zqc (depth, qc), k = E/qc, B, D, L, qn net pressure, g unit weight.</td></tr>
+<tr><td><code>=GEOXL.CPT_SETTLEMENT_IZ(z, B, D, L, qn, g)</code></td><td>Schmertmann strain influence factor Iz at depth z (accepts a column). Inputs: z, B, D, L, qn net pressure, g unit weight.</td></tr>
+<tr><td><code>=GEOXL.CPT_STEPPROFILE(x, y)</code></td><td>Alias of stepProfile for CPT profiles.</td></tr>
+<tr><td><code>=GEOXL.CUTLINE(Xarray, Yarray, slope, intercept)</code></td><td>Intersections {x, y} of a sampled curve with the line y = slope·x + intercept. Inputs: Xarray, Yarray columns, slope, intercept.</td></tr>
+<tr><td><code>=GEOXL.DISTANCE_POINT_POLYLINE(M, pl)</code></td><td>Perpendicular distances from point M {x, y} to the line through each segment of polyline pl.</td></tr>
+<tr><td><code>=GEOXL.ELASTIC_CIRCULAR_RADIUS(s)</code></td><td>Normalized radius r/z of a circular load giving vertical stress ratio s (0 ≤ s &lt; 1). Used to build influence charts.</td></tr>
+<tr><td><code>=GEOXL.ELASTIC_CIRCULAR_STRESS(rValue, z, [nu_])</code></td><td>Stress ratios {sz, sr} under the centre of a uniformly loaded circle. Inputs: rValue load radius, z depth, optional nu_ (default 0.3). Multiply by the load pressure.</td></tr>
+<tr><td><code>=GEOXL.ELASTIC_EMBANKMENT(b1z, b2z)</code></td><td>Vertical stress influence factor under an embankment (Osterberg). Inputs: b1z = b1/z, b2z = b2/z (b2z ≠ 0).</td></tr>
+<tr><td><code>=GEOXL.ELASTIC_JANBU_MU0(DB, LB)</code></td><td>Janbu μ0 settlement factor from digitized chart. Inputs: DB = D/B, LB = L/B (1, 2, 5, 10, 20, 50, 100 or 200).</td></tr>
+<tr><td><code>=GEOXL.ELASTIC_JANBU_MU1(LB, DB)</code></td><td>Janbu μ1 settlement factor from digitized chart. Inputs: LB (chart abscissa), DB curve selector (&quot;circle&quot;, 1, 2, 5, 10, 20, 50 or 100).</td></tr>
+<tr><td><code>=GEOXL.ELASTIC_LINELOAD(x, y)</code></td><td>Stresses {sx, sy, sxy} per unit vertical line load (Flamant). Inputs: x horizontal offset, y depth. Multiply by the line load.</td></tr>
+<tr><td><code>=GEOXL.ELASTIC_LINELOAD_HORIZONTAL(x, y)</code></td><td>Stresses {sx, sy, sxy} per unit horizontal line load. Inputs: x horizontal offset, y depth. Multiply by the line load.</td></tr>
+<tr><td><code>=GEOXL.ELASTIC_NEWMARK_FACTOR(m, n)</code></td><td>Newmark influence factor under the corner of a uniformly loaded rectangle. Inputs: m = B/z, n = L/z.</td></tr>
+<tr><td><code>=GEOXL.ELASTIC_NEWMARK_STRESS(x_, y_, z_, pt)</code></td><td>Vertical stress factor at any point (x_, y_, z_) under a loaded rectangle by superposition of corner factors. pt: 4 corners, opposite corners in rows 1 and 3.</td></tr>
+<tr><td><code>=GEOXL.ELASTIC_POINTLOAD(rValue, z, [nu_])</code></td><td>Stresses {sz, sr, st, srz} per unit point load (Boussinesq). Inputs: rValue radial offset, z depth, optional nu_ (default 0.3).</td></tr>
+<tr><td><code>=GEOXL.ELASTIC_SECTOR(x, y, z, pts)</code></td><td>Vertical stress factor under a point (x, y) at depth z for a uniformly loaded polygon, by integration over 1° sectors. pts: polygon vertices (two columns).</td></tr>
+<tr><td><code>=GEOXL.ELASTIC_SECTOR_ROW(txy)</code></td><td>Helper for elastic_sector: contribution of one ray. Input: row with angle (radians) followed by flattened polygon coordinates.</td></tr>
+<tr><td><code>=GEOXL.ELASTIC_SECTOR_SLICE(ra, rb, z, dt)</code></td><td>Vertical stress contribution of an annular sector between radii ra and rb at depth z. dt: angular weight (sector angle / 2π).</td></tr>
+<tr><td><code>=GEOXL.ELASTIC_STRIPLOAD(B, x, y)</code></td><td>Stress ratios {sy, sx, sxy} under a uniform strip load. Inputs: B full width, x offset from centre, y depth. Multiply by the pressure.</td></tr>
+<tr><td><code>=GEOXL.ELASTIC_STRIPLOAD_XY(B, X, Y)</code></td><td>Strip-load stress ratios in the order {sx, sy, sxy} (retaining-wall convention). Inputs: B full width, X offset, Y depth.</td></tr>
+<tr><td><code>=GEOXL.ELASTIC_TRIANGLE(B, x, y)</code></td><td>Stress ratios {sy, sx, sxy} under a triangular strip load. Inputs: B loaded width, x offset, y depth. Multiply by the maximum pressure.</td></tr>
+<tr><td><code>=GEOXL.GRAINSIZEANALYSIS(d, p)</code></td><td>Grain-size analysis: {D10; D30; D60; Cu; Cc; % clay; % silt; % sand; % gravel}. Inputs: d diameters (mm), p percent passing (any order).</td></tr>
+<tr><td><code>=GEOXL.INTERPOLATE(X, Xa, Ya, [mode], [outside])</code></td><td>Interpolate y at X from (Xa, Ya); X may be a column. Xa may be increasing or decreasing. mode: &quot;linear&quot; (default), &quot;logx&quot;, &quot;logy&quot;, &quot;logxy&quot;. outside: omitted = #N/A, &quot;extrapolate&quot;, &quot;clamp&quot;.</td></tr>
+<tr><td><code>=GEOXL.INTERPOLATE_TABLE(x, Y, XY)</code></td><td>Bilinear interpolation in a 2-D table. Inputs: x, Y query; XY table with x values in row 1 and y values in column 1 (ascending).</td></tr>
+<tr><td><code>=GEOXL.INTERSECTION_POLYGON_LINE(polygon, pt, t)</code></td><td>Intersections {x, y} of a polygon with the infinite line through pt at angle t (radians). Returns {0, 0} if none.</td></tr>
+<tr><td><code>=GEOXL.INTERSECTION_POLYGON_LINE_SLOPE(polyline, M, t)</code></td><td>Intersections {x, y} of a closed polygon with the line through M at angle t (radians). Returns {0, 0} if none.</td></tr>
+<tr><td><code>=GEOXL.INTERSECTION_POLYGON_RAY(polygon, pt, t)</code></td><td>Sorted distances from pt to the polygon boundary along a ray at angle t (radians).</td></tr>
+<tr><td><code>=GEOXL.INTERSECTION_POLYLINE_CIRCLE(pline, center, radius)</code></td><td>Intersection points {x, y} of a polyline with a circle. Inputs: pline vertices, center {x, y}, radius.</td></tr>
+<tr><td><code>=GEOXL.INTERSECTION_POLYLINE_POLYLINE(pl, ql, [m])</code></td><td>Intersections of polyline pl with polyline ql: {parameter, x, y}. Optional m keeps the m points with the largest x.</td></tr>
+<tr><td><code>=GEOXL.INTERSECTION_SEGMENT_POLYLINE(row)</code></td><td>Helper for intersection_polyline_polyline: segment parameter of the intersection between one segment and a polyline. Input: flattened row (segment, then polyline).</td></tr>
+<tr><td><code>=GEOXL.INTERSECTION_SPIRAL_SEGMENT(AB_, pt, rValue, phi, [x_], [iter_])</code></td><td>Intersection {x, y} of a log spiral (centre pt, radius rValue, angle phi) with segment AB_ by Newton iteration.</td></tr>
+<tr><td><code>=GEOXL.LATERALPILE_BROMS_COHESIONLESS(D, phi, g, B, e)</code></td><td>Broms lateral capacity of a short pile in cohesionless soil: {V; depth of max moment; Mmax}. Inputs: D embedment, phi, g, B diameter, e load eccentricity.</td></tr>
+<tr><td><code>=GEOXL.LATERALPILE_BROMS_COHESIVE(V, e, Su, B)</code></td><td>Broms short pile in cohesive soil: {required D; rotation depth Dr; depth of max moment; Mmax}. Inputs: V load, e eccentricity, Su, B diameter.</td></tr>
+<tr><td><code>=GEOXL.LATERALPILE_COHESIONLESS_REACTION_SHEAR_MOMENT(D, phi, g, B, e)</code></td><td>Reaction, shear and moment diagrams along a Broms short pile in cohesionless soil (header + 100 points). Inputs: D, phi, g, B, e.</td></tr>
+<tr><td><code>=GEOXL.LATERALPILE_COHESIVE_REACTION_SHEAR_MOMENT(V, e, Su, B, [D_], [Dr_])</code></td><td>Reaction, shear and moment diagrams along a Broms short pile in cohesive soil. Inputs: V, e, Su, B, optional D_ and Dr_ (default from Broms).</td></tr>
+<tr><td><code>=GEOXL.LOGSPIRAL(pt, rValue, phi, [ta_], [tb_], [n_])</code></td><td>Plotting points of a log spiral r = rValue·exp(−θ·tanφ). Inputs: pt centre, rValue, phi (deg), optional ta_, tb_ angles (deg), n_ points (default 100).</td></tr>
+<tr><td><code>=GEOXL.MINIMUM(A, B, [iter_])</code></td><td>Teaching example of golden-section minimization of x³ + 5x² − 10x on [A, B].</td></tr>
+<tr><td><code>=GEOXL.PILE_CAPACITY_ALPHA(zSu, pa, a, p, L, author, [D_])</code></td><td>Pile capacity in clay by the α method with tip 9·Su·A: {ultimate; shaft; tip}. Inputs: zSu (depth, Su), pa, a tip area, p perimeter, L, author (terzaghi, reese), optional D_ top depth.</td></tr>
+<tr><td><code>=GEOXL.PILE_CAPACITY_CPT_LCPC(z_qc_soil, a, p, L, pile)</code></td><td>LCPC (Bustamante–Gianeselli) CPT pile capacity: ultimate, shaft, tip, average qc at tip, average qs, kc. Inputs: table (z, qc, soil), a tip area, p perimeter, L, pile type.</td></tr>
+<tr><td><code>=GEOXL.PILE_CAPACITY_CPT_SCHMERTMAN(z_qc_fs_soil, A, p, L, pile)</code></td><td>Schmertmann CPT pile capacity: ultimate, shaft, tip, average fs and qc. Inputs: table (z, qc, fs, optional soil), A tip area, p perimeter, L length, pile (steel, concrete, timber).</td></tr>
+<tr><td><code>=GEOXL.PILE_CAPACITY_FELLENIUS(z_phi_sv_soil, a, p, L, [D_])</code></td><td>Fellenius β-method pile capacity: {ultimate; shaft; tip}. Inputs: table (z, phi, σ&#x27;v, soil), a tip area, p perimeter, L, optional D_ top depth.</td></tr>
+<tr><td><code>=GEOXL.PILE_CAPACITY_PMT_LCPC(z_pl_sv_soil, a, p, L, pile)</code></td><td>LCPC pressuremeter pile capacity: {ultimate; shaft; tip}. Inputs: table (z, pl, σv, soil), a tip area, p perimeter, L, pile type.</td></tr>
+<tr><td><code>=GEOXL.PILE_CAPACITY_SPT_MEYERHOF(zN, pa, a, p, L, [disp])</code></td><td>Meyerhof SPT pile capacity: ultimate, shaft, tip, average N along shaft and at tip. Inputs: zN (depth, N), pa, a tip area, p perimeter, L, disp (any value = displacement pile).</td></tr>
+<tr><td><code>=GEOXL.PILE_SHAFT_ALPHA(z, Su, pa, p, L, author)</code></td><td>Shaft resistance by the α method. Inputs: z, Su columns, pa atmospheric pressure, p perimeter, L length, author (terzaghi, reese).</td></tr>
+<tr><td><code>=GEOXL.PILE_SHAFT_LAMBDA(z_Su_sv, p, L, [ft])</code></td><td>Shaft capacity by the λ method: capacity, λ, average Su and σ&#x27;v. Inputs: table (z, Su, σ&#x27;v), p perimeter, L (m, or ft if ft is supplied).</td></tr>
+<tr><td><code>=GEOXL.PILE_SIDEFRICTION_ALPHA(Su, author)</code></td><td>Adhesion factor α. Inputs: Su = Su/pa (normalized), author (terzaghi, reese).</td></tr>
+<tr><td><code>=GEOXL.PILE_SIDEFRICTION_LAMBDA(D_, [ft])</code></td><td>λ coefficient for pile shaft friction (Vijayvergiya–Focht chart fit). Input: D_ pile length in m (or ft if ft is supplied).</td></tr>
+<tr><td><code>=GEOXL.PILE_TIP_MEYERHOF(pa, cValue, phi)</code></td><td>Meyerhof ultimate tip pressure. Inputs: pa atmospheric pressure, cValue cohesion, phi (deg).</td></tr>
+<tr><td><code>=GEOXL.PILE_TIP_MEYERHOF_FACTOR(phi)</code></td><td>Meyerhof pile tip factors {Nq; Nc} for phi (deg).</td></tr>
+<tr><td><code>=GEOXL.PILE_TIP_VESIC(sv, pa, cValue, [phi_], [Dr_])</code></td><td>Vesic ultimate tip pressure with reduced rigidity index: {qu; Nq; Nc; Irr; σm}. Inputs: sv vertical stress, pa, cValue cohesion, optional phi_ (deg), Dr_ relative density.</td></tr>
+<tr><td><code>=GEOXL.PILE_TIP_VESIC_FACTOR(phi, Ir)</code></td><td>Vesic pile tip factors {Nq; Nc}. Inputs: phi (deg), Ir rigidity index.</td></tr>
+<tr><td><code>=GEOXL.PMT_ALPHA(soil, Epl)</code></td><td>Ménard rheological factor α. Inputs: soil (peat, clay, silt, sand, gravel, rock), Epl = E/pl ratio.</td></tr>
+<tr><td><code>=GEOXL.PMT_BEARING_EUROCODE(z, pl, B, D, L, soil, g)</code></td><td>Eurocode 7 pressuremeter bearing pressure: {qu; ple; k}. Inputs: z, pl columns, B, D, L, soil (&quot;clay silt&quot;, &quot;sand gravel&quot;, &quot;chalk&quot;), g unit weight.</td></tr>
+<tr><td><code>=GEOXL.PMT_BEARING_EUROCODE_K(B, L, D, pl, soil_)</code></td><td>Eurocode 7 pressuremeter bearing factor k. Inputs: B, L, D embedment, pl limit pressure (MPa), soil_ (&quot;clay silt&quot;, &quot;sand gravel&quot;, &quot;chalk&quot;).</td></tr>
+<tr><td><code>=GEOXL.PMT_BEARING_LIMITPRESSURE(z, pl, B, D)</code></td><td>Equivalent limit pressure ple (geometric mean from D to D + 1.5B) and equivalent embedment De: {ple; De}. Inputs: z, pl columns, B, D.</td></tr>
+<tr><td><code>=GEOXL.PMT_BEARING_MENARD(z, pl, B, D, L, soil, g)</code></td><td>Ménard ultimate bearing pressure from pressuremeter data. Inputs: z, pl columns, B, D, L, soil category (I, II, III, IIIA), g unit weight.</td></tr>
+<tr><td><code>=GEOXL.PMT_BEARING_MENARD_K(H, BL, soil)</code></td><td>Ménard bearing factor k, interpolated between strip and square. Inputs: H = De/(B/2), BL = B/L, soil category (I, II, III, IIIA).</td></tr>
+<tr><td><code>=GEOXL.PMT_LAMBDA(LB)</code></td><td>Alias of PMT_settlement_lambda: Ménard shape coefficients {λc; λd} for L/B.</td></tr>
+<tr><td><code>=GEOXL.PMT_LAYERS(B, D)</code></td><td>Plotting lines of the 16 Ménard sub-layers below a footing. Inputs: B, D.</td></tr>
+<tr><td><code>=GEOXL.PMT_MODULI(yEpl, B, D)</code></td><td>Ménard equivalent moduli Ec, Ed and limit pressure from 16 sub-layers below a footing (labelled table + layer values). Inputs: yEpl (depth, E, pl), B, D.</td></tr>
+<tr><td><code>=GEOXL.PMT_PILE_SHAFTFRICTION(pl, classi)</code></td><td>LCPC unit shaft friction (MPa) from limit pressure pl (MPa) on curve &quot;q1&quot; … &quot;q7&quot;.</td></tr>
+<tr><td><code>=GEOXL.PMT_SETTLEMENT(q, yEpl, B, D, L, soil, [ft_])</code></td><td>Ménard settlement from a pressuremeter profile (labelled table: total, volumetric, deviatoric, α, λ, moduli). Inputs: q, yEpl (depth, E, pl), B, D, L, soil, ft_ (units flag).</td></tr>
+<tr><td><code>=GEOXL.PMT_SETTLEMENT_BASIC(q, Ec, Ed, B, LB, ac, ad, [B0_])</code></td><td>Ménard settlement {sc; sd; total} from given moduli. Inputs: q net pressure, Ec, Ed, B, LB = L/B, ac, ad rheological factors, optional B0_ reference width (default 1).</td></tr>
+<tr><td><code>=GEOXL.PMT_SETTLEMENT_LAMBDA(LB, [opt_])</code></td><td>Ménard shape coefficients λc, λd for L/B. opt_: &quot;v&quot; = λc, &quot;d&quot; = λd, omitted = {λc; λd}. Returns 0 if L/B &lt; 1.</td></tr>
+<tr><td><code>=GEOXL.PMT_SHAFTFRICTION(pl, i)</code></td><td>LCPC unit shaft friction (MPa) from limit pressure pl (MPa) on curve i (1–7). Accepts columns.</td></tr>
+<tr><td><code>=GEOXL.PMT_STAIRCASE(x, y)</code></td><td>Alias of stepProfile for pressuremeter profiles.</td></tr>
+<tr><td><code>=GEOXL.POLYGON_AREA_CENTROID(polygon)</code></td><td>Centroid and area of a polygon: {&quot;Centroid =&quot;, xc, yc; &quot;Area =&quot;, A, &quot;&quot;}. Input: vertices in two columns (first vertex may be repeated).</td></tr>
+<tr><td><code>=GEOXL.POLYGON_CENTROIDAREA(polygon)</code></td><td>Alias of polygon_area_centroid: centroid and area of a polygon.</td></tr>
+<tr><td><code>=GEOXL.POLYGON_INSIDE(x, y, xa, ya)</code></td><td>TRUE if point (x, y) lies below exactly one edge of the polygon (xa, ya) — vertical ray test.</td></tr>
+<tr><td><code>=GEOXL.POLYGON_WEIGHTMOMENT(XY, g, Pt)</code></td><td>Weight and moment {W, M} of a polygonal block about point Pt. Inputs: XY vertices, g unit weight, Pt {x, y}. Per unit thickness.</td></tr>
+<tr><td><code>=GEOXL.POLYLINE_SUBDIVIDE(X, polyline)</code></td><td>Linear interpolation of y at X along a polyline (two columns), searching for the segment starting at or below X. Used for root finding.</td></tr>
+<tr><td><code>=GEOXL.PRESSURE_FORCEMOMENT(d, p, d0)</code></td><td>Resultant force and moment {F, M} of a piecewise-linear pressure profile about depth d0. Inputs: d depth column, p pressure column, d0.</td></tr>
+<tr><td><code>=GEOXL.PRESSURE_SHEAR_MOMENT(d, p, [n])</code></td><td>Shear and moment diagram with header (depth, pressure, shear, moment). Inputs: d, p columns, optional n subdivisions (default 20).</td></tr>
+<tr><td><code>=GEOXL.PRESSURE_SHEAR_MOMENT_ANCHOR(d, p, da, Ta, [n])</code></td><td>Shear and moment diagram with an anchor force Ta at depth da (sheet-pile walls). Inputs: d, p columns, da, Ta, optional n subdivisions (default 20).</td></tr>
+<tr><td><code>=GEOXL.RANKINE_K(phi, beta)</code></td><td>Rankine active coefficient for a sloping backfill. Inputs: phi, beta (deg).</td></tr>
+<tr><td><code>=GEOXL.RANKINE_STRESS(phi, coh, alpha, beta, gz, [passive])</code></td><td>Rankine stresses on a wall from the Mohr circle (labelled table). Inputs: phi, coh, alpha wall angle, beta slope (deg), gz vertical stress, passive (omit = active).</td></tr>
+<tr><td><code>=GEOXL.SETTLEMENT_SCHMERTMAN_FACTOR(z, Imax, B, za, [BL_])</code></td><td>Schmertmann strain influence factor at depth z. Inputs: Imax, B, za footing depth, optional BL_ (0 = square, 1 = strip).</td></tr>
+<tr><td><code>=GEOXL.SHEARMOMENT(d, p, k)</code></td><td>Shear and moment from a piecewise-linear pressure profile. Columns: depth, pressure, shear, moment. k = subdivisions per segment.</td></tr>
+<tr><td><code>=GEOXL.SIND(X)</code></td><td>Sine of an angle in degrees.</td></tr>
+<tr><td><code>=GEOXL.SLOPE_CIRCLE_COHESIVE(pline, center, radius, cu, unitweight, [detail])</code></td><td>Factor of safety of a circular slip in undrained clay (φ = 0) using sector geometry. Inputs: pline ground surface, center, radius, cu, unit weight, detail (any value for details).</td></tr>
+<tr><td><code>=GEOXL.SLOPE_CIRCLE_POLYLINE(pl, center, radius)</code></td><td>Geometry of the soil mass above a circular slip: centroid, entry/exit points and angles, area. Inputs: pl ground polyline, center, radius.</td></tr>
+<tr><td><code>=GEOXL.SLOPE_CIRCLE_POLYLINE_COHESIVE(pline, center, radius, cu, unitweight, [detail])</code></td><td>Factor of safety of a circular slip in undrained clay using polygon geometry. Inputs: pline, center, radius, cu, unit weight, detail (any value for details).</td></tr>
+<tr><td><code>=GEOXL.SLOPE_FRICTION_CIRCLE(pline, pt, rValue, coh, phi, g, [opt_])</code></td><td>Friction circle method (c–φ soil): factor of safety and force polygon (labelled table). Inputs: pline, pt circle centre, rValue radius, coh, phi, g, opt_ (any value: alternative Taylor factor).</td></tr>
+<tr><td><code>=GEOXL.SLOPE_FRICTION_CIRCLE_FCT(FS, f, coh, w, kr, rValue, OD, DM, alpha, Lc)</code></td><td>Helper for slope_friction_circle: cohesion factor of safety for a trial frictional FS (accepts a column of FS).</td></tr>
+<tr><td><code>=GEOXL.SLOPE_FRICTION_CIRCLE_TAYLOR(t, opt)</code></td><td>Taylor friction-circle radius factor k for central angle t (radians). opt = 1 selects the alternative formula.</td></tr>
+<tr><td><code>=GEOXL.SLOPE_FRICTION_FS(FS, f, coh, w, kr, rValue, a, DM, alpha, ab)</code></td><td>Residual FS − FSc for the friction circle method (same inputs as slope_friction_circle_fct).</td></tr>
+<tr><td><code>=GEOXL.SLOPE_LOGSPIRAL(pl, pt, rValue, phi, coh, g)</code></td><td>Log-spiral slip surface: factor of safety, centroid, weight, entry/exit points, resisting and driving moments. Inputs: pl ground polyline, pt spiral centre, rValue, phi, coh, g.</td></tr>
+<tr><td><code>=GEOXL.SPT_BEARING(z, N, B, D, author)</code></td><td>Allowable bearing pressure from SPT N averaged between D and D + B. Inputs: z, N columns (or scalar N), B, D (m), author: bowles, meyerhof, terzaghi.</td></tr>
+<tr><td><code>=GEOXL.SPT_BEARING_DIRECT(N, B, D, author)</code></td><td>Allowable bearing pressure from a single SPT N value. Inputs: N, B, D (m), author: bowles, meyerhof, terzaghi.</td></tr>
+<tr><td><code>=GEOXL.SPT_BURLANDBURBIDGE_SETTLEMENT(z, N, q, B, [LB], [D_], [H], [sc])</code></td><td>Burland–Burbidge settlement from SPT. Inputs: z, N columns, q pressure, B width, optional LB = L/B, D_ depth, H layer thickness, sc preconsolidation pressure.</td></tr>
+<tr><td><code>=GEOXL.SPT_CORRECTION_DEPTH(s)</code></td><td>SPT overburden correction CN = 10/√σ&#x27;v (kPa), capped at 2.</td></tr>
+<tr><td><code>=GEOXL.SPT_CORRELATION_FRICTION(N, author, [s], [pa])</code></td><td>Friction angle (deg) from SPT N. author: peck, schmertman (needs s and pa), hatanaka (needs s, in kPa).</td></tr>
+<tr><td><code>=GEOXL.SPT_DEPTHCORRECTION(s)</code></td><td>Alias of SPT_correction_depth: overburden correction CN, capped at 2.</td></tr>
+<tr><td><code>=GEOXL.SPT_FRICTIONANGLE(N, [spa_], [author_])</code></td><td>Friction angle (deg) from SPT N. Optional spa_ = σ&#x27;v/pa (default 1), author_: peck (default), schmertman, hatanaka.</td></tr>
+<tr><td><code>=GEOXL.SPT_STEPPROFILE(x, y)</code></td><td>Alias of stepProfile for SPT profiles.</td></tr>
+<tr><td><code>=GEOXL.STEPPROFILE(x, y)</code></td><td>Step-profile plotting coordinates from depth/value columns. Inputs: x depths, y values.</td></tr>
+<tr><td><code>=GEOXL.STEP_TABLE(x, y)</code></td><td>Staircase table: each x repeated twice with y shifted one row, for step plots. Inputs: x, y columns.</td></tr>
+<tr><td><code>=GEOXL.STRESS_FORCEMOMENT(A, B, sa, sb)</code></td><td>Resultant force, moment and point of application of normal/shear stresses varying linearly along segment AB. Inputs: A, B {x, y}; sa, sb {normal, shear}.</td></tr>
+<tr><td><code>=GEOXL.STRESS_MOHR(sa, ta, alpha, sm)</code></td><td>Normal and shear stress {s, t} on a plane at angle alpha (deg) using the Mohr circle pole. Inputs: sa, ta pole stresses, alpha, sm circle centre.</td></tr>
+<tr><td><code>=GEOXL.STRESS_MOHRCIRCLE(sm, rValue)</code></td><td>Plotting points {σ, τ} of a Mohr circle with centre sm and radius rValue (header + 21 points).</td></tr>
+<tr><td><code>=GEOXL.STRESS_MOHR_FAILURE(sa, ta, A, phi, coh, [passive])</code></td><td>Mohr–Coulomb failure circle through a known stress (sa, ta) on plane A (deg): centre, radius, pole, principal and failure stresses. passive: omit = active.</td></tr>
+<tr><td><code>=GEOXL.STRESS_MOHR_POLE(sa, ta, A, sb)</code></td><td>Mohr circle and pole from stresses on two perpendicular planes: centre, radius, pole, principal stresses. Inputs: sa, ta on plane A (deg), sb normal stress on the perpendicular plane.</td></tr>
+<tr><td><code>=GEOXL.TAND(X)</code></td><td>Tangent of an angle in degrees.</td></tr>
+<tr><td><code>=GEOXL.VECTOR_LINE(ptA, ptB, sigA, sigB, M, s)</code></td><td>Plotting coordinates of stress vectors along segment ptA–ptB (rows separated by #N/A). Inputs: sigA, sigB {normal, shear}, M divisions, s display scale.</td></tr>
+<tr><td><code>=GEOXL.VERSION()</code></td><td>* / comment; Excel shows it as the function description. // Angles are in degrees unless stated otherwise. Use consistent units throughout. // 0.11 (2026-10-16): version() added; pressure_shear_moment_anchor local r renamed profileRows; // Stress2024.xlsx checked: its 3 LAMBDAs are already in the library as // Stress_Mohr, stress_Mohr_pole, stress_Mohrcircle (same formulas). // 0.12 (2026-10-16): classify_ASTM2487 added (ASTM D2487 flowchart workbook). // 0.13 (2026-10-16): tree_lines and tree_path removed; the flowchart workbook now draws paths with plain formulas. /** Library version and release date, as text. Use =GeoEXCEL.version() to check which version is installed.</td></tr>
+<tr><td><code>=GEOXL.WATER_PRESSURE(depth, waterTableDepth, [unitWeight])</code></td><td>Hydrostatic pore pressure at depth below the water table (0 above it). Optional unitWeight, default 9.81 kN/m³.</td></tr>
+</tbody></table>
+</main>
+<script>
+const q=document.getElementById('q'), rows=[...document.querySelectorAll('#t tr')];
+q.addEventListener('input',()=>{const s=q.value.toLowerCase();rows.forEach(r=>r.style.display=r.textContent.toLowerCase().includes(s)?'':'none');});
+</script></body></html>
