@@ -1,9 +1,37 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>geoXL workbook updater</title><style>
-*{box-sizing:border-box}body{margin:0;background:#f5f7fa;color:#1b2938;font:16px/1.55 system-ui,sans-serif}main{max-width:1050px;margin:auto;padding:30px 22px}h1{margin:0;font-size:30px}h2{font-size:21px;margin:0 0 12px}header p{max-width:780px}.tabs{display:flex;gap:8px;margin:24px 0}button,.download{border:1px solid #245783;border-radius:7px;background:#245783;color:white;padding:10px 17px;font:inherit;cursor:pointer;text-decoration:none;display:inline-block}button[aria-selected=false],button.secondary{background:white;color:#245783}button:disabled{opacity:.45;cursor:default}section{background:white;border:1px solid #dbe2e9;border-radius:10px;padding:22px;margin:16px 0}.hidden{display:none!important}.row{display:flex;gap:10px;flex-wrap:wrap}input[type=url]{flex:1;min-width:240px}input,select{padding:9px;font:inherit;max-width:100%}label{display:block;margin:10px 0 5px}.small{font-size:14px;color:#526578}.status{white-space:pre-wrap;margin:14px 0;overflow-wrap:anywhere}.error{color:#a32625}.note{background:#fff6df;padding:12px;border-left:3px solid #bd8b21}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:9px;text-align:left;border-bottom:1px solid #dbe2e9;vertical-align:top;overflow-wrap:anywhere}.tablewrap{overflow-x:auto}details{margin-top:12px}footer{font-size:13px;color:#526578}a{color:#245783}
-</style></head><body><main><header><p class=small>geoXL · student tools</p><h1>Update your workbook</h1><p>Import the published geoXL LAMBDA library into a new copy of your workbook. Your original stays unchanged, and workbook contents remain in your browser.</p><a href="./">Open function help</a></header>
-<section><h2>1. Load the published library</h2><p>The library comes from the geoXL distribution repository. Development Gist edits do not change this published snapshot.</p><button id=load>Load published library</button><div id=libraryStatus class=status role=status>No library loaded.</div></section>
-<section><h2>2. Choose one workbook</h2><p>Save and close your workbook in Excel first. Supported: .xlsx and .xlsm.</p><input id=workbook type=file accept=".xlsx,.xlsm" aria-label="Choose one workbook"><div id=selection class=status role=status>No workbook selected.</div></section>
-<section><h2>3. Download an updated copy</h2><button id=run disabled>Update workbook</button><div id=progress class=status role=status aria-live=polite></div><a id=download class="download hidden">Download updated workbook and report</a><p class=small>Extract the ZIP and open the updated workbook in Excel. The browser checks file updates; Excel calculates the results. Keep your original as a backup.</p></section><footer>No macros or add-in installation required for updating. Encrypted, signed, strict-format and binary workbooks are unsupported. Known dotted function names are migrated; unresolved references block the update. Publication of a library snapshot does not itself certify numerical results.</footer></main><script>/*!
+:root{--bg:#f5f7fa;--fg:#1b2938;--muted:#526578;--card:#fff;--line:#dbe2e9;--accent:#245783;--accentfg:#fff;--ok:#1f6b3a;--err:#a32625;--notebg:#fff6df;--noteline:#bd8b21}
+@media (prefers-color-scheme:dark){:root{--bg:#14181d;--fg:#e6eaee;--muted:#9fadbb;--card:#1c2228;--line:#2e3740;--accent:#7fb2e5;--accentfg:#0f1a24;--ok:#6fcf8f;--err:#ff8a80;--notebg:#2e2716;--noteline:#9a7a2e}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:860px;margin:auto;padding:32px 16px 48px}
+header{margin-bottom:8px}.brand{font-size:44px;font-weight:700;letter-spacing:-.5px;margin:0;line-height:1.1}.brand span{color:var(--accent)}
+.subtitle{font-size:22px;margin:4px 0 14px;color:var(--muted);font-weight:500}header p{margin:0 0 10px;max-width:720px}
+.links a{margin-right:18px}a{color:var(--accent)}
+.version{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin:20px 0 0}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex:none}.dot.ok{background:var(--ok)}.dot.err{background:var(--err)}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px 22px;margin:16px 0}
+h2{font-size:20px;margin:0 0 10px}p{margin:6px 0}.small{font-size:14px;color:var(--muted)}
+button,.download{border:1px solid var(--accent);border-radius:7px;background:var(--accent);color:var(--accentfg);padding:10px 18px;font:inherit;cursor:pointer;text-decoration:none;display:inline-block}
+button.secondary{background:transparent;color:var(--accent);padding:6px 12px;font-size:14px}button:disabled{opacity:.45;cursor:default}
+input[type=file]{font:inherit;max-width:100%;margin:8px 0}.hidden{display:none!important}
+.status{white-space:pre-wrap;margin:12px 0 0;overflow-wrap:anywhere}.error{color:var(--err)}
+.result{border-left:4px solid var(--ok);padding:4px 0 4px 14px;margin:14px 0}.result b{color:var(--ok)}
+.note{background:var(--notebg);border-left:3px solid var(--noteline);padding:8px 12px;border-radius:4px;margin:10px 0;font-size:15px}
+ul{margin:6px 0 6px 20px;padding:0}summary{cursor:pointer}li{margin:2px 0}code{font-family:ui-monospace,Menlo,monospace;font-size:14px}
+</style></head><body><main>
+<header><p class=brand>geo<span>XL</span></p><p class=subtitle>Workbook updater</p>
+<p><b>geoXL</b> is the library of geotechnical engineering functions used in this course: bearing capacity, settlement, consolidation, earth pressure, piles, slope stability, soil classification and more. The functions are Excel LAMBDA formulas stored inside each workbook, so they work in Excel without add-ins or macros.</p>
+<p>This page installs the latest published geoXL version into a copy of one of your workbooks.</p>
+<p class=links><a href="./">Function help</a></p>
+<div class=version role=status><span id=dot class=dot></span><span id=libraryStatus>Loading the current geoXL version…</span><button id=load class="secondary hidden">Try again</button></div></header>
+<section><h2>1. Choose your workbook</h2>
+<p>Save and close the workbook in Excel first, then choose it here. Only <code>.xlsx</code> workbooks are supported; save <code>.xls</code> or <code>.xlsm</code> files as <code>.xlsx</code> in Excel first.</p>
+<p class=small>Older workbooks that use names such as <code>bearing.capacity</code> are converted automatically to the current names (<code>bearing_capacity</code>), including the formulas that use them.</p>
+<input id=workbook type=file accept=".xlsx" aria-label="Choose one workbook"><div id=selection class=status role=status></div></section>
+<section><h2>2. Update and download</h2>
+<button id=run disabled>Update workbook</button><div id=progress class=status role=status aria-live=polite></div>
+<a id=download class="download hidden">Download updated workbook</a></section>
+</main><script>
+/*!
 
 JSZip v3.10.1 - A JavaScript class for generating and reading zip files
 <http://stuartk.com/jszip>
@@ -466,11 +494,59 @@ root.GeoUpdater={tokenize,declarations,readLibrary,updateWorkbook,sourceURL,fetc
 'use strict';
 let library=null,file=null,busy=false,url=null;
 const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function say(id,text,error=false){$(id).textContent=text;$(id).classList.toggle('error',error);}
-function reset(){if(url)URL.revokeObjectURL(url);url=null;$('download').classList.add('hidden');say('progress','');}
-function ready(){$('run').disabled=busy||!library||!file;$('load').disabled=busy;$('workbook').disabled=busy;}
-$('load').onclick=async()=>{busy=true;library=null;reset();ready();try{say('libraryStatus','Loading published library…');const r=await fetch('./library/current.json',{cache:'no-store',credentials:'omit'});if(!r.ok)throw Error('Could not load the published release record.');const release=await r.json();if(!/^releases\/[A-Za-z0-9._-]+\/library\.txt$/.test(release.library))throw Error('Invalid published library path.');const response=await fetch('./library/'+release.library,{cache:'no-store',credentials:'omit'});if(!response.ok)throw Error('Could not load the published LAMBDA text.');const lib=await GeoUpdater.readLibrary(await response.text());if(lib.hash!==release.sha256||lib.version!==release.version)throw Error('Release verification failed; no workbook was updated.');library=lib;say('libraryStatus','Published library '+lib.version+' · '+lib.all.length+' definitions · source '+lib.hash.slice(0,12));}catch(e){say('libraryStatus',e.message,true);}finally{busy=false;ready();}};
-$('workbook').onchange=()=>{reset();file=null;const files=Array.from($('workbook').files);if(files.length===1&&/\.(xlsx|xlsm)$/i.test(files[0].name)&&!files[0].name.startsWith('~$')){file=files[0];say('selection',file.name);}else say('selection','Choose one .xlsx or .xlsm workbook.',true);ready();};
-$('run').onclick=async()=>{if(busy||!library||!file)return;busy=true;ready();reset();try{say('progress','Updating '+file.name+'…');const r=await GeoUpdater.updateWorkbook(await file.arrayBuffer(),file.name,library);const zip=new JSZip();zip.file('Updated/'+file.name,r.bytes);zip.file('Update-report.json',JSON.stringify({toolVersion:'student-2.1',libraryVersion:library.version,sourceSHA256:library.hash,files:[r.report],nativeExcelVerified:false},null,2));zip.file('Library-installed.txt',library.source);const blob=await zip.generateAsync({type:'blob',compression:'STORE'});url=URL.createObjectURL(blob);$('download').href=url;$('download').download=file.name.replace(/\.(xlsx|xlsm)$/i,'')+'-geoXL-updated.zip';$('download').classList.remove('hidden');say('progress','Updated copy ready. '+r.report.counts.updated+' definitions replaced; '+r.report.counts.added+' added.'+(r.report.warnings.length?'\nNotes: '+r.report.warnings.join('; '):'')+'\nDownload, extract, and open the copy in Excel.');}catch(e){say('progress',e.message+' Your original was not changed.',true);}finally{busy=false;ready();}};
-ready();
+function reset(){if(url)URL.revokeObjectURL(url);url=null;$('download').classList.add('hidden');$('progress').innerHTML='';$('progress').classList.remove('error');}
+function ready(){$('run').disabled=busy||!library||!file;$('workbook').disabled=busy;}
+async function loadLibrary(){
+  busy=true;library=null;reset();ready();$('load').classList.add('hidden');$('dot').className='dot';
+  say('libraryStatus','Loading the current geoXL version…');
+  try{
+    const r=await fetch('./library/current.json',{cache:'no-store',credentials:'omit'});
+    if(!r.ok)throw Error('Could not reach the geoXL release record.');
+    const release=await r.json();
+    if(!/^releases\/[A-Za-z0-9._-]+\/library\.txt$/.test(release.library))throw Error('Invalid published library path.');
+    const response=await fetch('./library/'+release.library,{cache:'no-store',credentials:'omit'});
+    if(!response.ok)throw Error('Could not download the geoXL library.');
+    const lib=await GeoUpdater.readLibrary(await response.text());
+    if(lib.hash!==release.sha256||lib.version!==release.version)throw Error('The downloaded library failed its integrity check.');
+    library=lib;$('dot').className='dot ok';
+    say('libraryStatus','Current version: geoXL '+lib.version+' · '+lib.all.length+' functions · verified');
+  }catch(e){$('dot').className='dot err';say('libraryStatus',e.message+' Check your internet connection and try again.',true);$('load').classList.remove('hidden');}
+  finally{busy=false;ready();}
+}
+$('load').onclick=loadLibrary;
+$('workbook').onchange=()=>{reset();file=null;const files=Array.from($('workbook').files);
+  if(files.length===1&&/\.xlsx$/i.test(files[0].name)&&!files[0].name.startsWith('~$')){file=files[0];say('selection','Selected: '+file.name);}
+  else if(files.length===1&&/\.(xlsm|xls|xlsb)$/i.test(files[0].name))say('selection','This is not an .xlsx workbook. Open it in Excel, choose File › Save As › Excel Workbook (.xlsx), and choose the new file.',true);
+  else say('selection','Choose one .xlsx workbook.',true);
+  ready();};
+async function dottedNames(bytes){
+  try{const z=await JSZip.loadAsync(bytes);const w=await z.file('xl/workbook.xml').async('string');
+    const doc=new DOMParser().parseFromString(w,'application/xml');
+    const nodes=Array.from(doc.getElementsByTagNameNS('http://schemas.openxmlformats.org/spreadsheetml/2006/main','definedName'));
+    const aliases=GeoUpdater.dottedAliases(library,nodes);const seen=new Map();
+    for(const n of nodes){const name=n.getAttribute('name'),t=aliases.get(name.toLowerCase());if(t&&!seen.has(name.toLowerCase()))seen.set(name.toLowerCase(),[name,t]);}
+    return [...seen.values()];}catch(_){return [];}
+}
+$('run').onclick=async()=>{if(busy||!library||!file)return;busy=true;ready();reset();
+  try{
+    say('progress','Updating '+file.name+'…');
+    const bytes=await file.arrayBuffer();
+    const renamed=await dottedNames(bytes);
+    const r=await GeoUpdater.updateWorkbook(bytes,file.name,library);
+    const out=file.name.replace(/\.xlsx$/i,'')+' (geoXL '+library.version+').xlsx';
+    url=URL.createObjectURL(new Blob([r.bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+    $('download').href=url;$('download').download=out;$('download').textContent='Download '+out;$('download').classList.remove('hidden');
+    const c=r.report.counts,prev=r.report.previousVersion&&r.report.previousVersion!=='unknown'?' (previously '+esc(r.report.previousVersion)+')':'';
+    let h='<div class=result><b>Done.</b> Your original workbook <b>'+esc(file.name)+'</b> has not been changed. The download is a new copy containing <b>geoXL '+esc(library.version)+'</b>'+prev+': '+c.updated+' functions updated, '+c.added+' added.</div>';
+    if(renamed.length){const list='<ul>'+renamed.map(([a,b])=>'<li><code>'+esc(a)+'</code> → <code>'+esc(b)+'</code></li>').join('')+'</ul>',head=renamed.length+' older name'+(renamed.length>1?'s':'')+' converted to the current names, and the formulas using them updated';
+      h+='<div class=note>'+(renamed.length>5?'<details><summary>'+head+'</summary>'+list+'</details>':head+':'+list)+'</div>';}
+    const notes=r.report.warnings.filter(w=>!/version changed from a text value/i.test(w));
+    if(notes.length)h+='<div class=note>'+notes.map(esc).join('<br>')+'</div>';
+    h+='<p class=small>Open the downloaded workbook in Excel; it recalculates when it opens. Type <code>=version()</code> in any cell to check the installed geoXL version.</p>';
+    $('progress').innerHTML=h;
+  }catch(e){say('progress',e.message+' Your original workbook was not changed.',true);}
+  finally{busy=false;ready();}};
+loadLibrary();
 </script></body></html>
