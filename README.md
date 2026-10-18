@@ -1,7 +1,6 @@
 # geoXL — student distribution
 
-- [LAMBDA function help](https://jpbardet.github.io/geoXL/)
-- [Update one workbook](https://jpbardet.github.io/geoXL/update.html)
+- [geoXL: install / update a workbook and function reference](https://jpbardet.github.io/geoXL/)
 
 Use the updater to import the published LAMBDA library into a new copy of your
 workbook. Save and close the original first. No add-in or macro installation is
@@ -14,7 +13,7 @@ The textbook explains the teaching workbooks.
 
 The updater reads `docs/library/current.json` and verifies the version and
 SHA256 of its published library snapshot. It does not fetch the development
-Gist. Published version 0.13 is the starting distribution snapshot; native Excel
+Gist. Current published version: 0.14 (2026-10-18); earlier snapshots are kept under `docs/library/releases/`. Native Excel
 numerical and iterative-tool release validation remains pending.
 
 Development tools, candidate testing and future release approval are maintained
