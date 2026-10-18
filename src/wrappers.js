@@ -5,8 +5,9 @@
  * ==========================================================================================*/
 
 /**
- * * / comment; Excel shows it as the function description. // Angles are in degrees unless stated otherwise. Use consistent units throughout. // 0.11 (2026-10-16): version() added; pressure_shear_moment_anchor local r renamed profileRows; // Stress2024.xlsx checked: its 3 LAMBDAs are already in the library as // Stress_Mohr, stress_Mohr_pole, stress_Mohrcircle (same formulas). // 0.12 (2026-10-16): classify_ASTM2487 added (ASTM D2487 flowchart workbook). // 0.13 (2026-10-16): tree_lines and tree_path removed; the flowchart workbook now draws paths with plain formulas. /** Library version and release date, as text. Use =GeoEXCEL.version() to check which version is installed.
+ * Library version and release date, as text. Use =GeoEXCEL.version() to check which version is installed.
  * @customfunction VERSION
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#VERSION
  * @returns {any[][]} Result (single value, row or table).
  */
 function version() {
@@ -16,17 +17,18 @@ function version() {
 /**
  * Ultimate bearing pressure combining N factors with shape, depth and inclination factors. Inputs: coh, phi (deg), q surcharge, gam unit weight, B, L, D footing width/length/depth, H, V loads, author (terzaghi, prandtl, meyerhof, hansen, vesic, ec7).
  * @customfunction BEARING_CAPACITY
- * @param {any[][]} coh Cohesion
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} q q
- * @param {any[][]} gam gam
- * @param {any[][]} B Width
- * @param {any[][]} L Length
- * @param {any[][]} D Depth
- * @param {any[][]} H H
- * @param {any[][]} V V
- * @param {any[][]} author Method name (text)
- * @param {any[][]} [A_] A_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#BEARING_CAPACITY
+ * @param {any[][]} coh Cohesion c (kPa)
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} q Surcharge at footing level, γ·D (kPa)
+ * @param {any[][]} gam Unit weight of the soil below the footing (kN/m³)
+ * @param {any[][]} B Footing width (m)
+ * @param {any[][]} L Footing length (m); use a large value for a strip
+ * @param {any[][]} D Embedment depth of the footing (m)
+ * @param {any[][]} H Horizontal load (kN); 0 for vertical loading
+ * @param {any[][]} V Vertical load (kN)
+ * @param {any[][]} author Method: "terzaghi", "prandtl", "meyerhof", "hansen", "vesic" or "ec7"
+ * @param {any[][]} [A_] Optional effective footing area (m²), default 1
  * @returns {any[][]} Result (single value, row or table).
  */
 function bearing_capacity(coh, phi, q, gam, B, L, D, H, V, author, A_) {
@@ -36,9 +38,10 @@ function bearing_capacity(coh, phi, q, gam, B, L, D, H, V, author, A_) {
 /**
  * Depth factors {dc; dq; dγ} for the selected bearing method. Inputs: DB = D/B, phi (deg), author.
  * @customfunction BEARING_DEPTHFACTORS
- * @param {any[][]} DB DB
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} author Method name (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#BEARING_DEPTHFACTORS
+ * @param {any[][]} DB Depth ratio D/B
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} author Method: "terzaghi", "prandtl", "meyerhof", "hansen", "vesic" or "ec7"
  * @returns {any[][]} Result (single value, row or table).
  */
 function bearing_depthFactors(DB, phi, author) {
@@ -48,8 +51,9 @@ function bearing_depthFactors(DB, phi, author) {
 /**
  * Bearing capacity factors {Nc; Nq; Nγ} for the selected method. Inputs: phi (deg), author_.
  * @customfunction BEARING_FACTORS
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} author_ Method name (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#BEARING_FACTORS
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} author_ Method: "terzaghi", "prandtl", "meyerhof", "hansen", "vesic" or "ec7"
  * @returns {any[][]} Result (single value, row or table).
  */
 function bearing_factors(phi, author_) {
@@ -59,13 +63,14 @@ function bearing_factors(phi, author_) {
 /**
  * Load inclination factors {ic; iq; iγ}. Inputs: H, V horizontal/vertical loads, BL = B/L, phi (deg), coh, author, optional A_ area (default 1).
  * @customfunction BEARING_INCLINATIONFACTORS
- * @param {any[][]} H H
- * @param {any[][]} V V
- * @param {any[][]} BL BL
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} coh Cohesion
- * @param {any[][]} author Method name (text)
- * @param {any[][]} [A_] A_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#BEARING_INCLINATIONFACTORS
+ * @param {any[][]} H Horizontal load (kN)
+ * @param {any[][]} V Vertical load (kN)
+ * @param {any[][]} BL Shape ratio B/L
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} coh Cohesion c (kPa)
+ * @param {any[][]} author Method: "terzaghi", "prandtl", "meyerhof", "hansen", "vesic" or "ec7"
+ * @param {any[][]} [A_] Optional footing area (m²), default 1
  * @returns {any[][]} Result (single value, row or table).
  */
 function bearing_inclinationFactors(H, V, BL, phi, coh, author, A_) {
@@ -75,8 +80,9 @@ function bearing_inclinationFactors(H, V, BL, phi, coh, author, A_) {
 /**
  * Bearing factor Nq for the selected method (row 2 of bearing_factors). Inputs: Phi (deg), author_.
  * @customfunction BEARING_NQ
- * @param {any[][]} Phi Phi
- * @param {any[][]} author_ Method name (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#BEARING_NQ
+ * @param {any[][]} Phi Friction angle φ (degrees)
+ * @param {any[][]} author_ Method: "terzaghi", "prandtl", "meyerhof", "hansen", "vesic" or "ec7"
  * @returns {any[][]} Result (single value, row or table).
  */
 function bearing_Nq(Phi, author_) {
@@ -86,10 +92,11 @@ function bearing_Nq(Phi, author_) {
 /**
  * Shape factors {sc; sq; sγ} for the selected method. Inputs: BL = B/L, phi (deg), author, opt_ (any value selects the alternative Terzaghi sγ).
  * @customfunction BEARING_SHAPEFACTORS
- * @param {any[][]} BL BL
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} author Method name (text)
- * @param {any[][]} [opt_] opt_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#BEARING_SHAPEFACTORS
+ * @param {any[][]} BL Shape ratio B/L (0 for a strip, 1 for a square)
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} author Method: "terzaghi", "prandtl", "meyerhof", "hansen", "vesic" or "ec7"
+ * @param {any[][]} [opt_] Optional: any value selects the alternative Terzaghi sγ
  * @returns {any[][]} Result (single value, row or table).
  */
 function bearing_shapeFactors(BL, phi, author, opt_) {
@@ -99,8 +106,9 @@ function bearing_shapeFactors(BL, phi, author, opt_) {
 /**
  * Skempton Nc for undrained bearing (polynomial fit). Inputs: DB = D/B (capped at 6), BL = B/L.
  * @customfunction BEARING_SKEMPTON
- * @param {any[][]} DB DB
- * @param {any[][]} BL BL
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#BEARING_SKEMPTON
+ * @param {any[][]} DB Depth ratio D/B (capped at 6)
+ * @param {any[][]} BL Shape ratio B/L
  * @returns {any[][]} Result (single value, row or table).
  */
 function bearing_Skempton(DB, BL) {
@@ -110,11 +118,12 @@ function bearing_Skempton(DB, BL) {
 /**
  * AASHTO soil classification with group index, as text. Inputs: % passing No.10, No.40, No.200 (enter 40 for 40%), LL_, PL_.
  * @customfunction CLASSIFY_AASHTO
- * @param {any[][]} pf10_ pf10_
- * @param {any[][]} pf40_ pf40_
- * @param {any[][]} pf200_ pf200_
- * @param {any[][]} [LL_] LL_ (optional)
- * @param {any[][]} [PL_] PL_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CLASSIFY_AASHTO
+ * @param {any[][]} pf10_ Percent passing No. 10 sieve (enter 40 for 40 %)
+ * @param {any[][]} pf40_ Percent passing No. 40 sieve (%)
+ * @param {any[][]} pf200_ Percent passing No. 200 sieve (%)
+ * @param {any[][]} [LL_] Liquid limit LL (%), optional
+ * @param {any[][]} [PL_] Plastic limit PL (%), optional
  * @returns {any[][]} Result (single value, row or table).
  */
 function classify_AASHTO(pf10_, pf40_, pf200_, LL_, PL_) {
@@ -122,16 +131,27 @@ function classify_AASHTO(pf10_, pf40_, pf200_, LL_, PL_) {
 }
 
 /**
- * USCS symbol with ASTM group name from a two-column lookup table (symbol | descriptions). Inputs: list, % passing No.4 and No.200, optional Cu, Cc, LL, PL, organic.
+ * ASTM D2487 group symbols and group names, 100 rows {symbol, name} (was the ASTMtable name on the ASTMnames sheet). Use as the list argument of classify_ASTM.
+ * @customfunction ASTM_TABLE
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#ASTM_TABLE
+ * @returns {any[][]} Result (single value, row or table).
+ */
+function astm_table() {
+  return safe(() => G.astm_table());
+}
+
+/**
+ * USCS symbol with ASTM group name from a two-column lookup table (symbol | descriptions). Inputs: list (or "" for the built-in astm_table), % passing No.4 and No.200, optional Cu, Cc, LL, PL, organic.
  * @customfunction CLASSIFY_ASTM
- * @param {any[][]} list list (table)
- * @param {any[][]} pf4_ pf4_
- * @param {any[][]} pf200_ pf200_
- * @param {any[][]} [Cu_] Cu_ (optional)
- * @param {any[][]} [Cc_] Cc_ (optional)
- * @param {any[][]} [LL_] LL_ (optional)
- * @param {any[][]} [PL_] PL_ (optional)
- * @param {any[][]} [organic_] organic_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CLASSIFY_ASTM
+ * @param {any[][]} list Two-column table {symbol, group name}; enter "" to use the built-in ASTM_TABLE
+ * @param {any[][]} pf4_ Percent passing No. 4 sieve (%)
+ * @param {any[][]} pf200_ Percent passing No. 200 sieve (%)
+ * @param {any[][]} [Cu_] Coefficient of uniformity Cu = D60/D10, optional
+ * @param {any[][]} [Cc_] Coefficient of curvature Cc = D30²/(D10·D60), optional
+ * @param {any[][]} [LL_] Liquid limit LL (%), optional
+ * @param {any[][]} [PL_] Plastic limit PL (%), optional
+ * @param {any[][]} [organic_] Organic indicator: omit or 0 = inorganic, 1 = organic
  * @returns {any[][]} Result (single value, row or table).
  */
 function classify_ASTM(list, pf4_, pf200_, Cu_, Cc_, LL_, PL_, organic_) {
@@ -142,9 +162,10 @@ function classify_ASTM(list, pf4_, pf200_, Cu_, Cc_, LL_, PL_, organic_) {
 /**
  * Fine-grained soil symbol from the plasticity chart (CL, CH, ML, MH, OL, OH, CL & ML). Inputs: LL, PL in %, optional organic (0 = inorganic).
  * @customfunction CLASSIFY_PLASTICITY
- * @param {any[][]} LL LL
- * @param {any[][]} PL PL
- * @param {any[][]} [organic] organic (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CLASSIFY_PLASTICITY
+ * @param {any[][]} LL Liquid limit LL (%)
+ * @param {any[][]} PL Plastic limit PL (%)
+ * @param {any[][]} [organic] Organic indicator: omit or 0 = inorganic, 1 = organic
  * @returns {any[][]} Result (single value, row or table).
  */
 function classify_Plasticity(LL, PL, organic) {
@@ -154,13 +175,14 @@ function classify_Plasticity(LL, PL, organic) {
 /**
  * USCS group symbol from gradation and plasticity. Inputs: % passing No.4 and No.200, optional Cu = D60/D10, Cc = D30²/(D10·D60), LL, PL, organic.
  * @customfunction CLASSIFY_USC
- * @param {any[][]} pf4_ pf4_
- * @param {any[][]} pf200_ pf200_
- * @param {any[][]} [Cu_] Cu_ (optional)
- * @param {any[][]} [Cc_] Cc_ (optional)
- * @param {any[][]} [LL_] LL_ (optional)
- * @param {any[][]} [PL_] PL_ (optional)
- * @param {any[][]} [organic_] organic_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CLASSIFY_USC
+ * @param {any[][]} pf4_ Percent passing No. 4 sieve (%)
+ * @param {any[][]} pf200_ Percent passing No. 200 sieve (%)
+ * @param {any[][]} [Cu_] Coefficient of uniformity Cu = D60/D10, optional
+ * @param {any[][]} [Cc_] Coefficient of curvature Cc = D30²/(D10·D60), optional
+ * @param {any[][]} [LL_] Liquid limit LL (%), optional
+ * @param {any[][]} [PL_] Plastic limit PL (%), optional
+ * @param {any[][]} [organic_] Organic indicator: omit or 0 = inorganic, 1 = organic
  * @returns {any[][]} Result (single value, row or table).
  */
 function classify_USC(pf4_, pf200_, Cu_, Cc_, LL_, PL_, organic_) {
@@ -170,11 +192,12 @@ function classify_USC(pf4_, pf200_, Cu_, Cc_, LL_, PL_, organic_) {
 /**
  * Square-root-of-time analysis of a consolidation test: Cv, d0, d100, drainage length and compression ratios. Inputs: time and dial-reading columns, fitting window ta–tb, initial height hi.
  * @customfunction CONSOLIDATION_TEST
- * @param {any[][]} Tarray Tarray (column of values)
- * @param {any[][]} Xarray Xarray (column of values)
- * @param {any[][]} ta ta
- * @param {any[][]} tb tb
- * @param {any[][]} hi hi
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CONSOLIDATION_TEST
+ * @param {any[][]} Tarray Column of elapsed times (min)
+ * @param {any[][]} Xarray Column of dial readings (same rows as Tarray)
+ * @param {any[][]} ta Start of the straight-line fitting window (same unit as Tarray)
+ * @param {any[][]} tb End of the fitting window
+ * @param {any[][]} hi Initial specimen height (same unit as the readings)
  * @returns {any[][]} Result (single value, row or table).
  */
 function consolidation_test(Tarray, Xarray, ta, tb, hi) {
@@ -184,7 +207,8 @@ function consolidation_test(Tarray, Xarray, ta, tb, hi) {
 /**
  * Time factor Tv from average degree of consolidation U (fraction, 0 ≤ U < 1), approximate formula.
  * @customfunction CONSOLIDATION_TV
- * @param {any[][]} U U
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CONSOLIDATION_TV
+ * @param {any[][]} U Average degree of consolidation (fraction, 0 ≤ U < 1)
  * @returns {any[][]} Result (single value, row or table).
  */
 function consolidation_Tv(U) {
@@ -194,8 +218,9 @@ function consolidation_Tv(U) {
 /**
  * Average degree of consolidation U (fraction) from time factor tv by Fourier series. case_: uniform (default), triangular_top, triangular_bottom, vshape, saw, sine, parabolic, circular.
  * @customfunction CONSOLIDATION_U
- * @param {any[][]} tv tv (column of values)
- * @param {any[][]} [case_] case_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CONSOLIDATION_U
+ * @param {any[][]} tv Time factor Tv (single value or column)
+ * @param {any[][]} [case_] Initial excess pore pressure shape: "uniform" (default), "triangular_top", "triangular_bottom", "vshape", "saw", "sine", "parabolic", "circular"
  * @returns {any[][]} Result (single value, row or table).
  */
 function consolidation_U(tv, case_) {
@@ -205,9 +230,10 @@ function consolidation_U(tv, case_) {
 /**
  * Excess pore pressure ratio u/u0 along normalized depth at time factor tv. Inputs: Xarray (z/H column), tv, case_ (same cases as consolidation_U).
  * @customfunction CONSOLIDATION_UX
- * @param {any[][]} Xarray Xarray (column of values)
- * @param {any[][]} tv tv
- * @param {any[][]} [case_] case_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CONSOLIDATION_UX
+ * @param {any[][]} Xarray Column of normalized depths z/H
+ * @param {any[][]} tv Time factor Tv
+ * @param {any[][]} [case_] Initial pore pressure shape (same choices as consolidation_U)
  * @returns {any[][]} Result (single value, row or table).
  */
 function consolidation_Ux(Xarray, tv, case_) {
@@ -217,7 +243,8 @@ function consolidation_Ux(Xarray, tv, case_) {
 /**
  * Average degree of consolidation U (fraction) from tv, closed-form approximation.
  * @customfunction CONSOLIDATION_U_APPROXIMATE
- * @param {any[][]} tv tv
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CONSOLIDATION_U_APPROXIMATE
+ * @param {any[][]} tv Time factor Tv
  * @returns {any[][]} Result (single value, row or table).
  */
 function consolidation_U_approximate(tv) {
@@ -227,8 +254,9 @@ function consolidation_U_approximate(tv) {
 /**
  * Average consolidation U for a load applied linearly over construction time factor tc. Inputs: tv, tc.
  * @customfunction CONSOLIDATION_U_VARIABLE
- * @param {any[][]} tv tv
- * @param {any[][]} tc tc
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CONSOLIDATION_U_VARIABLE
+ * @param {any[][]} tv Time factor Tv
+ * @param {any[][]} tc Time factor at the end of construction (load ramps up linearly until tc)
  * @returns {any[][]} Result (single value, row or table).
  */
 function consolidation_U_variable(tv, tc) {
@@ -238,7 +266,8 @@ function consolidation_U_variable(tv, tc) {
 /**
  * Cosine of an angle in degrees.
  * @customfunction COSD
- * @param {any[][]} X X
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#COSD
+ * @param {any[][]} X Angle (degrees)
  * @returns {any[][]} Result (single value, row or table).
  */
 function cosd(X) {
@@ -248,14 +277,15 @@ function cosd(X) {
 /**
  * Coulomb trial wedge with cohesion: {W; R; P; Cs; Cw; z0; K}. Inputs: t wedge angle (radians), phi, alpha wall, beta slope, delta (deg), g unit weight, h wall height, optional coh_.
  * @customfunction COULOMB_COHESIVEFORCES
- * @param {any[][]} t t
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} alpha Angle (degrees)
- * @param {any[][]} beta Angle (degrees)
- * @param {any[][]} delta Wall friction angle (degrees)
- * @param {any[][]} g Unit weight
- * @param {any[][]} h Height
- * @param {any[][]} [coh_] coh_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#COULOMB_COHESIVEFORCES
+ * @param {any[][]} t Trial wedge (slip) angle (radians)
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} alpha Wall inclination α (degrees; 90 = vertical)
+ * @param {any[][]} beta Backfill slope β (degrees)
+ * @param {any[][]} delta Wall friction angle δ (degrees)
+ * @param {any[][]} g Unit weight γ (kN/m³)
+ * @param {any[][]} h Wall height H (m)
+ * @param {any[][]} [coh_] Cohesion c (kPa), optional, default 0
  * @returns {any[][]} Result (single value, row or table).
  */
 function Coulomb_cohesiveforces(t, phi, alpha, beta, delta, g, h, coh_) {
@@ -265,13 +295,14 @@ function Coulomb_cohesiveforces(t, phi, alpha, beta, delta, g, h, coh_) {
 /**
  * Coulomb trial wedge forces {W; R; P; K} for slip angle t (radians). Inputs: phi, alpha wall (90 = vertical), beta slope, delta (deg), g, h.
  * @customfunction COULOMB_FORCES
- * @param {any[][]} t t
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} alpha Angle (degrees)
- * @param {any[][]} beta Angle (degrees)
- * @param {any[][]} delta Wall friction angle (degrees)
- * @param {any[][]} g Unit weight
- * @param {any[][]} h Height
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#COULOMB_FORCES
+ * @param {any[][]} t Trial wedge (slip) angle (radians)
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} alpha Wall inclination α (degrees; 90 = vertical)
+ * @param {any[][]} beta Backfill slope β (degrees)
+ * @param {any[][]} delta Wall friction angle δ (degrees)
+ * @param {any[][]} g Unit weight γ (kN/m³)
+ * @param {any[][]} h Wall height H (m)
  * @returns {any[][]} Result (single value, row or table).
  */
 function Coulomb_forces(t, phi, alpha, beta, delta, g, h) {
@@ -281,11 +312,12 @@ function Coulomb_forces(t, phi, alpha, beta, delta, g, h) {
 /**
  * Coulomb earth pressure coefficient. Inputs: phi, alpha, beta, delta (deg); passive: omit for Ka, any value for Kp.
  * @customfunction COULOMB_K
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} alpha Angle (degrees)
- * @param {any[][]} beta Angle (degrees)
- * @param {any[][]} delta Wall friction angle (degrees)
- * @param {any[][]} [passive] passive (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#COULOMB_K
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} alpha Wall inclination α (degrees; 90 = vertical)
+ * @param {any[][]} beta Backfill slope β (degrees)
+ * @param {any[][]} delta Wall friction angle δ (degrees)
+ * @param {any[][]} [passive] Omit for active Ka; any value gives passive Kp
  * @returns {any[][]} Result (single value, row or table).
  */
 function coulomb_K(phi, alpha, beta, delta, passive) {
@@ -295,15 +327,16 @@ function coulomb_K(phi, alpha, beta, delta, passive) {
 /**
  * Critical Coulomb wedge by golden-section search: {slip angle (deg); W; R; P; K}. Inputs: a_, b_ (any values on first call), phi, alpha, beta, delta, g, h.
  * @customfunction COULOMB_MAXIMUM
- * @param {any[][]} a_ a_
- * @param {any[][]} b_ b_
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} alpha Angle (degrees)
- * @param {any[][]} beta Angle (degrees)
- * @param {any[][]} delta Wall friction angle (degrees)
- * @param {any[][]} g Unit weight
- * @param {any[][]} h Height
- * @param {any[][]} [iter_] iter_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#COULOMB_MAXIMUM
+ * @param {any[][]} a_ Lower search bound (any value on the first call)
+ * @param {any[][]} b_ Upper search bound (any value on the first call)
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} alpha Wall inclination α (degrees; 90 = vertical)
+ * @param {any[][]} beta Backfill slope β (degrees)
+ * @param {any[][]} delta Wall friction angle δ (degrees)
+ * @param {any[][]} g Unit weight γ (kN/m³)
+ * @param {any[][]} h Wall height H (m)
+ * @param {any[][]} [iter_] Leave empty (internal iteration counter)
  * @returns {any[][]} Result (single value, row or table).
  */
 function Coulomb_maximum(a_, b_, phi, alpha, beta, delta, g, h, iter_) {
@@ -313,10 +346,11 @@ function Coulomb_maximum(a_, b_, phi, alpha, beta, delta, g, h, iter_) {
 /**
  * Critical Coulomb slip angle (deg), closed form. Inputs: phi, alpha, beta, delta (deg).
  * @customfunction COULOMB_THETA
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} alpha Angle (degrees)
- * @param {any[][]} beta Angle (degrees)
- * @param {any[][]} delta Wall friction angle (degrees)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#COULOMB_THETA
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} alpha Wall inclination α (degrees; 90 = vertical)
+ * @param {any[][]} beta Backfill slope β (degrees)
+ * @param {any[][]} delta Wall friction angle δ (degrees)
  * @returns {any[][]} Result (single value, row or table).
  */
 function coulomb_theta(phi, alpha, beta, delta) {
@@ -326,10 +360,11 @@ function coulomb_theta(phi, alpha, beta, delta) {
 /**
  * Intersections {x, y} of a sampled curve with the line y = slope·x + intercept. Inputs: Xarray, Yarray columns, slope, intercept.
  * @customfunction CUTLINE
- * @param {any[][]} Xarray Xarray (column of values)
- * @param {any[][]} Yarray Yarray (column of values)
- * @param {any[][]} slope slope
- * @param {any[][]} intercept intercept
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CUTLINE
+ * @param {any[][]} Xarray Column of x values of the curve
+ * @param {any[][]} Yarray Column of y values of the curve
+ * @param {any[][]} slope Slope of the line
+ * @param {any[][]} intercept Intercept of the line
  * @returns {any[][]} Result (single value, row or table).
  */
 function cutline(Xarray, Yarray, slope, intercept) {
@@ -339,7 +374,8 @@ function cutline(Xarray, Yarray, slope, intercept) {
 /**
  * Normalized radius r/z of a circular load giving vertical stress ratio s (0 ≤ s < 1). Used to build influence charts.
  * @customfunction ELASTIC_CIRCULAR_RADIUS
- * @param {any[][]} s s
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#ELASTIC_CIRCULAR_RADIUS
+ * @param {any[][]} s Stress ratio Δσz/q under the centre (0 ≤ s < 1)
  * @returns {any[][]} Result (single value, row or table).
  */
 function elastic_circular_radius(s) {
@@ -349,9 +385,10 @@ function elastic_circular_radius(s) {
 /**
  * Stress ratios {sz, sr} under the centre of a uniformly loaded circle. Inputs: rValue load radius, z depth, optional nu_ (default 0.3). Multiply by the load pressure.
  * @customfunction ELASTIC_CIRCULAR_STRESS
- * @param {any[][]} rValue rValue
- * @param {any[][]} z Depth
- * @param {any[][]} [nu_] nu_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#ELASTIC_CIRCULAR_STRESS
+ * @param {any[][]} rValue Radius of the loaded circle (m)
+ * @param {any[][]} z Depth below the centre (m)
+ * @param {any[][]} [nu_] Poisson's ratio, optional, default 0.3
  * @returns {any[][]} Result (single value, row or table).
  */
 function elastic_circular_stress(rValue, z, nu_) {
@@ -361,8 +398,9 @@ function elastic_circular_stress(rValue, z, nu_) {
 /**
  * Vertical stress influence factor under an embankment (Osterberg). Inputs: b1z = b1/z, b2z = b2/z (b2z ≠ 0).
  * @customfunction ELASTIC_EMBANKMENT
- * @param {any[][]} b1z b1z
- * @param {any[][]} b2z b2z
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#ELASTIC_EMBANKMENT
+ * @param {any[][]} b1z Ratio b1/z (half crest width over depth)
+ * @param {any[][]} b2z Ratio b2/z (horizontal length of the side slope over depth, ≠ 0)
  * @returns {any[][]} Result (single value, row or table).
  */
 function elastic_embankment(b1z, b2z) {
@@ -372,8 +410,9 @@ function elastic_embankment(b1z, b2z) {
 /**
  * Janbu μ0 settlement factor from digitized chart. Inputs: DB = D/B, LB = L/B (1, 2, 5, 10, 20, 50, 100 or 200).
  * @customfunction ELASTIC_JANBU_MU0
- * @param {any[][]} DB DB
- * @param {any[][]} LB LB
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#ELASTIC_JANBU_MU0
+ * @param {any[][]} DB Depth ratio D/B
+ * @param {any[][]} LB Length ratio L/B: 1, 2, 5, 10, 20, 50, 100 or 200
  * @returns {any[][]} Result (single value, row or table).
  */
 function elastic_Janbu_mu0(DB, LB) {
@@ -383,8 +422,9 @@ function elastic_Janbu_mu0(DB, LB) {
 /**
  * Janbu μ1 settlement factor from digitized chart. Inputs: LB (chart abscissa), DB curve selector ("circle", 1, 2, 5, 10, 20, 50 or 100).
  * @customfunction ELASTIC_JANBU_MU1
- * @param {any[][]} LB LB
- * @param {any[][]} DB DB (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#ELASTIC_JANBU_MU1
+ * @param {any[][]} LB Chart abscissa (H/B)
+ * @param {any[][]} DB Curve: "circle" or L/B = 1, 2, 5, 10, 20, 50, 100
  * @returns {any[][]} Result (single value, row or table).
  */
 function elastic_Janbu_mu1(LB, DB) {
@@ -394,8 +434,9 @@ function elastic_Janbu_mu1(LB, DB) {
 /**
  * Stresses {sx, sy, sxy} per unit vertical line load (Flamant). Inputs: x horizontal offset, y depth. Multiply by the line load.
  * @customfunction ELASTIC_LINELOAD
- * @param {any[][]} x x
- * @param {any[][]} y y
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#ELASTIC_LINELOAD
+ * @param {any[][]} x Horizontal offset from the load (m)
+ * @param {any[][]} y Depth (m)
  * @returns {any[][]} Result (single value, row or table).
  */
 function elastic_lineload(x, y) {
@@ -405,8 +446,9 @@ function elastic_lineload(x, y) {
 /**
  * Stresses {sx, sy, sxy} per unit horizontal line load. Inputs: x horizontal offset, y depth. Multiply by the line load.
  * @customfunction ELASTIC_LINELOAD_HORIZONTAL
- * @param {any[][]} x x
- * @param {any[][]} y y
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#ELASTIC_LINELOAD_HORIZONTAL
+ * @param {any[][]} x Horizontal offset from the load (m)
+ * @param {any[][]} y Depth (m)
  * @returns {any[][]} Result (single value, row or table).
  */
 function elastic_lineload_horizontal(x, y) {
@@ -416,8 +458,9 @@ function elastic_lineload_horizontal(x, y) {
 /**
  * Newmark influence factor under the corner of a uniformly loaded rectangle. Inputs: m = B/z, n = L/z.
  * @customfunction ELASTIC_NEWMARK_FACTOR
- * @param {any[][]} m m
- * @param {any[][]} n n
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#ELASTIC_NEWMARK_FACTOR
+ * @param {any[][]} m Ratio B/z (rectangle side over depth)
+ * @param {any[][]} n Ratio L/z (other side over depth)
  * @returns {any[][]} Result (single value, row or table).
  */
 function elastic_Newmark_factor(m, n) {
@@ -427,10 +470,11 @@ function elastic_Newmark_factor(m, n) {
 /**
  * Vertical stress factor at any point (x_, y_, z_) under a loaded rectangle by superposition of corner factors. pt: 4 corners, opposite corners in rows 1 and 3.
  * @customfunction ELASTIC_NEWMARK_STRESS
- * @param {any[][]} x_ x_
- * @param {any[][]} y_ y_
- * @param {any[][]} z_ z_
- * @param {any[][]} pt pt (two-column x, y list)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#ELASTIC_NEWMARK_STRESS
+ * @param {any[][]} x_ x coordinate of the point
+ * @param {any[][]} y_ y coordinate of the point
+ * @param {any[][]} z_ Depth of the point
+ * @param {any[][]} pt Rectangle corners (4 rows × 2 columns, opposite corners in rows 1 and 3)
  * @returns {any[][]} Result (single value, row or table).
  */
 function elastic_Newmark_stress(x_, y_, z_, pt) {
@@ -441,9 +485,10 @@ function elastic_Newmark_stress(x_, y_, z_, pt) {
 /**
  * Stresses {sz, sr, st, srz} per unit point load (Boussinesq). Inputs: rValue radial offset, z depth, optional nu_ (default 0.3).
  * @customfunction ELASTIC_POINTLOAD
- * @param {any[][]} rValue rValue
- * @param {any[][]} z Depth
- * @param {any[][]} [nu_] nu_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#ELASTIC_POINTLOAD
+ * @param {any[][]} rValue Horizontal distance from the load (m)
+ * @param {any[][]} z Depth (m)
+ * @param {any[][]} [nu_] Poisson's ratio, optional, default 0.3
  * @returns {any[][]} Result (single value, row or table).
  */
 function elastic_pointload(rValue, z, nu_) {
@@ -453,10 +498,11 @@ function elastic_pointload(rValue, z, nu_) {
 /**
  * Vertical stress factor under a point (x, y) at depth z for a uniformly loaded polygon, by integration over 1° sectors. pts: polygon vertices (two columns).
  * @customfunction ELASTIC_SECTOR
- * @param {any[][]} x x
- * @param {any[][]} y y
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#ELASTIC_SECTOR
+ * @param {any[][]} x x coordinate of the point
+ * @param {any[][]} y y coordinate of the point
  * @param {any[][]} z Depth
- * @param {any[][]} pts pts (two-column x, y list)
+ * @param {any[][]} pts Polygon vertices (two columns x, y)
  * @returns {any[][]} Result (single value, row or table).
  */
 function elastic_sector(x, y, z, pts) {
@@ -467,7 +513,8 @@ function elastic_sector(x, y, z, pts) {
 /**
  * Helper for elastic_sector: contribution of one ray. Input: row with angle (radians) followed by flattened polygon coordinates.
  * @customfunction ELASTIC_SECTOR_ROW
- * @param {any[][]} txy txy (column of values)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#ELASTIC_SECTOR_ROW
+ * @param {any[][]} txy Row: ray angle (radians) followed by the flattened polygon coordinates
  * @returns {any[][]} Result (single value, row or table).
  */
 function elastic_sector_row(txy) {
@@ -477,10 +524,11 @@ function elastic_sector_row(txy) {
 /**
  * Vertical stress contribution of an annular sector between radii ra and rb at depth z. dt: angular weight (sector angle / 2π).
  * @customfunction ELASTIC_SECTOR_SLICE
- * @param {any[][]} ra ra
- * @param {any[][]} rb rb
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#ELASTIC_SECTOR_SLICE
+ * @param {any[][]} ra Inner radius
+ * @param {any[][]} rb Outer radius
  * @param {any[][]} z Depth
- * @param {any[][]} dt dt
+ * @param {any[][]} dt Angular weight (sector angle / 2π)
  * @returns {any[][]} Result (single value, row or table).
  */
 function elastic_sector_slice(ra, rb, z, dt) {
@@ -490,9 +538,10 @@ function elastic_sector_slice(ra, rb, z, dt) {
 /**
  * Stress ratios {sy, sx, sxy} under a uniform strip load. Inputs: B full width, x offset from centre, y depth. Multiply by the pressure.
  * @customfunction ELASTIC_STRIPLOAD
- * @param {any[][]} B Width
- * @param {any[][]} x x
- * @param {any[][]} y y
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#ELASTIC_STRIPLOAD
+ * @param {any[][]} B Full width of the strip (m)
+ * @param {any[][]} x Horizontal offset from the strip centre (m)
+ * @param {any[][]} y Depth (m)
  * @returns {any[][]} Result (single value, row or table).
  */
 function elastic_stripload(B, x, y) {
@@ -502,9 +551,10 @@ function elastic_stripload(B, x, y) {
 /**
  * Stress ratios {sy, sx, sxy} under a triangular strip load. Inputs: B loaded width, x offset, y depth. Multiply by the maximum pressure.
  * @customfunction ELASTIC_TRIANGLE
- * @param {any[][]} B Width
- * @param {any[][]} x x
- * @param {any[][]} y y
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#ELASTIC_TRIANGLE
+ * @param {any[][]} B Loaded width (m)
+ * @param {any[][]} x Horizontal offset (m)
+ * @param {any[][]} y Depth (m)
  * @returns {any[][]} Result (single value, row or table).
  */
 function elastic_triangle(B, x, y) {
@@ -514,11 +564,12 @@ function elastic_triangle(B, x, y) {
 /**
  * Interpolate y at X from (Xa, Ya); X may be a column. Xa may be increasing or decreasing. mode: "linear" (default), "logx", "logy", "logxy". outside: omitted = #N/A, "extrapolate", "clamp".
  * @customfunction INTERPOLATE
- * @param {any[][]} X X
- * @param {any[][]} Xa Xa (column of values)
- * @param {any[][]} Ya Ya (column of values)
- * @param {any[][]} [mode] mode (optional)
- * @param {any[][]} [outside] outside (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#INTERPOLATE
+ * @param {any[][]} X Value(s) at which to interpolate
+ * @param {any[][]} Xa Column of known x values (increasing or decreasing)
+ * @param {any[][]} Ya Column of known y values
+ * @param {any[][]} [mode] "linear" (default), "logx", "logy" or "logxy"
+ * @param {any[][]} [outside] Omit for #N/A outside the table, "extrapolate" or "clamp"
  * @returns {any[][]} Result (single value, row or table).
  */
 function Interpolate(X, Xa, Ya, mode, outside) {
@@ -532,9 +583,10 @@ function Interpolate(X, Xa, Ya, mode, outside) {
 /**
  * Intersections {x, y} of a polygon with the infinite line through pt at angle t (radians). Returns {0, 0} if none.
  * @customfunction INTERSECTION_POLYGON_LINE
- * @param {any[][]} polygon polygon (two-column x, y list)
- * @param {any[][]} pt pt (point {x, y})
- * @param {any[][]} t t
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#INTERSECTION_POLYGON_LINE
+ * @param {any[][]} polygon Polygon vertices (two columns x, y)
+ * @param {any[][]} pt Point {x, y} on the line
+ * @param {any[][]} t Line angle (radians)
  * @returns {any[][]} Result (single value, row or table).
  */
 function intersection_polygon_line(polygon, pt, t) {
@@ -544,9 +596,10 @@ function intersection_polygon_line(polygon, pt, t) {
 /**
  * Sorted distances from pt to the polygon boundary along a ray at angle t (radians).
  * @customfunction INTERSECTION_POLYGON_RAY
- * @param {any[][]} polygon polygon (two-column x, y list)
- * @param {any[][]} pt pt (point {x, y})
- * @param {any[][]} t t
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#INTERSECTION_POLYGON_RAY
+ * @param {any[][]} polygon Polygon vertices (two columns x, y)
+ * @param {any[][]} pt Ray origin {x, y}
+ * @param {any[][]} t Ray angle (radians)
  * @returns {any[][]} Result (single value, row or table).
  */
 function intersection_polygon_ray(polygon, pt, t) {
@@ -556,9 +609,10 @@ function intersection_polygon_ray(polygon, pt, t) {
 /**
  * Teaching example of golden-section minimization of x³ + 5x² − 10x on [A, B].
  * @customfunction MINIMUM
- * @param {any[][]} A A
- * @param {any[][]} B Width
- * @param {any[][]} [iter_] iter_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#MINIMUM
+ * @param {any[][]} A Lower bound of the search interval
+ * @param {any[][]} B Upper bound
+ * @param {any[][]} [iter_] Leave empty (internal counter)
  * @returns {any[][]} Result (single value, row or table).
  */
 function minimum(A, B, iter_) {
@@ -568,7 +622,8 @@ function minimum(A, B, iter_) {
 /**
  * Alias of polygon_area_centroid: centroid and area of a polygon.
  * @customfunction POLYGON_CENTROIDAREA
- * @param {any[][]} polygon polygon (two-column x, y list)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#POLYGON_CENTROIDAREA
+ * @param {any[][]} polygon Vertices (two columns x, y); the first vertex may be repeated at the end
  * @returns {any[][]} Result (single value, row or table).
  */
 function polygon_centroidArea(polygon) {
@@ -578,9 +633,10 @@ function polygon_centroidArea(polygon) {
 /**
  * Weight and moment {W, M} of a polygonal block about point Pt. Inputs: XY vertices, g unit weight, Pt {x, y}. Per unit thickness.
  * @customfunction POLYGON_WEIGHTMOMENT
- * @param {any[][]} XY XY (two-column x, y list)
- * @param {any[][]} g Unit weight
- * @param {any[][]} Pt Pt (point {x, y})
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#POLYGON_WEIGHTMOMENT
+ * @param {any[][]} XY Block vertices (two columns x, y)
+ * @param {any[][]} g Unit weight (kN/m³)
+ * @param {any[][]} Pt Point {x, y} about which the moment is taken
  * @returns {any[][]} Result (single value, row or table).
  */
 function polygon_weightMoment(XY, g, Pt) {
@@ -590,9 +646,10 @@ function polygon_weightMoment(XY, g, Pt) {
 /**
  * Resultant force and moment {F, M} of a piecewise-linear pressure profile about depth d0. Inputs: d depth column, p pressure column, d0.
  * @customfunction PRESSURE_FORCEMOMENT
- * @param {any[][]} d d (column of values)
- * @param {any[][]} p p (column of values)
- * @param {any[][]} d0 d0
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PRESSURE_FORCEMOMENT
+ * @param {any[][]} d Column of depths (m)
+ * @param {any[][]} p Column of pressures (kPa)
+ * @param {any[][]} d0 Depth of the moment centre (m)
  * @returns {any[][]} Result (single value, row or table).
  */
 function pressure_forceMoment(d, p, d0) {
@@ -602,8 +659,9 @@ function pressure_forceMoment(d, p, d0) {
 /**
  * Rankine active coefficient for a sloping backfill. Inputs: phi, beta (deg).
  * @customfunction RANKINE_K
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} beta Angle (degrees)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#RANKINE_K
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} beta Backfill slope β (degrees)
  * @returns {any[][]} Result (single value, row or table).
  */
 function Rankine_K(phi, beta) {
@@ -613,12 +671,13 @@ function Rankine_K(phi, beta) {
 /**
  * Rankine stresses on a wall from the Mohr circle (labelled table). Inputs: phi, coh, alpha wall angle, beta slope (deg), gz vertical stress, passive (omit = active).
  * @customfunction RANKINE_STRESS
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} coh Cohesion
- * @param {any[][]} alpha Angle (degrees)
- * @param {any[][]} beta Angle (degrees)
- * @param {any[][]} gz gz
- * @param {any[][]} [passive] passive (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#RANKINE_STRESS
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} coh Cohesion c (kPa)
+ * @param {any[][]} alpha Wall angle α (degrees)
+ * @param {any[][]} beta Backfill slope β (degrees)
+ * @param {any[][]} gz Vertical stress γ·z (kPa)
+ * @param {any[][]} [passive] Omit for active; any value for passive
  * @returns {any[][]} Result (single value, row or table).
  */
 function Rankine_stress(phi, coh, alpha, beta, gz, passive) {
@@ -628,7 +687,8 @@ function Rankine_stress(phi, coh, alpha, beta, gz, passive) {
 /**
  * Sine of an angle in degrees.
  * @customfunction SIND
- * @param {any[][]} X X
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SIND
+ * @param {any[][]} X Angle (degrees)
  * @returns {any[][]} Result (single value, row or table).
  */
 function sind(X) {
@@ -638,38 +698,45 @@ function sind(X) {
 /**
  * Allowable bearing pressure from SPT N averaged between D and D + B. Inputs: z, N columns (or scalar N), B, D (m), author: bowles, meyerhof, terzaghi.
  * @customfunction SPT_BEARING
- * @param {any[][]} z Depth (column of values)
- * @param {any[][]} N N (column of values)
- * @param {any[][]} B Width
- * @param {any[][]} D Depth
- * @param {any[][]} author Method name (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SPT_BEARING
+ * @param {any[][]} z Column of depths (m)
+ * @param {any[][]} N Column of SPT N values (or a single N)
+ * @param {any[][]} B Footing width (m)
+ * @param {any[][]} D Footing depth (m)
+ * @param {any[][]} author "bowles", "meyerhof" or "terzaghi"
  * @returns {any[][]} Result (single value, row or table).
  */
 function SPT_bearing(z, N, B, D, author) {
-  return safe(() => G.SPT_bearing(colNum(z), colNum(N), num(B), num(D), str(author)));
+  const z_c = colNum(z);
+  const N_c = colNum(N);
+  return safeLifted(() => lift((e_z, e_N, e_B, e_D, e_author) => G.SPT_bearing(e_z, e_N, num(e_B), num(e_D), e_author), [z_c, N_c, B, D, author], [0, 1]));
 }
 
 /**
  * Burland–Burbidge settlement from SPT. Inputs: z, N columns, q pressure, B width, optional LB = L/B, D_ depth, H layer thickness, sc preconsolidation pressure.
  * @customfunction SPT_BURLANDBURBIDGE_SETTLEMENT
- * @param {any[][]} z Depth (column of values)
- * @param {any[][]} N N (column of values)
- * @param {any[][]} q q
- * @param {any[][]} B Width
- * @param {any[][]} [LB] LB (optional)
- * @param {any[][]} [D_] D_ (optional)
- * @param {any[][]} [H] H (optional)
- * @param {any[][]} [sc] sc (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SPT_BURLANDBURBIDGE_SETTLEMENT
+ * @param {any[][]} z Column of depths (m)
+ * @param {any[][]} N Column of SPT N values
+ * @param {any[][]} q Applied pressure (kPa)
+ * @param {any[][]} B Footing width (m)
+ * @param {any[][]} [LB] Ratio L/B, optional (shape correction)
+ * @param {any[][]} [D_] Footing depth (m), optional, default 0
+ * @param {any[][]} [H] Thickness of the compressible layer (m), optional (thin-layer correction)
+ * @param {any[][]} [sc] Preconsolidation pressure σ'p (kPa), optional
  * @returns {any[][]} Result (single value, row or table).
  */
 function SPT_BurlandBurbidge_settlement(z, N, q, B, LB, D_, H, sc) {
-  return safe(() => G.SPT_BurlandBurbidge_settlement(colNum(z), colNum(N), num(q), num(B), opt(LB), opt(D_), opt(H), opt(sc)));
+  const z_c = colNum(z);
+  const N_c = colNum(N);
+  return safeLifted(() => lift((e_z, e_N, e_q, e_B, e_LB, e_D_, e_H, e_sc) => G.SPT_BurlandBurbidge_settlement(e_z, e_N, num(e_q), num(e_B), e_LB, e_D_, e_H, e_sc), [z_c, N_c, q, B, LB, D_, H, sc], [0, 1]));
 }
 
 /**
  * SPT overburden correction CN = 10/√σ'v (kPa), capped at 2.
  * @customfunction SPT_CORRECTION_DEPTH
- * @param {any[][]} s s
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SPT_CORRECTION_DEPTH
+ * @param {any[][]} s Effective vertical stress σ'v (kPa)
  * @returns {any[][]} Result (single value, row or table).
  */
 function SPT_correction_depth(s) {
@@ -679,10 +746,11 @@ function SPT_correction_depth(s) {
 /**
  * Friction angle (deg) from SPT N. author: peck, schmertman (needs s and pa), hatanaka (needs s, in kPa).
  * @customfunction SPT_CORRELATION_FRICTION
- * @param {any[][]} N N
- * @param {any[][]} author Method name (text)
- * @param {any[][]} [s] s (optional)
- * @param {any[][]} [pa] Atmospheric pressure (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SPT_CORRELATION_FRICTION
+ * @param {any[][]} N SPT blow count N
+ * @param {any[][]} author "peck", "schmertman" or "hatanaka"
+ * @param {any[][]} [s] Effective vertical stress σ'v (needed by schmertman and hatanaka; kPa for hatanaka)
+ * @param {any[][]} [pa] Atmospheric pressure in the same unit as s (needed by schmertman)
  * @returns {any[][]} Result (single value, row or table).
  */
 function SPT_Correlation_friction(N, author, s, pa) {
@@ -692,10 +760,11 @@ function SPT_Correlation_friction(N, author, s, pa) {
 /**
  * Resultant force, moment and point of application of normal/shear stresses varying linearly along segment AB. Inputs: A, B {x, y}; sa, sb {normal, shear}.
  * @customfunction STRESS_FORCEMOMENT
- * @param {any[][]} A A (point {x, y})
- * @param {any[][]} B Width (point {x, y})
- * @param {any[][]} sa sa (point {x, y})
- * @param {any[][]} sb sb (point {x, y})
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#STRESS_FORCEMOMENT
+ * @param {any[][]} A Segment start {x, y}
+ * @param {any[][]} B Segment end {x, y}
+ * @param {any[][]} sa Stresses at A {normal, shear}
+ * @param {any[][]} sb Stresses at B {normal, shear}
  * @returns {any[][]} Result (single value, row or table).
  */
 function stress_ForceMoment(A, B, sa, sb) {
@@ -705,10 +774,11 @@ function stress_ForceMoment(A, B, sa, sb) {
 /**
  * Normal and shear stress {s, t} on a plane at angle alpha (deg) using the Mohr circle pole. Inputs: sa, ta pole stresses, alpha, sm circle centre.
  * @customfunction STRESS_MOHR
- * @param {any[][]} sa sa
- * @param {any[][]} ta ta
- * @param {any[][]} alpha Angle (degrees)
- * @param {any[][]} sm sm
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#STRESS_MOHR
+ * @param {any[][]} sa Normal stress at the pole (kPa)
+ * @param {any[][]} ta Shear stress at the pole (kPa)
+ * @param {any[][]} alpha Plane angle (degrees)
+ * @param {any[][]} sm Centre of the Mohr circle (kPa)
  * @returns {any[][]} Result (single value, row or table).
  */
 function Stress_Mohr(sa, ta, alpha, sm) {
@@ -718,12 +788,13 @@ function Stress_Mohr(sa, ta, alpha, sm) {
 /**
  * Mohr–Coulomb failure circle through a known stress (sa, ta) on plane A (deg): centre, radius, pole, principal and failure stresses. passive: omit = active.
  * @customfunction STRESS_MOHR_FAILURE
- * @param {any[][]} sa sa
- * @param {any[][]} ta ta
- * @param {any[][]} A A
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} coh Cohesion
- * @param {any[][]} [passive] passive (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#STRESS_MOHR_FAILURE
+ * @param {any[][]} sa Known normal stress (kPa)
+ * @param {any[][]} ta Known shear stress (kPa)
+ * @param {any[][]} A Angle of the plane carrying (sa, ta) (degrees)
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} coh Cohesion c (kPa)
+ * @param {any[][]} [passive] Omit for active; any value for passive
  * @returns {any[][]} Result (single value, row or table).
  */
 function stress_Mohr_failure(sa, ta, A, phi, coh, passive) {
@@ -733,10 +804,11 @@ function stress_Mohr_failure(sa, ta, A, phi, coh, passive) {
 /**
  * Mohr circle and pole from stresses on two perpendicular planes: centre, radius, pole, principal stresses. Inputs: sa, ta on plane A (deg), sb normal stress on the perpendicular plane.
  * @customfunction STRESS_MOHR_POLE
- * @param {any[][]} sa sa
- * @param {any[][]} ta ta
- * @param {any[][]} A A
- * @param {any[][]} sb sb
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#STRESS_MOHR_POLE
+ * @param {any[][]} sa Normal stress on plane A (kPa)
+ * @param {any[][]} ta Shear stress on plane A (kPa)
+ * @param {any[][]} A Angle of plane A (degrees)
+ * @param {any[][]} sb Normal stress on the perpendicular plane (kPa)
  * @returns {any[][]} Result (single value, row or table).
  */
 function stress_Mohr_pole(sa, ta, A, sb) {
@@ -746,8 +818,9 @@ function stress_Mohr_pole(sa, ta, A, sb) {
 /**
  * Plotting points {σ, τ} of a Mohr circle with centre sm and radius rValue (header + 21 points).
  * @customfunction STRESS_MOHRCIRCLE
- * @param {any[][]} sm sm
- * @param {any[][]} rValue rValue
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#STRESS_MOHRCIRCLE
+ * @param {any[][]} sm Centre of the circle (kPa)
+ * @param {any[][]} rValue Radius of the circle (kPa)
  * @returns {any[][]} Result (single value, row or table).
  */
 function stress_Mohrcircle(sm, rValue) {
@@ -757,7 +830,8 @@ function stress_Mohrcircle(sm, rValue) {
 /**
  * Tangent of an angle in degrees.
  * @customfunction TAND
- * @param {any[][]} X X
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#TAND
+ * @param {any[][]} X Angle (degrees)
  * @returns {any[][]} Result (single value, row or table).
  */
 function tand(X) {
@@ -767,12 +841,13 @@ function tand(X) {
 /**
  * Plotting coordinates of stress vectors along segment ptA–ptB (rows separated by #N/A). Inputs: sigA, sigB {normal, shear}, M divisions, s display scale.
  * @customfunction VECTOR_LINE
- * @param {any[][]} ptA ptA (point {x, y})
- * @param {any[][]} ptB ptB (point {x, y})
- * @param {any[][]} sigA sigA (point {x, y})
- * @param {any[][]} sigB sigB (point {x, y})
- * @param {any[][]} M M
- * @param {any[][]} s s
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#VECTOR_LINE
+ * @param {any[][]} ptA Segment start {x, y}
+ * @param {any[][]} ptB Segment end {x, y}
+ * @param {any[][]} sigA Stresses at A {normal, shear}
+ * @param {any[][]} sigB Stresses at B {normal, shear}
+ * @param {any[][]} M Number of vectors drawn along the segment
+ * @param {any[][]} s Display scale (length per unit stress)
  * @returns {any[][]} Result (single value, row or table).
  */
 function vector_line(ptA, ptB, sigA, sigB, M, s) {
@@ -782,9 +857,10 @@ function vector_line(ptA, ptB, sigA, sigB, M, s) {
 /**
  * Hydrostatic pore pressure at depth below the water table (0 above it). Optional unitWeight, default 9.81 kN/m³.
  * @customfunction WATER_PRESSURE
- * @param {any[][]} depth depth
- * @param {any[][]} waterTableDepth waterTableDepth
- * @param {any[][]} [unitWeight] unitWeight (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#WATER_PRESSURE
+ * @param {any[][]} depth Depth below the ground surface (m)
+ * @param {any[][]} waterTableDepth Depth of the water table below the ground surface (m)
+ * @param {any[][]} [unitWeight] Unit weight of water, optional, default 9.81 kN/m³
  * @returns {any[][]} Result (single value, row or table).
  */
 function water_pressure(depth, waterTableDepth, unitWeight) {
@@ -794,9 +870,10 @@ function water_pressure(depth, waterTableDepth, unitWeight) {
 /**
  * Strip-load stress ratios in the order {sx, sy, sxy} (retaining-wall convention). Inputs: B full width, X offset, Y depth.
  * @customfunction ELASTIC_STRIPLOAD_XY
- * @param {any[][]} B Width
- * @param {any[][]} X X
- * @param {any[][]} Y Y
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#ELASTIC_STRIPLOAD_XY
+ * @param {any[][]} B Full width of the strip (m)
+ * @param {any[][]} X Horizontal offset from the strip centre (m)
+ * @param {any[][]} Y Depth (m)
  * @returns {any[][]} Result (single value, row or table).
  */
 function elastic_stripload_xy(B, X, Y) {
@@ -806,11 +883,12 @@ function elastic_stripload_xy(B, X, Y) {
 /**
  * Plotting points of a circle or arc (header + n+1 points). Inputs: pt centre {x, y}, rValue radius, optional ta_, tb_ start/end angles (deg), n_ points (default 100).
  * @customfunction CIRCLE
- * @param {any[][]} pt pt (point {x, y})
- * @param {any[][]} rValue rValue
- * @param {any[][]} [ta_] ta_ (optional)
- * @param {any[][]} [tb_] tb_ (optional)
- * @param {any[][]} [n_] n_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CIRCLE
+ * @param {any[][]} pt Centre {x, y}
+ * @param {any[][]} rValue Radius
+ * @param {any[][]} [ta_] Start angle (degrees), optional, default 0
+ * @param {any[][]} [tb_] End angle (degrees), optional, default 360
+ * @param {any[][]} [n_] Number of segments, optional, default 100
  * @returns {any[][]} Result (single value, row or table).
  */
 function circle(pt, rValue, ta_, tb_, n_) {
@@ -820,9 +898,10 @@ function circle(pt, rValue, ta_, tb_, n_) {
 /**
  * LCPC CPT pile parameters {category, kc, β, qs max (MPa)}. Inputs: qc (MPa), soil (clay, silt, sand, gravel, chalk), pile (drilled, cast, steel, concrete).
  * @customfunction CLASSIFY_CPT_LCPC
- * @param {any[][]} qc qc
- * @param {any[][]} soil Soil type (text)
- * @param {any[][]} pile Pile type (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CLASSIFY_CPT_LCPC
+ * @param {any[][]} qc Cone resistance qc (MPa)
+ * @param {any[][]} soil "clay", "silt", "sand", "gravel" or "chalk"
+ * @param {any[][]} pile Pile type: "drilled", "cast", "steel" or "concrete"
  * @returns {any[][]} Result (single value, row or table).
  */
 function classify_CPT_LCPC(qc, soil, pile) {
@@ -832,9 +911,10 @@ function classify_CPT_LCPC(qc, soil, pile) {
 /**
  * LCPC pressuremeter pile parameters {kp, shaft-friction curve number}. Inputs: pl limit pressure (MPa), soil (clay … rock), pile installation type.
  * @customfunction CLASSIFY_PMT_LCPC
- * @param {any[][]} pl pl
- * @param {any[][]} soil Soil type (text)
- * @param {any[][]} pile Pile type (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CLASSIFY_PMT_LCPC
+ * @param {any[][]} pl Limit pressure pl (MPa)
+ * @param {any[][]} soil Soil type ("clay" … "rock")
+ * @param {any[][]} pile Pile installation type
  * @returns {any[][]} Result (single value, row or table).
  */
 function classify_PMT_LCPC(pl, soil, pile) {
@@ -844,24 +924,28 @@ function classify_PMT_LCPC(pl, soil, pile) {
 /**
  * Average CPT qc below a footing: D to D + 1.5B (meyerhof) or D to D + B (robertson). Inputs: z, qc columns, D, B, author.
  * @customfunction CPT_AVERAGE_QC
- * @param {any[][]} z Depth (column of values)
- * @param {any[][]} qc qc (column of values)
- * @param {any[][]} D Depth
- * @param {any[][]} B Width
- * @param {any[][]} author Method name (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CPT_AVERAGE_QC
+ * @param {any[][]} z Column of depths (m)
+ * @param {any[][]} qc Column of cone resistances qc
+ * @param {any[][]} D Footing depth (m)
+ * @param {any[][]} B Footing width (m)
+ * @param {any[][]} author "meyerhof" (D to D + 1.5B) or "robertson" (D to D + B)
  * @returns {any[][]} Result (single value, row or table).
  */
 function CPT_average_qc(z, qc, D, B, author) {
-  return safe(() => G.CPT_average_qc(colNum(z), colNum(qc), num(D), num(B), str(author)));
+  const z_c = colNum(z);
+  const qc_c = colNum(qc);
+  return safeLifted(() => lift((e_z, e_qc, e_D, e_B, e_author) => G.CPT_average_qc(e_z, e_qc, num(e_D), num(e_B), e_author), [z_c, qc_c, D, B, author], [0, 1]));
 }
 
 /**
  * Meyerhof CPT bearing factor with water-table corrections Cw1, Cw2. Inputs: B, D, dw water depth, optional m (any value selects the 12.19 divisor).
  * @customfunction CPT_BEARING_MEYERHOF_K
- * @param {any[][]} B Width
- * @param {any[][]} D Depth
- * @param {any[][]} dw dw
- * @param {any[][]} [m] m (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CPT_BEARING_MEYERHOF_K
+ * @param {any[][]} B Footing width (m)
+ * @param {any[][]} D Footing depth (m)
+ * @param {any[][]} dw Depth of the water table (m)
+ * @param {any[][]} [m] Optional: any value selects the 12.19 divisor instead of 40
  * @returns {any[][]} Result (single value, row or table).
  */
 function CPT_bearing_Meyerhof_k(B, D, dw, m) {
@@ -871,10 +955,11 @@ function CPT_bearing_Meyerhof_k(B, D, dw, m) {
 /**
  * Robertson CPT bearing factor k from chart fits. Inputs: B, D, shape (square, circular), density (dense, loose).
  * @customfunction CPT_BEARING_ROBERTSON_K
- * @param {any[][]} B Width
- * @param {any[][]} D Depth
- * @param {any[][]} shape shape (text)
- * @param {any[][]} density density (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CPT_BEARING_ROBERTSON_K
+ * @param {any[][]} B Footing width (m)
+ * @param {any[][]} D Footing depth (m)
+ * @param {any[][]} shape "square" or "circular"
+ * @param {any[][]} density "dense" or "loose"
  * @returns {any[][]} Result (single value, row or table).
  */
 function CPT_bearing_Robertson_k(B, D, shape, density) {
@@ -884,10 +969,11 @@ function CPT_bearing_Robertson_k(B, D, shape, density) {
 /**
  * Friction angle (deg) from CPT qc. Inputs: z depth, qc, g unit weight (consistent units), author_: robertson, kulhawy, ricceri, lee.
  * @customfunction CPT_FRICTION_ANGLE
- * @param {any[][]} z Depth
- * @param {any[][]} qc qc
- * @param {any[][]} g Unit weight
- * @param {any[][]} author_ Method name (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CPT_FRICTION_ANGLE
+ * @param {any[][]} z Depth (m)
+ * @param {any[][]} qc Cone resistance qc (same unit as γ·z, so qc/σv is dimensionless)
+ * @param {any[][]} g Unit weight γ (consistent with qc and z)
+ * @param {any[][]} author_ "robertson", "kulhawy", "ricceri" or "lee"
  * @returns {any[][]} Result (single value, row or table).
  */
 function CPT_friction_angle(z, qc, g, author_) {
@@ -897,7 +983,8 @@ function CPT_friction_angle(z, qc, g, author_) {
 /**
  * Layer thicknesses from an Olsen SCN profile (header + thickness, SCN+3). Input: cpt table with depth in column 1 and SCN in column 6.
  * @customfunction CPT_OLSEN_LAYERS
- * @param {any[][]} cpt cpt (table)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CPT_OLSEN_LAYERS
+ * @param {any[][]} cpt Output table of CPT_Olsen_SCN with depth in column 1 and SCN in column 6
  * @returns {any[][]} Result (single value, row or table).
  */
 function CPT_Olsen_layers(cpt) {
@@ -907,12 +994,13 @@ function CPT_Olsen_layers(cpt) {
 /**
  * Olsen soil classification number (SCN) for a CPT profile: {Qn, Fr, SCN, name}. Inputs: dqs (depth, qc, fs), pa, n exponent, g, gw, dw.
  * @customfunction CPT_OLSEN_SCN
- * @param {any[][]} dqs dqs (table)
- * @param {any[][]} pa Atmospheric pressure
- * @param {any[][]} n n
- * @param {any[][]} g Unit weight
- * @param {any[][]} gw gw
- * @param {any[][]} dw dw
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CPT_OLSEN_SCN
+ * @param {any[][]} dqs Three-column table {depth, qc, fs}
+ * @param {any[][]} pa Atmospheric pressure (same unit as qc)
+ * @param {any[][]} n Stress exponent for normalization
+ * @param {any[][]} g Total unit weight of the soil
+ * @param {any[][]} gw Unit weight of water
+ * @param {any[][]} dw Depth of the water table
  * @returns {any[][]} Result (single value, row or table).
  */
 function CPT_Olsen_SCN(dqs, pa, n, g, gw, dw) {
@@ -922,8 +1010,9 @@ function CPT_Olsen_SCN(dqs, pa, n, g, gw, dw) {
 /**
  * Helper for CPT_Olsen_SCN: zone index (1–7) for one point. Inputs: Qt normalized tip resistance, Fr friction ratio (%).
  * @customfunction CPT_OLSEN_SCN_ROW
- * @param {any[][]} Qt Qt
- * @param {any[][]} Fr Fr
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CPT_OLSEN_SCN_ROW
+ * @param {any[][]} Qt Normalized tip resistance
+ * @param {any[][]} Fr Friction ratio (%)
  * @returns {any[][]} Result (single value, row or table).
  */
 function CPT_Olsen_SCN_row(Qt, Fr) {
@@ -933,8 +1022,9 @@ function CPT_Olsen_SCN_row(Qt, Fr) {
 /**
  * Boundary curve A–H of the Robertson CPT classification chart: Qt at friction ratio x_ (%). sel: letter of the curve.
  * @customfunction CPT_ROBERTSON_CLASSIFICATION_CHART
- * @param {any[][]} x_ x_
- * @param {any[][]} sel sel (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CPT_ROBERTSON_CLASSIFICATION_CHART
+ * @param {any[][]} x_ Friction ratio Fr (%)
+ * @param {any[][]} sel Boundary curve letter "A" … "H"
  * @returns {any[][]} Result (single value, row or table).
  */
 function CPT_Robertson_classification_chart(x_, sel) {
@@ -944,7 +1034,8 @@ function CPT_Robertson_classification_chart(x_, sel) {
 /**
  * Layer thicknesses from Robertson SBT and SBT(Ic) profiles. Input: cpt table with depth in column 1, SBT in column 6, SBT(Ic) in column 9.
  * @customfunction CPT_ROBERTSON_LAYERS
- * @param {any[][]} cpt cpt (table)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CPT_ROBERTSON_LAYERS
+ * @param {any[][]} cpt Output table of CPT_Robertson_SBT (depth in column 1, SBT in column 6, SBT(Ic) in column 9)
  * @returns {any[][]} Result (single value, row or table).
  */
 function CPT_Robertson_layers(cpt) {
@@ -954,12 +1045,13 @@ function CPT_Robertson_layers(cpt) {
 /**
  * Robertson soil behaviour type for a CPT profile: {Qn, Fr, SBT, name, Ic, SBT(Ic), name}. Inputs: dqs (depth, qc, fs), pa, n exponent, g, gw, dw.
  * @customfunction CPT_ROBERTSON_SBT
- * @param {any[][]} dqs dqs (table)
- * @param {any[][]} pa Atmospheric pressure
- * @param {any[][]} n n
- * @param {any[][]} g Unit weight
- * @param {any[][]} gw gw
- * @param {any[][]} dw dw
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CPT_ROBERTSON_SBT
+ * @param {any[][]} dqs Three-column table {depth, qc, fs}
+ * @param {any[][]} pa Atmospheric pressure (same unit as qc)
+ * @param {any[][]} n Stress exponent for normalization
+ * @param {any[][]} g Total unit weight of the soil
+ * @param {any[][]} gw Unit weight of water
+ * @param {any[][]} dw Depth of the water table
  * @returns {any[][]} Result (single value, row or table).
  */
 function CPT_Robertson_SBT(dqs, pa, n, g, gw, dw) {
@@ -969,8 +1061,9 @@ function CPT_Robertson_SBT(dqs, pa, n, g, gw, dw) {
 /**
  * Helper for CPT_Robertson_SBT: SBT zone (1–9, 0 = outside chart) for one point. Inputs: Qt_, Fr_ (%).
  * @customfunction CPT_ROBERTSON_SBT_ROW
- * @param {any[][]} [Qt_] Qt_ (optional)
- * @param {any[][]} [Fr_] Fr_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CPT_ROBERTSON_SBT_ROW
+ * @param {any[][]} [Qt_] Normalized tip resistance
+ * @param {any[][]} [Fr_] Friction ratio (%)
  * @returns {any[][]} Result (single value, row or table).
  */
 function CPT_Robertson_SBT_row(Qt_, Fr_) {
@@ -980,13 +1073,14 @@ function CPT_Robertson_SBT_row(Qt_, Fr_) {
 /**
  * Schmertmann settlement from a CPT profile (total settlement + layer table). Inputs: zqc (depth, qc), k = E/qc, B, D, L, qn net pressure, g unit weight.
  * @customfunction CPT_SETTLEMENT
- * @param {any[][]} zqc zqc (table)
- * @param {any[][]} k k
- * @param {any[][]} B Width
- * @param {any[][]} D Depth
- * @param {any[][]} L Length
- * @param {any[][]} qn qn
- * @param {any[][]} g Unit weight
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CPT_SETTLEMENT
+ * @param {any[][]} zqc Two-column table {depth (m), qc}
+ * @param {any[][]} k Modulus factor E/qc (e.g. 2.5 square, 3.5 strip)
+ * @param {any[][]} B Footing width (m)
+ * @param {any[][]} D Footing depth (m)
+ * @param {any[][]} L Footing length (m)
+ * @param {any[][]} qn Net applied pressure (same unit as qc)
+ * @param {any[][]} g Unit weight above footing level
  * @returns {any[][]} Result (single value, row or table).
  */
 function CPT_settlement(zqc, k, B, D, L, qn, g) {
@@ -996,12 +1090,13 @@ function CPT_settlement(zqc, k, B, D, L, qn, g) {
 /**
  * Schmertmann strain influence factor Iz at depth z (accepts a column). Inputs: z, B, D, L, qn net pressure, g unit weight.
  * @customfunction CPT_SETTLEMENT_IZ
- * @param {any[][]} z Depth
- * @param {any[][]} B Width
- * @param {any[][]} D Depth
- * @param {any[][]} L Length
- * @param {any[][]} qn qn
- * @param {any[][]} g Unit weight
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CPT_SETTLEMENT_IZ
+ * @param {any[][]} z Depth(s) (m)
+ * @param {any[][]} B Footing width (m)
+ * @param {any[][]} D Footing depth (m)
+ * @param {any[][]} L Footing length (m)
+ * @param {any[][]} qn Net applied pressure
+ * @param {any[][]} g Unit weight above footing level
  * @returns {any[][]} Result (single value, row or table).
  */
 function CPT_settlement_Iz(z, B, D, L, qn, g) {
@@ -1011,8 +1106,9 @@ function CPT_settlement_Iz(z, B, D, L, qn, g) {
 /**
  * Perpendicular distances from point M {x, y} to the line through each segment of polyline pl.
  * @customfunction DISTANCE_POINT_POLYLINE
- * @param {any[][]} M M (point {x, y})
- * @param {any[][]} pl pl (two-column x, y list)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#DISTANCE_POINT_POLYLINE
+ * @param {any[][]} M Point {x, y}
+ * @param {any[][]} pl Polyline vertices (two columns x, y)
  * @returns {any[][]} Result (single value, row or table).
  */
 function distance_point_polyline(M, pl) {
@@ -1022,9 +1118,10 @@ function distance_point_polyline(M, pl) {
 /**
  * Bilinear interpolation in a 2-D table. Inputs: x, Y query; XY table with x values in row 1 and y values in column 1 (ascending).
  * @customfunction INTERPOLATE_TABLE
- * @param {any[][]} x x
- * @param {any[][]} Y Y
- * @param {any[][]} XY XY (table)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#INTERPOLATE_TABLE
+ * @param {any[][]} x Value along the first row of the table
+ * @param {any[][]} Y Value along the first column of the table
+ * @param {any[][]} XY Table: x values in row 1, y values in column 1 (ascending), data inside
  * @returns {any[][]} Result (single value, row or table).
  */
 function interpolate_table(x, Y, XY) {
@@ -1035,9 +1132,10 @@ function interpolate_table(x, Y, XY) {
 /**
  * Intersection points {x, y} of a polyline with a circle. Inputs: pline vertices, center {x, y}, radius.
  * @customfunction INTERSECTION_POLYLINE_CIRCLE
- * @param {any[][]} pline pline (two-column x, y list)
- * @param {any[][]} center center (point {x, y})
- * @param {any[][]} radius radius
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#INTERSECTION_POLYLINE_CIRCLE
+ * @param {any[][]} pline Polyline vertices (two columns x, y)
+ * @param {any[][]} center Circle centre {x, y}
+ * @param {any[][]} radius Circle radius
  * @returns {any[][]} Result (single value, row or table).
  */
 function intersection_polyline_circle(pline, center, radius) {
@@ -1047,9 +1145,10 @@ function intersection_polyline_circle(pline, center, radius) {
 /**
  * Intersections of polyline pl with polyline ql: {parameter, x, y}. Optional m keeps the m points with the largest x.
  * @customfunction INTERSECTION_POLYLINE_POLYLINE
- * @param {any[][]} pl pl (two-column x, y list)
- * @param {any[][]} ql ql (two-column x, y list)
- * @param {any[][]} [m] m (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#INTERSECTION_POLYLINE_POLYLINE
+ * @param {any[][]} pl First polyline (two columns x, y)
+ * @param {any[][]} ql Second polyline (two columns x, y)
+ * @param {any[][]} [m] Optional: keep only the m intersections with the largest x
  * @returns {any[][]} Result (single value, row or table).
  */
 function intersection_polyline_polyline(pl, ql, m) {
@@ -1059,7 +1158,8 @@ function intersection_polyline_polyline(pl, ql, m) {
 /**
  * Helper for intersection_polyline_polyline: segment parameter of the intersection between one segment and a polyline. Input: flattened row (segment, then polyline).
  * @customfunction INTERSECTION_SEGMENT_POLYLINE
- * @param {any[][]} row row (column of values)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#INTERSECTION_SEGMENT_POLYLINE
+ * @param {any[][]} row Flattened row: segment end points, then the polyline coordinates
  * @returns {any[][]} Result (single value, row or table).
  */
 function intersection_segment_polyline(row) {
@@ -1069,12 +1169,13 @@ function intersection_segment_polyline(row) {
 /**
  * Intersection {x, y} of a log spiral (centre pt, radius rValue, angle phi) with segment AB_ by Newton iteration.
  * @customfunction INTERSECTION_SPIRAL_SEGMENT
- * @param {any[][]} AB_ AB_ (two-column x, y list)
- * @param {any[][]} pt pt (point {x, y})
- * @param {any[][]} rValue rValue
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} [x_] x_ (optional)
- * @param {any[][]} [iter_] iter_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#INTERSECTION_SPIRAL_SEGMENT
+ * @param {any[][]} AB_ Segment end points (2 rows × 2 columns)
+ * @param {any[][]} pt Spiral centre {x, y}
+ * @param {any[][]} rValue Spiral initial radius
+ * @param {any[][]} phi Friction angle φ of the spiral (degrees)
+ * @param {any[][]} [x_] Optional starting guess
+ * @param {any[][]} [iter_] Leave empty (internal counter)
  * @returns {any[][]} Result (single value, row or table).
  */
 function intersection_spiral_segment(AB_, pt, rValue, phi, x_, iter_) {
@@ -1084,11 +1185,12 @@ function intersection_spiral_segment(AB_, pt, rValue, phi, x_, iter_) {
 /**
  * Broms lateral capacity of a short pile in cohesionless soil: {V; depth of max moment; Mmax}. Inputs: D embedment, phi, g, B diameter, e load eccentricity.
  * @customfunction LATERALPILE_BROMS_COHESIONLESS
- * @param {any[][]} D Depth
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} g Unit weight
- * @param {any[][]} B Width
- * @param {any[][]} e e
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#LATERALPILE_BROMS_COHESIONLESS
+ * @param {any[][]} D Embedded length of the pile (m)
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} g Unit weight γ (kN/m³)
+ * @param {any[][]} B Pile diameter (m)
+ * @param {any[][]} e Height of the load above the ground (m)
  * @returns {any[][]} Result (single value, row or table).
  */
 function lateralpile_Broms_cohesionless(D, phi, g, B, e) {
@@ -1098,10 +1200,11 @@ function lateralpile_Broms_cohesionless(D, phi, g, B, e) {
 /**
  * Broms short pile in cohesive soil: {required D; rotation depth Dr; depth of max moment; Mmax}. Inputs: V load, e eccentricity, Su, B diameter.
  * @customfunction LATERALPILE_BROMS_COHESIVE
- * @param {any[][]} V V
- * @param {any[][]} e e
- * @param {any[][]} Su Su
- * @param {any[][]} B Width
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#LATERALPILE_BROMS_COHESIVE
+ * @param {any[][]} V Lateral load (kN)
+ * @param {any[][]} e Height of the load above the ground (m)
+ * @param {any[][]} Su Undrained shear strength (kPa)
+ * @param {any[][]} B Pile diameter (m)
  * @returns {any[][]} Result (single value, row or table).
  */
 function lateralpile_Broms_cohesive(V, e, Su, B) {
@@ -1111,11 +1214,12 @@ function lateralpile_Broms_cohesive(V, e, Su, B) {
 /**
  * Reaction, shear and moment diagrams along a Broms short pile in cohesionless soil (header + 100 points). Inputs: D, phi, g, B, e.
  * @customfunction LATERALPILE_COHESIONLESS_REACTION_SHEAR_MOMENT
- * @param {any[][]} D Depth
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} g Unit weight
- * @param {any[][]} B Width
- * @param {any[][]} e e
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#LATERALPILE_COHESIONLESS_REACTION_SHEAR_MOMENT
+ * @param {any[][]} D Embedded length (m)
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} g Unit weight γ (kN/m³)
+ * @param {any[][]} B Pile diameter (m)
+ * @param {any[][]} e Height of the load above the ground (m)
  * @returns {any[][]} Result (single value, row or table).
  */
 function lateralpile_cohesionless_reaction_shear_moment(D, phi, g, B, e) {
@@ -1125,12 +1229,13 @@ function lateralpile_cohesionless_reaction_shear_moment(D, phi, g, B, e) {
 /**
  * Reaction, shear and moment diagrams along a Broms short pile in cohesive soil. Inputs: V, e, Su, B, optional D_ and Dr_ (default from Broms).
  * @customfunction LATERALPILE_COHESIVE_REACTION_SHEAR_MOMENT
- * @param {any[][]} V V
- * @param {any[][]} e e
- * @param {any[][]} Su Su
- * @param {any[][]} B Width
- * @param {any[][]} [D_] D_ (optional)
- * @param {any[][]} [Dr_] Dr_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#LATERALPILE_COHESIVE_REACTION_SHEAR_MOMENT
+ * @param {any[][]} V Lateral load (kN)
+ * @param {any[][]} e Height of the load above the ground (m)
+ * @param {any[][]} Su Undrained shear strength (kPa)
+ * @param {any[][]} B Pile diameter (m)
+ * @param {any[][]} [D_] Embedded length (m), optional (default from Broms)
+ * @param {any[][]} [Dr_] Rotation depth (m), optional (default from Broms)
  * @returns {any[][]} Result (single value, row or table).
  */
 function lateralpile_cohesive_reaction_shear_moment(V, e, Su, B, D_, Dr_) {
@@ -1140,12 +1245,13 @@ function lateralpile_cohesive_reaction_shear_moment(V, e, Su, B, D_, Dr_) {
 /**
  * Plotting points of a log spiral r = rValue·exp(−θ·tanφ). Inputs: pt centre, rValue, phi (deg), optional ta_, tb_ angles (deg), n_ points (default 100).
  * @customfunction LOGSPIRAL
- * @param {any[][]} pt pt (point {x, y})
- * @param {any[][]} rValue rValue
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} [ta_] ta_ (optional)
- * @param {any[][]} [tb_] tb_ (optional)
- * @param {any[][]} [n_] n_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#LOGSPIRAL
+ * @param {any[][]} pt Centre {x, y}
+ * @param {any[][]} rValue Initial radius r0
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} [ta_] Start angle (degrees), optional, default 0
+ * @param {any[][]} [tb_] End angle (degrees), optional, default −180
+ * @param {any[][]} [n_] Number of segments, optional, default 100
  * @returns {any[][]} Result (single value, row or table).
  */
 function logSpiral(pt, rValue, phi, ta_, tb_, n_) {
@@ -1155,11 +1261,12 @@ function logSpiral(pt, rValue, phi, ta_, tb_, n_) {
 /**
  * Schmertmann CPT pile capacity: ultimate, shaft, tip, average fs and qc. Inputs: table (z, qc, fs, optional soil), A tip area, p perimeter, L length, pile (steel, concrete, timber).
  * @customfunction PILE_CAPACITY_CPT_SCHMERTMAN
- * @param {any[][]} z_qc_fs_soil z_qc_fs_soil (table)
- * @param {any[][]} A A
- * @param {any[][]} p p
- * @param {any[][]} L Length
- * @param {any[][]} pile Pile type (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PILE_CAPACITY_CPT_SCHMERTMAN
+ * @param {any[][]} z_qc_fs_soil Table {depth (m), qc, fs, optional soil ("clay", "silt", "sand", "gravel"; default sand)}
+ * @param {any[][]} A Pile tip area (m²)
+ * @param {any[][]} p Pile perimeter (m)
+ * @param {any[][]} L Pile length (m)
+ * @param {any[][]} pile "steel", "concrete" or "timber"
  * @returns {any[][]} Result (single value, row or table).
  */
 function pile_capacity_CPT_Schmertman(z_qc_fs_soil, A, p, L, pile) {
@@ -1169,12 +1276,13 @@ function pile_capacity_CPT_Schmertman(z_qc_fs_soil, A, p, L, pile) {
 /**
  * Shaft resistance by the α method. Inputs: z, Su columns, pa atmospheric pressure, p perimeter, L length, author (terzaghi, reese).
  * @customfunction PILE_SHAFT_ALPHA
- * @param {any[][]} z Depth (column of values)
- * @param {any[][]} Su Su (column of values)
- * @param {any[][]} pa Atmospheric pressure
- * @param {any[][]} p p
- * @param {any[][]} L Length
- * @param {any[][]} author Method name (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PILE_SHAFT_ALPHA
+ * @param {any[][]} z Column of depths (m)
+ * @param {any[][]} Su Column of undrained shear strengths (kPa)
+ * @param {any[][]} pa Atmospheric pressure (kPa, about 101)
+ * @param {any[][]} p Pile perimeter (m)
+ * @param {any[][]} L Pile length (m)
+ * @param {any[][]} author "terzaghi" or "reese"
  * @returns {any[][]} Result (single value, row or table).
  */
 function pile_shaft_alpha(z, Su, pa, p, L, author) {
@@ -1184,8 +1292,9 @@ function pile_shaft_alpha(z, Su, pa, p, L, author) {
 /**
  * Adhesion factor α. Inputs: Su = Su/pa (normalized), author (terzaghi, reese).
  * @customfunction PILE_SIDEFRICTION_ALPHA
- * @param {any[][]} Su Su
- * @param {any[][]} author Method name (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PILE_SIDEFRICTION_ALPHA
+ * @param {any[][]} Su Normalized strength Su/pa
+ * @param {any[][]} author "terzaghi" or "reese"
  * @returns {any[][]} Result (single value, row or table).
  */
 function pile_sidefriction_alpha(Su, author) {
@@ -1195,8 +1304,9 @@ function pile_sidefriction_alpha(Su, author) {
 /**
  * λ coefficient for pile shaft friction (Vijayvergiya–Focht chart fit). Input: D_ pile length in m (or ft if ft is supplied).
  * @customfunction PILE_SIDEFRICTION_LAMBDA
- * @param {any[][]} D_ D_
- * @param {any[][]} [ft] ft (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PILE_SIDEFRICTION_LAMBDA
+ * @param {any[][]} D_ Pile length (m, or ft if ft is supplied)
+ * @param {any[][]} [ft] Optional: any value means D_ is in feet
  * @returns {any[][]} Result (single value, row or table).
  */
 function pile_sidefriction_lambda(D_, ft) {
@@ -1206,9 +1316,10 @@ function pile_sidefriction_lambda(D_, ft) {
 /**
  * Meyerhof ultimate tip pressure. Inputs: pa atmospheric pressure, cValue cohesion, phi (deg).
  * @customfunction PILE_TIP_MEYERHOF
- * @param {any[][]} pa Atmospheric pressure
- * @param {any[][]} cValue cValue
- * @param {any[][]} phi Friction angle (degrees)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PILE_TIP_MEYERHOF
+ * @param {any[][]} pa Atmospheric pressure (kPa)
+ * @param {any[][]} cValue Cohesion c (kPa)
+ * @param {any[][]} phi Friction angle φ (degrees)
  * @returns {any[][]} Result (single value, row or table).
  */
 function pile_tip_Meyerhof(pa, cValue, phi) {
@@ -1218,7 +1329,8 @@ function pile_tip_Meyerhof(pa, cValue, phi) {
 /**
  * Meyerhof pile tip factors {Nq; Nc} for phi (deg).
  * @customfunction PILE_TIP_MEYERHOF_FACTOR
- * @param {any[][]} phi Friction angle (degrees)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PILE_TIP_MEYERHOF_FACTOR
+ * @param {any[][]} phi Friction angle φ (degrees)
  * @returns {any[][]} Result (single value, row or table).
  */
 function pile_tip_meyerhof_factor(phi) {
@@ -1228,11 +1340,12 @@ function pile_tip_meyerhof_factor(phi) {
 /**
  * Vesic ultimate tip pressure with reduced rigidity index: {qu; Nq; Nc; Irr; σm}. Inputs: sv vertical stress, pa, cValue cohesion, optional phi_ (deg), Dr_ relative density.
  * @customfunction PILE_TIP_VESIC
- * @param {any[][]} sv sv
- * @param {any[][]} pa Atmospheric pressure
- * @param {any[][]} cValue cValue
- * @param {any[][]} [phi_] phi_ (optional)
- * @param {any[][]} [Dr_] Dr_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PILE_TIP_VESIC
+ * @param {any[][]} sv Vertical effective stress at the tip (kPa)
+ * @param {any[][]} pa Atmospheric pressure (kPa)
+ * @param {any[][]} cValue Cohesion c (kPa)
+ * @param {any[][]} [phi_] Friction angle φ (degrees), optional, default 0
+ * @param {any[][]} [Dr_] Relative density (fraction), optional, default 0.1
  * @returns {any[][]} Result (single value, row or table).
  */
 function pile_tip_vesic(sv, pa, cValue, phi_, Dr_) {
@@ -1242,8 +1355,9 @@ function pile_tip_vesic(sv, pa, cValue, phi_, Dr_) {
 /**
  * Vesic pile tip factors {Nq; Nc}. Inputs: phi (deg), Ir rigidity index.
  * @customfunction PILE_TIP_VESIC_FACTOR
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} Ir Ir
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PILE_TIP_VESIC_FACTOR
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} Ir Rigidity index Ir
  * @returns {any[][]} Result (single value, row or table).
  */
 function pile_tip_vesic_factor(phi, Ir) {
@@ -1253,8 +1367,9 @@ function pile_tip_vesic_factor(phi, Ir) {
 /**
  * Ménard rheological factor α. Inputs: soil (peat, clay, silt, sand, gravel, rock), Epl = E/pl ratio.
  * @customfunction PMT_ALPHA
- * @param {any[][]} soil Soil type (text)
- * @param {any[][]} Epl Epl
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PMT_ALPHA
+ * @param {any[][]} soil "peat", "clay", "silt", "sand", "gravel" or "rock"
+ * @param {any[][]} Epl Ratio E/pl
  * @returns {any[][]} Result (single value, row or table).
  */
 function PMT_alpha(soil, Epl) {
@@ -1264,10 +1379,11 @@ function PMT_alpha(soil, Epl) {
 /**
  * Equivalent limit pressure ple (geometric mean from D to D + 1.5B) and equivalent embedment De: {ple; De}. Inputs: z, pl columns, B, D.
  * @customfunction PMT_BEARING_LIMITPRESSURE
- * @param {any[][]} z Depth (column of values)
- * @param {any[][]} pl pl (column of values)
- * @param {any[][]} B Width
- * @param {any[][]} D Depth
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PMT_BEARING_LIMITPRESSURE
+ * @param {any[][]} z Column of test depths (m)
+ * @param {any[][]} pl Column of limit pressures pl
+ * @param {any[][]} B Footing width (m)
+ * @param {any[][]} D Footing depth (m)
  * @returns {any[][]} Result (single value, row or table).
  */
 function PMT_bearing_limitPressure(z, pl, B, D) {
@@ -1277,13 +1393,14 @@ function PMT_bearing_limitPressure(z, pl, B, D) {
 /**
  * Ménard ultimate bearing pressure from pressuremeter data. Inputs: z, pl columns, B, D, L, soil category (I, II, III, IIIA), g unit weight.
  * @customfunction PMT_BEARING_MENARD
- * @param {any[][]} z Depth (column of values)
- * @param {any[][]} pl pl (column of values)
- * @param {any[][]} B Width
- * @param {any[][]} D Depth
- * @param {any[][]} L Length
- * @param {any[][]} soil Soil type (text)
- * @param {any[][]} g Unit weight
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PMT_BEARING_MENARD
+ * @param {any[][]} z Column of test depths (m)
+ * @param {any[][]} pl Column of limit pressures pl
+ * @param {any[][]} B Footing width (m)
+ * @param {any[][]} D Footing depth (m)
+ * @param {any[][]} L Footing length (m)
+ * @param {any[][]} soil Ménard category "I", "II", "III" or "IIIA"
+ * @param {any[][]} g Unit weight above footing level
  * @returns {any[][]} Result (single value, row or table).
  */
 function PMT_bearing_Menard(z, pl, B, D, L, soil, g) {
@@ -1293,9 +1410,10 @@ function PMT_bearing_Menard(z, pl, B, D, L, soil, g) {
 /**
  * Ménard bearing factor k, interpolated between strip and square. Inputs: H = De/(B/2), BL = B/L, soil category (I, II, III, IIIA).
  * @customfunction PMT_BEARING_MENARD_K
- * @param {any[][]} H H
- * @param {any[][]} BL BL
- * @param {any[][]} soil Soil type (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PMT_BEARING_MENARD_K
+ * @param {any[][]} H Ratio De/(B/2)
+ * @param {any[][]} BL Shape ratio B/L
+ * @param {any[][]} soil Ménard category "I", "II", "III" or "IIIA"
  * @returns {any[][]} Result (single value, row or table).
  */
 function PMT_bearing_Menard_k(H, BL, soil) {
@@ -1305,8 +1423,9 @@ function PMT_bearing_Menard_k(H, BL, soil) {
 /**
  * Plotting lines of the 16 Ménard sub-layers below a footing. Inputs: B, D.
  * @customfunction PMT_LAYERS
- * @param {any[][]} B Width
- * @param {any[][]} D Depth
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PMT_LAYERS
+ * @param {any[][]} B Footing width (m)
+ * @param {any[][]} D Footing depth (m)
  * @returns {any[][]} Result (single value, row or table).
  */
 function PMT_layers(B, D) {
@@ -1316,8 +1435,9 @@ function PMT_layers(B, D) {
 /**
  * Step-profile plotting coordinates from depth/value columns. Inputs: x depths, y values.
  * @customfunction STEPPROFILE
- * @param {any[][]} x x (column of values)
- * @param {any[][]} y y (column of values)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#STEPPROFILE
+ * @param {any[][]} x Column of depths
+ * @param {any[][]} y Column of values
  * @returns {any[][]} Result (single value, row or table).
  */
 function stepProfile(x, y) {
@@ -1327,8 +1447,9 @@ function stepProfile(x, y) {
 /**
  * Alias of stepProfile for SPT profiles.
  * @customfunction SPT_STEPPROFILE
- * @param {any[][]} x x (column of values)
- * @param {any[][]} y y (column of values)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SPT_STEPPROFILE
+ * @param {any[][]} x Column of depths
+ * @param {any[][]} y Column of N values
  * @returns {any[][]} Result (single value, row or table).
  */
 function SPT_stepProfile(x, y) {
@@ -1338,8 +1459,9 @@ function SPT_stepProfile(x, y) {
 /**
  * Alias of stepProfile for CPT profiles.
  * @customfunction CPT_STEPPROFILE
- * @param {any[][]} x x (column of values)
- * @param {any[][]} y y (column of values)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CPT_STEPPROFILE
+ * @param {any[][]} x Column of depths
+ * @param {any[][]} y Column of CPT values
  * @returns {any[][]} Result (single value, row or table).
  */
 function CPT_stepProfile(x, y) {
@@ -1349,8 +1471,9 @@ function CPT_stepProfile(x, y) {
 /**
  * Alias of stepProfile for pressuremeter profiles.
  * @customfunction PMT_STAIRCASE
- * @param {any[][]} x x (column of values)
- * @param {any[][]} y y (column of values)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PMT_STAIRCASE
+ * @param {any[][]} x Column of depths
+ * @param {any[][]} y Column of pressuremeter values
  * @returns {any[][]} Result (single value, row or table).
  */
 function PMT_staircase(x, y) {
@@ -1360,7 +1483,8 @@ function PMT_staircase(x, y) {
 /**
  * Centroid and area of a polygon: {"Centroid =", xc, yc; "Area =", A, ""}. Input: vertices in two columns (first vertex may be repeated).
  * @customfunction POLYGON_AREA_CENTROID
- * @param {any[][]} polygon polygon (two-column x, y list)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#POLYGON_AREA_CENTROID
+ * @param {any[][]} polygon Vertices (two columns x, y); the first vertex may be repeated at the end
  * @returns {any[][]} Result (single value, row or table).
  */
 function polygon_area_centroid(polygon) {
@@ -1370,10 +1494,11 @@ function polygon_area_centroid(polygon) {
 /**
  * TRUE if point (x, y) lies below exactly one edge of the polygon (xa, ya) — vertical ray test.
  * @customfunction POLYGON_INSIDE
- * @param {any[][]} x x
- * @param {any[][]} y y
- * @param {any[][]} xa xa (column of values)
- * @param {any[][]} ya ya (column of values)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#POLYGON_INSIDE
+ * @param {any[][]} x x of the point
+ * @param {any[][]} y y of the point
+ * @param {any[][]} xa Column of polygon x coordinates
+ * @param {any[][]} ya Column of polygon y coordinates
  * @returns {any[][]} Result (single value, row or table).
  */
 function Polygon_inside(x, y, xa, ya) {
@@ -1385,8 +1510,9 @@ function Polygon_inside(x, y, xa, ya) {
 /**
  * Linear interpolation of y at X along a polyline (two columns), searching for the segment starting at or below X. Used for root finding.
  * @customfunction POLYLINE_SUBDIVIDE
- * @param {any[][]} X X
- * @param {any[][]} polyline polyline (two-column x, y list)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#POLYLINE_SUBDIVIDE
+ * @param {any[][]} X x value
+ * @param {any[][]} polyline Polyline vertices (two columns x, y)
  * @returns {any[][]} Result (single value, row or table).
  */
 function polyline_subdivide(X, polyline) {
@@ -1397,11 +1523,12 @@ function polyline_subdivide(X, polyline) {
 /**
  * Schmertmann strain influence factor at depth z. Inputs: Imax, B, za footing depth, optional BL_ (0 = square, 1 = strip).
  * @customfunction SETTLEMENT_SCHMERTMAN_FACTOR
- * @param {any[][]} z Depth
- * @param {any[][]} Imax Imax
- * @param {any[][]} B Width
- * @param {any[][]} za za
- * @param {any[][]} [BL_] BL_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SETTLEMENT_SCHMERTMAN_FACTOR
+ * @param {any[][]} z Depth (m)
+ * @param {any[][]} Imax Peak strain influence factor Izp
+ * @param {any[][]} B Footing width (m)
+ * @param {any[][]} za Depth of the footing base (m)
+ * @param {any[][]} [BL_] Optional shape: 0 = square/axisymmetric (default), 1 = strip
  * @returns {any[][]} Result (single value, row or table).
  */
 function settlement_Schmertman_factor(z, Imax, B, za, BL_) {
@@ -1411,12 +1538,13 @@ function settlement_Schmertman_factor(z, Imax, B, za, BL_) {
 /**
  * Factor of safety of a circular slip in undrained clay (φ = 0) using sector geometry. Inputs: pline ground surface, center, radius, cu, unit weight, detail (any value for details).
  * @customfunction SLOPE_CIRCLE_COHESIVE
- * @param {any[][]} pline pline (two-column x, y list)
- * @param {any[][]} center center (point {x, y})
- * @param {any[][]} radius radius
- * @param {any[][]} cu cu
- * @param {any[][]} unitweight unitweight
- * @param {any[][]} [detail] detail (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SLOPE_CIRCLE_COHESIVE
+ * @param {any[][]} pline Ground surface polyline (two columns x, y)
+ * @param {any[][]} center Circle centre {x, y}
+ * @param {any[][]} radius Circle radius (m)
+ * @param {any[][]} cu Undrained shear strength (kPa)
+ * @param {any[][]} unitweight Unit weight (kN/m³)
+ * @param {any[][]} [detail] Optional: any value returns the details table instead of FS only
  * @returns {any[][]} Result (single value, row or table).
  */
 function slope_circle_cohesive(pline, center, radius, cu, unitweight, detail) {
@@ -1426,9 +1554,10 @@ function slope_circle_cohesive(pline, center, radius, cu, unitweight, detail) {
 /**
  * Geometry of the soil mass above a circular slip: centroid, entry/exit points and angles, area. Inputs: pl ground polyline, center, radius.
  * @customfunction SLOPE_CIRCLE_POLYLINE
- * @param {any[][]} pl pl (two-column x, y list)
- * @param {any[][]} center center (point {x, y})
- * @param {any[][]} radius radius
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SLOPE_CIRCLE_POLYLINE
+ * @param {any[][]} pl Ground surface polyline (two columns x, y)
+ * @param {any[][]} center Circle centre {x, y}
+ * @param {any[][]} radius Circle radius
  * @returns {any[][]} Result (single value, row or table).
  */
 function slope_circle_polyline(pl, center, radius) {
@@ -1438,12 +1567,13 @@ function slope_circle_polyline(pl, center, radius) {
 /**
  * Factor of safety of a circular slip in undrained clay using polygon geometry. Inputs: pline, center, radius, cu, unit weight, detail (any value for details).
  * @customfunction SLOPE_CIRCLE_POLYLINE_COHESIVE
- * @param {any[][]} pline pline (two-column x, y list)
- * @param {any[][]} center center (point {x, y})
- * @param {any[][]} radius radius
- * @param {any[][]} cu cu
- * @param {any[][]} unitweight unitweight
- * @param {any[][]} [detail] detail (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SLOPE_CIRCLE_POLYLINE_COHESIVE
+ * @param {any[][]} pline Ground surface polyline (two columns x, y)
+ * @param {any[][]} center Circle centre {x, y}
+ * @param {any[][]} radius Circle radius (m)
+ * @param {any[][]} cu Undrained shear strength (kPa)
+ * @param {any[][]} unitweight Unit weight (kN/m³)
+ * @param {any[][]} [detail] Optional: any value returns the details table
  * @returns {any[][]} Result (single value, row or table).
  */
 function slope_circle_polyline_cohesive(pline, center, radius, cu, unitweight, detail) {
@@ -1453,13 +1583,14 @@ function slope_circle_polyline_cohesive(pline, center, radius, cu, unitweight, d
 /**
  * Friction circle method (c–φ soil): factor of safety and force polygon (labelled table). Inputs: pline, pt circle centre, rValue radius, coh, phi, g, opt_ (any value: alternative Taylor factor).
  * @customfunction SLOPE_FRICTION_CIRCLE
- * @param {any[][]} pline pline (two-column x, y list)
- * @param {any[][]} pt pt (point {x, y})
- * @param {any[][]} rValue rValue
- * @param {any[][]} coh Cohesion
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} g Unit weight
- * @param {any[][]} [opt_] opt_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SLOPE_FRICTION_CIRCLE
+ * @param {any[][]} pline Ground surface polyline (two columns x, y)
+ * @param {any[][]} pt Circle centre {x, y}
+ * @param {any[][]} rValue Circle radius (m)
+ * @param {any[][]} coh Cohesion c (kPa)
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} g Unit weight γ (kN/m³)
+ * @param {any[][]} [opt_] Optional: any value uses the alternative Taylor factor
  * @returns {any[][]} Result (single value, row or table).
  */
 function slope_friction_circle(pline, pt, rValue, coh, phi, g, opt_) {
@@ -1469,16 +1600,17 @@ function slope_friction_circle(pline, pt, rValue, coh, phi, g, opt_) {
 /**
  * Helper for slope_friction_circle: cohesion factor of safety for a trial frictional FS (accepts a column of FS).
  * @customfunction SLOPE_FRICTION_CIRCLE_FCT
- * @param {any[][]} FS FS
- * @param {any[][]} f f
- * @param {any[][]} coh Cohesion
- * @param {any[][]} w w
- * @param {any[][]} kr kr
- * @param {any[][]} rValue rValue
- * @param {any[][]} OD OD
- * @param {any[][]} DM DM
- * @param {any[][]} alpha Angle (degrees)
- * @param {any[][]} Lc Lc
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SLOPE_FRICTION_CIRCLE_FCT
+ * @param {any[][]} FS Trial frictional factor of safety (accepts a column)
+ * @param {any[][]} f Friction angle (radians)
+ * @param {any[][]} coh Cohesion c
+ * @param {any[][]} w Weight of the sliding mass
+ * @param {any[][]} kr Taylor factor k
+ * @param {any[][]} rValue Circle radius
+ * @param {any[][]} OD Distance used for the line of action of the weight
+ * @param {any[][]} DM Lever arm of the cohesion resultant
+ * @param {any[][]} alpha Direction of the cohesion resultant (radians)
+ * @param {any[][]} Lc Chord length
  * @returns {any[][]} Result (single value, row or table).
  */
 function slope_friction_circle_fct(FS, f, coh, w, kr, rValue, OD, DM, alpha, Lc) {
@@ -1488,8 +1620,9 @@ function slope_friction_circle_fct(FS, f, coh, w, kr, rValue, OD, DM, alpha, Lc)
 /**
  * Taylor friction-circle radius factor k for central angle t (radians). opt = 1 selects the alternative formula.
  * @customfunction SLOPE_FRICTION_CIRCLE_TAYLOR
- * @param {any[][]} t t
- * @param {any[][]} opt opt
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SLOPE_FRICTION_CIRCLE_TAYLOR
+ * @param {any[][]} t Central angle of the arc (radians)
+ * @param {any[][]} opt 1 selects the alternative formula
  * @returns {any[][]} Result (single value, row or table).
  */
 function slope_friction_circle_Taylor(t, opt) {
@@ -1499,16 +1632,17 @@ function slope_friction_circle_Taylor(t, opt) {
 /**
  * Residual FS − FSc for the friction circle method (same inputs as slope_friction_circle_fct).
  * @customfunction SLOPE_FRICTION_FS
- * @param {any[][]} FS FS
- * @param {any[][]} f f
- * @param {any[][]} coh Cohesion
- * @param {any[][]} w w
- * @param {any[][]} kr kr
- * @param {any[][]} rValue rValue
- * @param {any[][]} a a
- * @param {any[][]} DM DM
- * @param {any[][]} alpha Angle (degrees)
- * @param {any[][]} ab ab
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SLOPE_FRICTION_FS
+ * @param {any[][]} FS Trial factor of safety
+ * @param {any[][]} f Friction angle (radians)
+ * @param {any[][]} coh Cohesion c
+ * @param {any[][]} w Weight of the sliding mass
+ * @param {any[][]} kr Taylor factor k
+ * @param {any[][]} rValue Circle radius
+ * @param {any[][]} a Distance used for the line of action of the weight
+ * @param {any[][]} DM Lever arm of the cohesion resultant
+ * @param {any[][]} alpha Direction of the cohesion resultant (radians)
+ * @param {any[][]} ab Chord length
  * @returns {any[][]} Result (single value, row or table).
  */
 function slope_friction_FS(FS, f, coh, w, kr, rValue, a, DM, alpha, ab) {
@@ -1518,12 +1652,13 @@ function slope_friction_FS(FS, f, coh, w, kr, rValue, a, DM, alpha, ab) {
 /**
  * Log-spiral slip surface: factor of safety, centroid, weight, entry/exit points, resisting and driving moments. Inputs: pl ground polyline, pt spiral centre, rValue, phi, coh, g.
  * @customfunction SLOPE_LOGSPIRAL
- * @param {any[][]} pl pl (two-column x, y list)
- * @param {any[][]} pt pt (point {x, y})
- * @param {any[][]} rValue rValue
- * @param {any[][]} phi Friction angle (degrees)
- * @param {any[][]} coh Cohesion
- * @param {any[][]} g Unit weight
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SLOPE_LOGSPIRAL
+ * @param {any[][]} pl Ground surface polyline (two columns x, y)
+ * @param {any[][]} pt Spiral centre {x, y}
+ * @param {any[][]} rValue Initial radius
+ * @param {any[][]} phi Friction angle φ (degrees)
+ * @param {any[][]} coh Cohesion c (kPa)
+ * @param {any[][]} g Unit weight γ (kN/m³)
  * @returns {any[][]} Result (single value, row or table).
  */
 function slope_logSpiral(pl, pt, rValue, phi, coh, g) {
@@ -1533,7 +1668,8 @@ function slope_logSpiral(pl, pt, rValue, phi, coh, g) {
 /**
  * Alias of SPT_correction_depth: overburden correction CN, capped at 2.
  * @customfunction SPT_DEPTHCORRECTION
- * @param {any[][]} s s
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SPT_DEPTHCORRECTION
+ * @param {any[][]} s Effective vertical stress σ'v (kPa)
  * @returns {any[][]} Result (single value, row or table).
  */
 function SPT_depthCorrection(s) {
@@ -1543,9 +1679,10 @@ function SPT_depthCorrection(s) {
 /**
  * Friction angle (deg) from SPT N. Optional spa_ = σ'v/pa (default 1), author_: peck (default), schmertman, hatanaka.
  * @customfunction SPT_FRICTIONANGLE
- * @param {any[][]} N N
- * @param {any[][]} [spa_] spa_ (optional)
- * @param {any[][]} [author_] Method name (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SPT_FRICTIONANGLE
+ * @param {any[][]} N SPT blow count N
+ * @param {any[][]} [spa_] Ratio σ'v/pa, optional, default 1
+ * @param {any[][]} [author_] "peck" (default), "schmertman" or "hatanaka"
  * @returns {any[][]} Result (single value, row or table).
  */
 function SPT_frictionAngle(N, spa_, author_) {
@@ -1555,8 +1692,9 @@ function SPT_frictionAngle(N, spa_, author_) {
 /**
  * Staircase table: each x repeated twice with y shifted one row, for step plots. Inputs: x, y columns.
  * @customfunction STEP_TABLE
- * @param {any[][]} x x (column of values)
- * @param {any[][]} y y (column of values)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#STEP_TABLE
+ * @param {any[][]} x Column of x values
+ * @param {any[][]} y Column of y values
  * @returns {any[][]} Result (single value, row or table).
  */
 function Step_table(x, y) {
@@ -1566,9 +1704,10 @@ function Step_table(x, y) {
 /**
  * Intersections {x, y} of a closed polygon with the line through M at angle t (radians). Returns {0, 0} if none.
  * @customfunction INTERSECTION_POLYGON_LINE_SLOPE
- * @param {any[][]} polyline polyline (two-column x, y list)
- * @param {any[][]} M M (point {x, y})
- * @param {any[][]} t t
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#INTERSECTION_POLYGON_LINE_SLOPE
+ * @param {any[][]} polyline Closed polygon (two columns x, y)
+ * @param {any[][]} M Point {x, y} on the line
+ * @param {any[][]} t Line angle (radians)
  * @returns {any[][]} Result (single value, row or table).
  */
 function intersection_polygon_line_slope(polyline, M, t) {
@@ -1578,8 +1717,9 @@ function intersection_polygon_line_slope(polyline, M, t) {
 /**
  * Grain-size analysis: {D10; D30; D60; Cu; Cc; % clay; % silt; % sand; % gravel}. Inputs: d diameters (mm), p percent passing (any order).
  * @customfunction GRAINSIZEANALYSIS
- * @param {any[][]} d d (column of values)
- * @param {any[][]} p p (column of values)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#GRAINSIZEANALYSIS
+ * @param {any[][]} d Column of particle diameters (mm)
+ * @param {any[][]} p Column of percent passing (%), any order
  * @returns {any[][]} Result (single value, row or table).
  */
 function grainsizeanalysis(d, p) {
@@ -1589,13 +1729,14 @@ function grainsizeanalysis(d, p) {
 /**
  * Pile capacity in clay by the α method with tip 9·Su·A: {ultimate; shaft; tip}. Inputs: zSu (depth, Su), pa, a tip area, p perimeter, L, author (terzaghi, reese), optional D_ top depth.
  * @customfunction PILE_CAPACITY_ALPHA
- * @param {any[][]} zSu zSu (table)
- * @param {any[][]} pa Atmospheric pressure
- * @param {any[][]} a a
- * @param {any[][]} p p
- * @param {any[][]} L Length
- * @param {any[][]} author Method name (text)
- * @param {any[][]} [D_] D_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PILE_CAPACITY_ALPHA
+ * @param {any[][]} zSu Two-column table {depth (m), Su (kPa)}
+ * @param {any[][]} pa Atmospheric pressure (kPa)
+ * @param {any[][]} a Pile tip area (m²)
+ * @param {any[][]} p Pile perimeter (m)
+ * @param {any[][]} L Pile length (m)
+ * @param {any[][]} author "terzaghi" or "reese"
+ * @param {any[][]} [D_] Depth of the pile top (m), optional, default 0
  * @returns {any[][]} Result (single value, row or table).
  */
 function pile_capacity_alpha(zSu, pa, a, p, L, author, D_) {
@@ -1605,11 +1746,12 @@ function pile_capacity_alpha(zSu, pa, a, p, L, author, D_) {
 /**
  * LCPC (Bustamante–Gianeselli) CPT pile capacity: ultimate, shaft, tip, average qc at tip, average qs, kc. Inputs: table (z, qc, soil), a tip area, p perimeter, L, pile type.
  * @customfunction PILE_CAPACITY_CPT_LCPC
- * @param {any[][]} z_qc_soil z_qc_soil (table)
- * @param {any[][]} a a
- * @param {any[][]} p p
- * @param {any[][]} L Length
- * @param {any[][]} pile Pile type (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PILE_CAPACITY_CPT_LCPC
+ * @param {any[][]} z_qc_soil Table {depth (m), qc (MPa), soil}
+ * @param {any[][]} a Pile tip area (m²)
+ * @param {any[][]} p Pile perimeter (m)
+ * @param {any[][]} L Pile length (m)
+ * @param {any[][]} pile Pile type ("drilled", "cast", "steel", "concrete")
  * @returns {any[][]} Result (single value, row or table).
  */
 function pile_capacity_CPT_LCPC(z_qc_soil, a, p, L, pile) {
@@ -1619,11 +1761,12 @@ function pile_capacity_CPT_LCPC(z_qc_soil, a, p, L, pile) {
 /**
  * Fellenius β-method pile capacity: {ultimate; shaft; tip}. Inputs: table (z, phi, σ'v, soil), a tip area, p perimeter, L, optional D_ top depth.
  * @customfunction PILE_CAPACITY_FELLENIUS
- * @param {any[][]} z_phi_sv_soil z_phi_sv_soil (table)
- * @param {any[][]} a a
- * @param {any[][]} p p
- * @param {any[][]} L Length
- * @param {any[][]} [D_] D_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PILE_CAPACITY_FELLENIUS
+ * @param {any[][]} z_phi_sv_soil Table {depth (m), φ (degrees), σ'v (kPa), soil ("clay", "silt", "sand", "gravel")}
+ * @param {any[][]} a Pile tip area (m²)
+ * @param {any[][]} p Pile perimeter (m)
+ * @param {any[][]} L Pile length (m)
+ * @param {any[][]} [D_] Depth of the pile top (m), optional, default 0
  * @returns {any[][]} Result (single value, row or table).
  */
 function pile_capacity_Fellenius(z_phi_sv_soil, a, p, L, D_) {
@@ -1633,11 +1776,12 @@ function pile_capacity_Fellenius(z_phi_sv_soil, a, p, L, D_) {
 /**
  * LCPC pressuremeter pile capacity: {ultimate; shaft; tip}. Inputs: table (z, pl, σv, soil), a tip area, p perimeter, L, pile type.
  * @customfunction PILE_CAPACITY_PMT_LCPC
- * @param {any[][]} z_pl_sv_soil z_pl_sv_soil (table)
- * @param {any[][]} a a
- * @param {any[][]} p p
- * @param {any[][]} L Length
- * @param {any[][]} pile Pile type (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PILE_CAPACITY_PMT_LCPC
+ * @param {any[][]} z_pl_sv_soil Table {depth (m), pl (MPa), σv, soil}
+ * @param {any[][]} a Pile tip area (m²)
+ * @param {any[][]} p Pile perimeter (m)
+ * @param {any[][]} L Pile length (m)
+ * @param {any[][]} pile Pile installation type
  * @returns {any[][]} Result (single value, row or table).
  */
 function pile_capacity_PMT_LCPC(z_pl_sv_soil, a, p, L, pile) {
@@ -1647,12 +1791,13 @@ function pile_capacity_PMT_LCPC(z_pl_sv_soil, a, p, L, pile) {
 /**
  * Meyerhof SPT pile capacity: ultimate, shaft, tip, average N along shaft and at tip. Inputs: zN (depth, N), pa, a tip area, p perimeter, L, disp (any value = displacement pile).
  * @customfunction PILE_CAPACITY_SPT_MEYERHOF
- * @param {any[][]} zN zN (table)
- * @param {any[][]} pa Atmospheric pressure
- * @param {any[][]} a a
- * @param {any[][]} p p
- * @param {any[][]} L Length
- * @param {any[][]} [disp] disp (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PILE_CAPACITY_SPT_MEYERHOF
+ * @param {any[][]} zN Two-column table {depth (m), N}
+ * @param {any[][]} pa Atmospheric pressure (kPa)
+ * @param {any[][]} a Pile tip area (m²)
+ * @param {any[][]} p Pile perimeter (m)
+ * @param {any[][]} L Pile length (m)
+ * @param {any[][]} [disp] Optional: any value = displacement (driven) pile
  * @returns {any[][]} Result (single value, row or table).
  */
 function pile_capacity_SPT_Meyerhof(zN, pa, a, p, L, disp) {
@@ -1662,10 +1807,11 @@ function pile_capacity_SPT_Meyerhof(zN, pa, a, p, L, disp) {
 /**
  * Shaft capacity by the λ method: capacity, λ, average Su and σ'v. Inputs: table (z, Su, σ'v), p perimeter, L (m, or ft if ft is supplied).
  * @customfunction PILE_SHAFT_LAMBDA
- * @param {any[][]} z_Su_sv z_Su_sv (table)
- * @param {any[][]} p p
- * @param {any[][]} L Length
- * @param {any[][]} [ft] ft (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PILE_SHAFT_LAMBDA
+ * @param {any[][]} z_Su_sv Table {depth, Su, σ'v}
+ * @param {any[][]} p Pile perimeter
+ * @param {any[][]} L Pile length (m, or ft if ft is supplied)
+ * @param {any[][]} [ft] Optional: any value means lengths are in feet
  * @returns {any[][]} Result (single value, row or table).
  */
 function pile_shaft_lambda(z_Su_sv, p, L, ft) {
@@ -1675,8 +1821,9 @@ function pile_shaft_lambda(z_Su_sv, p, L, ft) {
 /**
  * LCPC unit shaft friction (MPa) from limit pressure pl (MPa) on curve i (1–7). Accepts columns.
  * @customfunction PMT_SHAFTFRICTION
- * @param {any[][]} pl pl
- * @param {any[][]} i i
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PMT_SHAFTFRICTION
+ * @param {any[][]} pl Limit pressure pl (MPa); accepts a column
+ * @param {any[][]} i LCPC curve number 1–7
  * @returns {any[][]} Result (single value, row or table).
  */
 function PMT_shaftFriction(pl, i) {
@@ -1686,8 +1833,9 @@ function PMT_shaftFriction(pl, i) {
 /**
  * LCPC unit shaft friction (MPa) from limit pressure pl (MPa) on curve "q1" … "q7".
  * @customfunction PMT_PILE_SHAFTFRICTION
- * @param {any[][]} pl pl
- * @param {any[][]} classi classi (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PMT_PILE_SHAFTFRICTION
+ * @param {any[][]} pl Limit pressure pl (MPa)
+ * @param {any[][]} classi Curve "q1" … "q7"
  * @returns {any[][]} Result (single value, row or table).
  */
 function PMT_pile_shaftFriction(pl, classi) {
@@ -1697,8 +1845,9 @@ function PMT_pile_shaftFriction(pl, classi) {
 /**
  * Ménard shape coefficients λc, λd for L/B. opt_: "v" = λc, "d" = λd, omitted = {λc; λd}. Returns 0 if L/B < 1.
  * @customfunction PMT_SETTLEMENT_LAMBDA
- * @param {any[][]} LB LB
- * @param {any[][]} [opt_] opt_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PMT_SETTLEMENT_LAMBDA
+ * @param {any[][]} LB Ratio L/B
+ * @param {any[][]} [opt_] Optional: "v" = λc only, "d" = λd only; omit for both
  * @returns {any[][]} Result (single value, row or table).
  */
 function PMT_settlement_lambda(LB, opt_) {
@@ -1708,7 +1857,8 @@ function PMT_settlement_lambda(LB, opt_) {
 /**
  * Alias of PMT_settlement_lambda: Ménard shape coefficients {λc; λd} for L/B.
  * @customfunction PMT_LAMBDA
- * @param {any[][]} LB LB
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PMT_LAMBDA
+ * @param {any[][]} LB Ratio L/B
  * @returns {any[][]} Result (single value, row or table).
  */
 function PMT_lambda(LB) {
@@ -1718,9 +1868,10 @@ function PMT_lambda(LB) {
 /**
  * Ménard equivalent moduli Ec, Ed and limit pressure from 16 sub-layers below a footing (labelled table + layer values). Inputs: yEpl (depth, E, pl), B, D.
  * @customfunction PMT_MODULI
- * @param {any[][]} yEpl yEpl (table)
- * @param {any[][]} B Width
- * @param {any[][]} D Depth
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PMT_MODULI
+ * @param {any[][]} yEpl Table {depth (m), E, pl}
+ * @param {any[][]} B Footing width (m)
+ * @param {any[][]} D Footing depth (m)
  * @returns {any[][]} Result (single value, row or table).
  */
 function PMT_moduli(yEpl, B, D) {
@@ -1730,13 +1881,14 @@ function PMT_moduli(yEpl, B, D) {
 /**
  * Eurocode 7 pressuremeter bearing pressure: {qu; ple; k}. Inputs: z, pl columns, B, D, L, soil ("clay silt", "sand gravel", "chalk"), g unit weight.
  * @customfunction PMT_BEARING_EUROCODE
- * @param {any[][]} z Depth (column of values)
- * @param {any[][]} pl pl (column of values)
- * @param {any[][]} B Width
- * @param {any[][]} D Depth
- * @param {any[][]} L Length
- * @param {any[][]} soil Soil type (text)
- * @param {any[][]} g Unit weight
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PMT_BEARING_EUROCODE
+ * @param {any[][]} z Column of test depths (m)
+ * @param {any[][]} pl Column of limit pressures pl (MPa)
+ * @param {any[][]} B Footing width (m)
+ * @param {any[][]} D Footing depth (m)
+ * @param {any[][]} L Footing length (m)
+ * @param {any[][]} soil "clay silt", "sand gravel" or "chalk"
+ * @param {any[][]} g Unit weight above footing level
  * @returns {any[][]} Result (single value, row or table).
  */
 function PMT_bearing_Eurocode(z, pl, B, D, L, soil, g) {
@@ -1746,11 +1898,12 @@ function PMT_bearing_Eurocode(z, pl, B, D, L, soil, g) {
 /**
  * Eurocode 7 pressuremeter bearing factor k. Inputs: B, L, D embedment, pl limit pressure (MPa), soil_ ("clay silt", "sand gravel", "chalk").
  * @customfunction PMT_BEARING_EUROCODE_K
- * @param {any[][]} B Width
- * @param {any[][]} L Length
- * @param {any[][]} D Depth
- * @param {any[][]} pl pl
- * @param {any[][]} soil_ soil_ (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PMT_BEARING_EUROCODE_K
+ * @param {any[][]} B Footing width (m)
+ * @param {any[][]} L Footing length (m)
+ * @param {any[][]} D Embedment (m)
+ * @param {any[][]} pl Limit pressure pl (MPa)
+ * @param {any[][]} soil_ "clay silt", "sand gravel" or "chalk"
  * @returns {any[][]} Result (single value, row or table).
  */
 function PMT_bearing_eurocode_k(B, L, D, pl, soil_) {
@@ -1760,14 +1913,15 @@ function PMT_bearing_eurocode_k(B, L, D, pl, soil_) {
 /**
  * Ménard settlement {sc; sd; total} from given moduli. Inputs: q net pressure, Ec, Ed, B, LB = L/B, ac, ad rheological factors, optional B0_ reference width (default 1).
  * @customfunction PMT_SETTLEMENT_BASIC
- * @param {any[][]} q q
- * @param {any[][]} Ec Ec
- * @param {any[][]} Ed Ed
- * @param {any[][]} B Width
- * @param {any[][]} LB LB
- * @param {any[][]} ac ac
- * @param {any[][]} ad ad
- * @param {any[][]} [B0_] B0_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PMT_SETTLEMENT_BASIC
+ * @param {any[][]} q Net applied pressure
+ * @param {any[][]} Ec Volumetric (spherical) modulus Ec, same unit as q
+ * @param {any[][]} Ed Deviatoric modulus Ed
+ * @param {any[][]} B Footing width (m)
+ * @param {any[][]} LB Ratio L/B
+ * @param {any[][]} ac Rheological factor α for the volumetric term
+ * @param {any[][]} ad Rheological factor α for the deviatoric term
+ * @param {any[][]} [B0_] Reference width (m), optional, default 1
  * @returns {any[][]} Result (single value, row or table).
  */
 function PMT_settlement_basic(q, Ec, Ed, B, LB, ac, ad, B0_) {
@@ -1777,13 +1931,14 @@ function PMT_settlement_basic(q, Ec, Ed, B, LB, ac, ad, B0_) {
 /**
  * Ménard settlement from a pressuremeter profile (labelled table: total, volumetric, deviatoric, α, λ, moduli). Inputs: q, yEpl (depth, E, pl), B, D, L, soil, ft_ (units flag).
  * @customfunction PMT_SETTLEMENT
- * @param {any[][]} q q
- * @param {any[][]} yEpl yEpl (table)
- * @param {any[][]} B Width
- * @param {any[][]} D Depth
- * @param {any[][]} L Length
- * @param {any[][]} soil Soil type (text)
- * @param {any[][]} [ft_] ft_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PMT_SETTLEMENT
+ * @param {any[][]} q Net applied pressure
+ * @param {any[][]} yEpl Table {depth (m), E, pl}
+ * @param {any[][]} B Footing width (m)
+ * @param {any[][]} D Footing depth (m)
+ * @param {any[][]} L Footing length (m)
+ * @param {any[][]} soil "peat", "clay", "silt", "sand", "gravel" or "rock"
+ * @param {any[][]} [ft_] Optional units flag: omit for B0 = 0.6 m; any value for B0 = 2 ft
  * @returns {any[][]} Result (single value, row or table).
  */
 function PMT_settlement(q, yEpl, B, D, L, soil, ft_) {
@@ -1793,9 +1948,10 @@ function PMT_settlement(q, yEpl, B, D, L, soil, ft_) {
 /**
  * Shear and moment from a piecewise-linear pressure profile. Columns: depth, pressure, shear, moment. k = subdivisions per segment.
  * @customfunction SHEARMOMENT
- * @param {any[][]} d d (column of values)
- * @param {any[][]} p p (column of values)
- * @param {any[][]} k k
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SHEARMOMENT
+ * @param {any[][]} d Column of depths (m)
+ * @param {any[][]} p Column of pressures (kPa)
+ * @param {any[][]} k Subdivisions per segment
  * @returns {any[][]} Result (single value, row or table).
  */
 function shearMoment(d, p, k) {
@@ -1805,9 +1961,10 @@ function shearMoment(d, p, k) {
 /**
  * Shear and moment diagram without header (depth, pressure, shear, moment). Inputs: d, p columns, optional n subdivisions (default 20).
  * @customfunction BEAM
- * @param {any[][]} d d (column of values)
- * @param {any[][]} p p (column of values)
- * @param {any[][]} [n] n (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#BEAM
+ * @param {any[][]} d Column of depths (m)
+ * @param {any[][]} p Column of pressures (kPa)
+ * @param {any[][]} [n] Subdivisions per segment, optional, default 20
  * @returns {any[][]} Result (single value, row or table).
  */
 function beam(d, p, n) {
@@ -1817,9 +1974,10 @@ function beam(d, p, n) {
 /**
  * Shear and moment diagram with header (depth, pressure, shear, moment). Inputs: d, p columns, optional n subdivisions (default 20).
  * @customfunction PRESSURE_SHEAR_MOMENT
- * @param {any[][]} d d (column of values)
- * @param {any[][]} p p (column of values)
- * @param {any[][]} [n] n (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PRESSURE_SHEAR_MOMENT
+ * @param {any[][]} d Column of depths (m)
+ * @param {any[][]} p Column of pressures (kPa)
+ * @param {any[][]} [n] Subdivisions per segment, optional, default 20
  * @returns {any[][]} Result (single value, row or table).
  */
 function pressure_shear_moment(d, p, n) {
@@ -1829,11 +1987,12 @@ function pressure_shear_moment(d, p, n) {
 /**
  * Shear and moment diagram with an anchor force Ta at depth da (sheet-pile walls). Inputs: d, p columns, da, Ta, optional n subdivisions (default 20).
  * @customfunction PRESSURE_SHEAR_MOMENT_ANCHOR
- * @param {any[][]} d d (column of values)
- * @param {any[][]} p p (column of values)
- * @param {any[][]} da da
- * @param {any[][]} Ta Ta
- * @param {any[][]} [n] n (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#PRESSURE_SHEAR_MOMENT_ANCHOR
+ * @param {any[][]} d Column of depths (m)
+ * @param {any[][]} p Column of pressures (kPa)
+ * @param {any[][]} da Depth of the anchor (m)
+ * @param {any[][]} Ta Anchor force (kN/m)
+ * @param {any[][]} [n] Subdivisions per segment, optional, default 20
  * @returns {any[][]} Result (single value, row or table).
  */
 function pressure_shear_moment_anchor(d, p, da, Ta, n) {
@@ -1843,10 +2002,11 @@ function pressure_shear_moment_anchor(d, p, da, Ta, n) {
 /**
  * Allowable bearing pressure from a single SPT N value. Inputs: N, B, D (m), author: bowles, meyerhof, terzaghi.
  * @customfunction SPT_BEARING_DIRECT
- * @param {any[][]} N N
- * @param {any[][]} B Width
- * @param {any[][]} D Depth
- * @param {any[][]} author Method name (text)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#SPT_BEARING_DIRECT
+ * @param {any[][]} N SPT blow count N (average below the footing)
+ * @param {any[][]} B Footing width (m)
+ * @param {any[][]} D Footing depth (m)
+ * @param {any[][]} author "bowles", "meyerhof" or "terzaghi"
  * @returns {any[][]} Result (single value, row or table).
  */
 function SPT_bearing_direct(N, B, D, author) {
@@ -1856,13 +2016,14 @@ function SPT_bearing_direct(N, B, D, author) {
 /**
  * ASTM D2487 group symbol and group name {symbol, name}. Inputs: % passing No. 4 and No. 200, optional Cu, Cc, LL, PL, LL oven-dried/LL not dried (blank = inorganic).
  * @customfunction CLASSIFY_ASTM2487
- * @param {any[][]} pf4 pf4
- * @param {any[][]} pf200 pf200
- * @param {any[][]} [cu_] cu_ (optional)
- * @param {any[][]} [cc_] cc_ (optional)
- * @param {any[][]} [ll_] ll_ (optional)
- * @param {any[][]} [pl_] pl_ (optional)
- * @param {any[][]} [ratio_] ratio_ (optional)
+ * @helpurl https://jpbardet.github.io/geoXL/index.html#CLASSIFY_ASTM2487
+ * @param {any[][]} pf4 Percent passing No. 4 sieve (%)
+ * @param {any[][]} pf200 Percent passing No. 200 sieve (%)
+ * @param {any[][]} [cu_] Coefficient of uniformity Cu = D60/D10, optional
+ * @param {any[][]} [cc_] Coefficient of curvature Cc = D30²/(D10·D60), optional
+ * @param {any[][]} [ll_] Liquid limit LL (%), optional
+ * @param {any[][]} [pl_] Plastic limit PL (%), optional
+ * @param {any[][]} [ratio_] LL oven-dried / LL not dried, optional (below 0.75 = organic; blank = inorganic)
  * @returns {any[][]} Result (single value, row or table).
  */
 function classify_ASTM2487(pf4, pf200, cu_, cc_, ll_, pl_, ratio_) {
@@ -1870,6 +2031,6 @@ function classify_ASTM2487(pf4, pf200, cu_, cc_, ll_, pl_, ratio_) {
 }
 
 // ---------------------------------------------------------------- registration
-const GEOXL_FUNCTIONS = {VERSION: version, BEARING_CAPACITY: bearing_capacity, BEARING_DEPTHFACTORS: bearing_depthFactors, BEARING_FACTORS: bearing_factors, BEARING_INCLINATIONFACTORS: bearing_inclinationFactors, BEARING_NQ: bearing_Nq, BEARING_SHAPEFACTORS: bearing_shapeFactors, BEARING_SKEMPTON: bearing_Skempton, CLASSIFY_AASHTO: classify_AASHTO, CLASSIFY_ASTM: classify_ASTM, CLASSIFY_PLASTICITY: classify_Plasticity, CLASSIFY_USC: classify_USC, CONSOLIDATION_TEST: consolidation_test, CONSOLIDATION_TV: consolidation_Tv, CONSOLIDATION_U: consolidation_U, CONSOLIDATION_UX: consolidation_Ux, CONSOLIDATION_U_APPROXIMATE: consolidation_U_approximate, CONSOLIDATION_U_VARIABLE: consolidation_U_variable, COSD: cosd, COULOMB_COHESIVEFORCES: Coulomb_cohesiveforces, COULOMB_FORCES: Coulomb_forces, COULOMB_K: coulomb_K, COULOMB_MAXIMUM: Coulomb_maximum, COULOMB_THETA: coulomb_theta, CUTLINE: cutline, ELASTIC_CIRCULAR_RADIUS: elastic_circular_radius, ELASTIC_CIRCULAR_STRESS: elastic_circular_stress, ELASTIC_EMBANKMENT: elastic_embankment, ELASTIC_JANBU_MU0: elastic_Janbu_mu0, ELASTIC_JANBU_MU1: elastic_Janbu_mu1, ELASTIC_LINELOAD: elastic_lineload, ELASTIC_LINELOAD_HORIZONTAL: elastic_lineload_horizontal, ELASTIC_NEWMARK_FACTOR: elastic_Newmark_factor, ELASTIC_NEWMARK_STRESS: elastic_Newmark_stress, ELASTIC_POINTLOAD: elastic_pointload, ELASTIC_SECTOR: elastic_sector, ELASTIC_SECTOR_ROW: elastic_sector_row, ELASTIC_SECTOR_SLICE: elastic_sector_slice, ELASTIC_STRIPLOAD: elastic_stripload, ELASTIC_TRIANGLE: elastic_triangle, INTERPOLATE: Interpolate, INTERSECTION_POLYGON_LINE: intersection_polygon_line, INTERSECTION_POLYGON_RAY: intersection_polygon_ray, MINIMUM: minimum, POLYGON_CENTROIDAREA: polygon_centroidArea, POLYGON_WEIGHTMOMENT: polygon_weightMoment, PRESSURE_FORCEMOMENT: pressure_forceMoment, RANKINE_K: Rankine_K, RANKINE_STRESS: Rankine_stress, SIND: sind, SPT_BEARING: SPT_bearing, SPT_BURLANDBURBIDGE_SETTLEMENT: SPT_BurlandBurbidge_settlement, SPT_CORRECTION_DEPTH: SPT_correction_depth, SPT_CORRELATION_FRICTION: SPT_Correlation_friction, STRESS_FORCEMOMENT: stress_ForceMoment, STRESS_MOHR: Stress_Mohr, STRESS_MOHR_FAILURE: stress_Mohr_failure, STRESS_MOHR_POLE: stress_Mohr_pole, STRESS_MOHRCIRCLE: stress_Mohrcircle, TAND: tand, VECTOR_LINE: vector_line, WATER_PRESSURE: water_pressure, ELASTIC_STRIPLOAD_XY: elastic_stripload_xy, CIRCLE: circle, CLASSIFY_CPT_LCPC: classify_CPT_LCPC, CLASSIFY_PMT_LCPC: classify_PMT_LCPC, CPT_AVERAGE_QC: CPT_average_qc, CPT_BEARING_MEYERHOF_K: CPT_bearing_Meyerhof_k, CPT_BEARING_ROBERTSON_K: CPT_bearing_Robertson_k, CPT_FRICTION_ANGLE: CPT_friction_angle, CPT_OLSEN_LAYERS: CPT_Olsen_layers, CPT_OLSEN_SCN: CPT_Olsen_SCN, CPT_OLSEN_SCN_ROW: CPT_Olsen_SCN_row, CPT_ROBERTSON_CLASSIFICATION_CHART: CPT_Robertson_classification_chart, CPT_ROBERTSON_LAYERS: CPT_Robertson_layers, CPT_ROBERTSON_SBT: CPT_Robertson_SBT, CPT_ROBERTSON_SBT_ROW: CPT_Robertson_SBT_row, CPT_SETTLEMENT: CPT_settlement, CPT_SETTLEMENT_IZ: CPT_settlement_Iz, DISTANCE_POINT_POLYLINE: distance_point_polyline, INTERPOLATE_TABLE: interpolate_table, INTERSECTION_POLYLINE_CIRCLE: intersection_polyline_circle, INTERSECTION_POLYLINE_POLYLINE: intersection_polyline_polyline, INTERSECTION_SEGMENT_POLYLINE: intersection_segment_polyline, INTERSECTION_SPIRAL_SEGMENT: intersection_spiral_segment, LATERALPILE_BROMS_COHESIONLESS: lateralpile_Broms_cohesionless, LATERALPILE_BROMS_COHESIVE: lateralpile_Broms_cohesive, LATERALPILE_COHESIONLESS_REACTION_SHEAR_MOMENT: lateralpile_cohesionless_reaction_shear_moment, LATERALPILE_COHESIVE_REACTION_SHEAR_MOMENT: lateralpile_cohesive_reaction_shear_moment, LOGSPIRAL: logSpiral, PILE_CAPACITY_CPT_SCHMERTMAN: pile_capacity_CPT_Schmertman, PILE_SHAFT_ALPHA: pile_shaft_alpha, PILE_SIDEFRICTION_ALPHA: pile_sidefriction_alpha, PILE_SIDEFRICTION_LAMBDA: pile_sidefriction_lambda, PILE_TIP_MEYERHOF: pile_tip_Meyerhof, PILE_TIP_MEYERHOF_FACTOR: pile_tip_meyerhof_factor, PILE_TIP_VESIC: pile_tip_vesic, PILE_TIP_VESIC_FACTOR: pile_tip_vesic_factor, PMT_ALPHA: PMT_alpha, PMT_BEARING_LIMITPRESSURE: PMT_bearing_limitPressure, PMT_BEARING_MENARD: PMT_bearing_Menard, PMT_BEARING_MENARD_K: PMT_bearing_Menard_k, PMT_LAYERS: PMT_layers, STEPPROFILE: stepProfile, SPT_STEPPROFILE: SPT_stepProfile, CPT_STEPPROFILE: CPT_stepProfile, PMT_STAIRCASE: PMT_staircase, POLYGON_AREA_CENTROID: polygon_area_centroid, POLYGON_INSIDE: Polygon_inside, POLYLINE_SUBDIVIDE: polyline_subdivide, SETTLEMENT_SCHMERTMAN_FACTOR: settlement_Schmertman_factor, SLOPE_CIRCLE_COHESIVE: slope_circle_cohesive, SLOPE_CIRCLE_POLYLINE: slope_circle_polyline, SLOPE_CIRCLE_POLYLINE_COHESIVE: slope_circle_polyline_cohesive, SLOPE_FRICTION_CIRCLE: slope_friction_circle, SLOPE_FRICTION_CIRCLE_FCT: slope_friction_circle_fct, SLOPE_FRICTION_CIRCLE_TAYLOR: slope_friction_circle_Taylor, SLOPE_FRICTION_FS: slope_friction_FS, SLOPE_LOGSPIRAL: slope_logSpiral, SPT_DEPTHCORRECTION: SPT_depthCorrection, SPT_FRICTIONANGLE: SPT_frictionAngle, STEP_TABLE: Step_table, INTERSECTION_POLYGON_LINE_SLOPE: intersection_polygon_line_slope, GRAINSIZEANALYSIS: grainsizeanalysis, PILE_CAPACITY_ALPHA: pile_capacity_alpha, PILE_CAPACITY_CPT_LCPC: pile_capacity_CPT_LCPC, PILE_CAPACITY_FELLENIUS: pile_capacity_Fellenius, PILE_CAPACITY_PMT_LCPC: pile_capacity_PMT_LCPC, PILE_CAPACITY_SPT_MEYERHOF: pile_capacity_SPT_Meyerhof, PILE_SHAFT_LAMBDA: pile_shaft_lambda, PMT_SHAFTFRICTION: PMT_shaftFriction, PMT_PILE_SHAFTFRICTION: PMT_pile_shaftFriction, PMT_SETTLEMENT_LAMBDA: PMT_settlement_lambda, PMT_LAMBDA: PMT_lambda, PMT_MODULI: PMT_moduli, PMT_BEARING_EUROCODE: PMT_bearing_Eurocode, PMT_BEARING_EUROCODE_K: PMT_bearing_eurocode_k, PMT_SETTLEMENT_BASIC: PMT_settlement_basic, PMT_SETTLEMENT: PMT_settlement, SHEARMOMENT: shearMoment, BEAM: beam, PRESSURE_SHEAR_MOMENT: pressure_shear_moment, PRESSURE_SHEAR_MOMENT_ANCHOR: pressure_shear_moment_anchor, SPT_BEARING_DIRECT: SPT_bearing_direct, CLASSIFY_ASTM2487: classify_ASTM2487};
+const GEOXL_FUNCTIONS = {VERSION: version, BEARING_CAPACITY: bearing_capacity, BEARING_DEPTHFACTORS: bearing_depthFactors, BEARING_FACTORS: bearing_factors, BEARING_INCLINATIONFACTORS: bearing_inclinationFactors, BEARING_NQ: bearing_Nq, BEARING_SHAPEFACTORS: bearing_shapeFactors, BEARING_SKEMPTON: bearing_Skempton, CLASSIFY_AASHTO: classify_AASHTO, ASTM_TABLE: astm_table, CLASSIFY_ASTM: classify_ASTM, CLASSIFY_PLASTICITY: classify_Plasticity, CLASSIFY_USC: classify_USC, CONSOLIDATION_TEST: consolidation_test, CONSOLIDATION_TV: consolidation_Tv, CONSOLIDATION_U: consolidation_U, CONSOLIDATION_UX: consolidation_Ux, CONSOLIDATION_U_APPROXIMATE: consolidation_U_approximate, CONSOLIDATION_U_VARIABLE: consolidation_U_variable, COSD: cosd, COULOMB_COHESIVEFORCES: Coulomb_cohesiveforces, COULOMB_FORCES: Coulomb_forces, COULOMB_K: coulomb_K, COULOMB_MAXIMUM: Coulomb_maximum, COULOMB_THETA: coulomb_theta, CUTLINE: cutline, ELASTIC_CIRCULAR_RADIUS: elastic_circular_radius, ELASTIC_CIRCULAR_STRESS: elastic_circular_stress, ELASTIC_EMBANKMENT: elastic_embankment, ELASTIC_JANBU_MU0: elastic_Janbu_mu0, ELASTIC_JANBU_MU1: elastic_Janbu_mu1, ELASTIC_LINELOAD: elastic_lineload, ELASTIC_LINELOAD_HORIZONTAL: elastic_lineload_horizontal, ELASTIC_NEWMARK_FACTOR: elastic_Newmark_factor, ELASTIC_NEWMARK_STRESS: elastic_Newmark_stress, ELASTIC_POINTLOAD: elastic_pointload, ELASTIC_SECTOR: elastic_sector, ELASTIC_SECTOR_ROW: elastic_sector_row, ELASTIC_SECTOR_SLICE: elastic_sector_slice, ELASTIC_STRIPLOAD: elastic_stripload, ELASTIC_TRIANGLE: elastic_triangle, INTERPOLATE: Interpolate, INTERSECTION_POLYGON_LINE: intersection_polygon_line, INTERSECTION_POLYGON_RAY: intersection_polygon_ray, MINIMUM: minimum, POLYGON_CENTROIDAREA: polygon_centroidArea, POLYGON_WEIGHTMOMENT: polygon_weightMoment, PRESSURE_FORCEMOMENT: pressure_forceMoment, RANKINE_K: Rankine_K, RANKINE_STRESS: Rankine_stress, SIND: sind, SPT_BEARING: SPT_bearing, SPT_BURLANDBURBIDGE_SETTLEMENT: SPT_BurlandBurbidge_settlement, SPT_CORRECTION_DEPTH: SPT_correction_depth, SPT_CORRELATION_FRICTION: SPT_Correlation_friction, STRESS_FORCEMOMENT: stress_ForceMoment, STRESS_MOHR: Stress_Mohr, STRESS_MOHR_FAILURE: stress_Mohr_failure, STRESS_MOHR_POLE: stress_Mohr_pole, STRESS_MOHRCIRCLE: stress_Mohrcircle, TAND: tand, VECTOR_LINE: vector_line, WATER_PRESSURE: water_pressure, ELASTIC_STRIPLOAD_XY: elastic_stripload_xy, CIRCLE: circle, CLASSIFY_CPT_LCPC: classify_CPT_LCPC, CLASSIFY_PMT_LCPC: classify_PMT_LCPC, CPT_AVERAGE_QC: CPT_average_qc, CPT_BEARING_MEYERHOF_K: CPT_bearing_Meyerhof_k, CPT_BEARING_ROBERTSON_K: CPT_bearing_Robertson_k, CPT_FRICTION_ANGLE: CPT_friction_angle, CPT_OLSEN_LAYERS: CPT_Olsen_layers, CPT_OLSEN_SCN: CPT_Olsen_SCN, CPT_OLSEN_SCN_ROW: CPT_Olsen_SCN_row, CPT_ROBERTSON_CLASSIFICATION_CHART: CPT_Robertson_classification_chart, CPT_ROBERTSON_LAYERS: CPT_Robertson_layers, CPT_ROBERTSON_SBT: CPT_Robertson_SBT, CPT_ROBERTSON_SBT_ROW: CPT_Robertson_SBT_row, CPT_SETTLEMENT: CPT_settlement, CPT_SETTLEMENT_IZ: CPT_settlement_Iz, DISTANCE_POINT_POLYLINE: distance_point_polyline, INTERPOLATE_TABLE: interpolate_table, INTERSECTION_POLYLINE_CIRCLE: intersection_polyline_circle, INTERSECTION_POLYLINE_POLYLINE: intersection_polyline_polyline, INTERSECTION_SEGMENT_POLYLINE: intersection_segment_polyline, INTERSECTION_SPIRAL_SEGMENT: intersection_spiral_segment, LATERALPILE_BROMS_COHESIONLESS: lateralpile_Broms_cohesionless, LATERALPILE_BROMS_COHESIVE: lateralpile_Broms_cohesive, LATERALPILE_COHESIONLESS_REACTION_SHEAR_MOMENT: lateralpile_cohesionless_reaction_shear_moment, LATERALPILE_COHESIVE_REACTION_SHEAR_MOMENT: lateralpile_cohesive_reaction_shear_moment, LOGSPIRAL: logSpiral, PILE_CAPACITY_CPT_SCHMERTMAN: pile_capacity_CPT_Schmertman, PILE_SHAFT_ALPHA: pile_shaft_alpha, PILE_SIDEFRICTION_ALPHA: pile_sidefriction_alpha, PILE_SIDEFRICTION_LAMBDA: pile_sidefriction_lambda, PILE_TIP_MEYERHOF: pile_tip_Meyerhof, PILE_TIP_MEYERHOF_FACTOR: pile_tip_meyerhof_factor, PILE_TIP_VESIC: pile_tip_vesic, PILE_TIP_VESIC_FACTOR: pile_tip_vesic_factor, PMT_ALPHA: PMT_alpha, PMT_BEARING_LIMITPRESSURE: PMT_bearing_limitPressure, PMT_BEARING_MENARD: PMT_bearing_Menard, PMT_BEARING_MENARD_K: PMT_bearing_Menard_k, PMT_LAYERS: PMT_layers, STEPPROFILE: stepProfile, SPT_STEPPROFILE: SPT_stepProfile, CPT_STEPPROFILE: CPT_stepProfile, PMT_STAIRCASE: PMT_staircase, POLYGON_AREA_CENTROID: polygon_area_centroid, POLYGON_INSIDE: Polygon_inside, POLYLINE_SUBDIVIDE: polyline_subdivide, SETTLEMENT_SCHMERTMAN_FACTOR: settlement_Schmertman_factor, SLOPE_CIRCLE_COHESIVE: slope_circle_cohesive, SLOPE_CIRCLE_POLYLINE: slope_circle_polyline, SLOPE_CIRCLE_POLYLINE_COHESIVE: slope_circle_polyline_cohesive, SLOPE_FRICTION_CIRCLE: slope_friction_circle, SLOPE_FRICTION_CIRCLE_FCT: slope_friction_circle_fct, SLOPE_FRICTION_CIRCLE_TAYLOR: slope_friction_circle_Taylor, SLOPE_FRICTION_FS: slope_friction_FS, SLOPE_LOGSPIRAL: slope_logSpiral, SPT_DEPTHCORRECTION: SPT_depthCorrection, SPT_FRICTIONANGLE: SPT_frictionAngle, STEP_TABLE: Step_table, INTERSECTION_POLYGON_LINE_SLOPE: intersection_polygon_line_slope, GRAINSIZEANALYSIS: grainsizeanalysis, PILE_CAPACITY_ALPHA: pile_capacity_alpha, PILE_CAPACITY_CPT_LCPC: pile_capacity_CPT_LCPC, PILE_CAPACITY_FELLENIUS: pile_capacity_Fellenius, PILE_CAPACITY_PMT_LCPC: pile_capacity_PMT_LCPC, PILE_CAPACITY_SPT_MEYERHOF: pile_capacity_SPT_Meyerhof, PILE_SHAFT_LAMBDA: pile_shaft_lambda, PMT_SHAFTFRICTION: PMT_shaftFriction, PMT_PILE_SHAFTFRICTION: PMT_pile_shaftFriction, PMT_SETTLEMENT_LAMBDA: PMT_settlement_lambda, PMT_LAMBDA: PMT_lambda, PMT_MODULI: PMT_moduli, PMT_BEARING_EUROCODE: PMT_bearing_Eurocode, PMT_BEARING_EUROCODE_K: PMT_bearing_eurocode_k, PMT_SETTLEMENT_BASIC: PMT_settlement_basic, PMT_SETTLEMENT: PMT_settlement, SHEARMOMENT: shearMoment, BEAM: beam, PRESSURE_SHEAR_MOMENT: pressure_shear_moment, PRESSURE_SHEAR_MOMENT_ANCHOR: pressure_shear_moment_anchor, SPT_BEARING_DIRECT: SPT_bearing_direct, CLASSIFY_ASTM2487: classify_ASTM2487};
 if (typeof CustomFunctions !== "undefined") { for (const [id, f] of Object.entries(GEOXL_FUNCTIONS)) CustomFunctions.associate(id, f); }
 if (typeof module !== "undefined") module.exports = { G, GEOXL_FUNCTIONS };

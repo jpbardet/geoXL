@@ -2086,7 +2086,9 @@ function sind(X) {
  * @returns {any[][]} Result (single value, row or table).
  */
 function SPT_bearing(z, N, B, D, author) {
-  return safe(() => G.SPT_bearing(colNum(z), colNum(N), num(B), num(D), str(author)));
+  const z_c = colNum(z);
+  const N_c = colNum(N);
+  return safeLifted(() => lift((e_z, e_N, e_B, e_D, e_author) => G.SPT_bearing(e_z, e_N, num(e_B), num(e_D), e_author), [z_c, N_c, B, D, author], [0, 1]));
 }
 
 /**
@@ -2104,7 +2106,9 @@ function SPT_bearing(z, N, B, D, author) {
  * @returns {any[][]} Result (single value, row or table).
  */
 function SPT_BurlandBurbidge_settlement(z, N, q, B, LB, D_, H, sc) {
-  return safe(() => G.SPT_BurlandBurbidge_settlement(colNum(z), colNum(N), num(q), num(B), opt(LB), opt(D_), opt(H), opt(sc)));
+  const z_c = colNum(z);
+  const N_c = colNum(N);
+  return safeLifted(() => lift((e_z, e_N, e_q, e_B, e_LB, e_D_, e_H, e_sc) => G.SPT_BurlandBurbidge_settlement(e_z, e_N, num(e_q), num(e_B), e_LB, e_D_, e_H, e_sc), [z_c, N_c, q, B, LB, D_, H, sc], [0, 1]));
 }
 
 /**
@@ -2308,7 +2312,9 @@ function classify_PMT_LCPC(pl, soil, pile) {
  * @returns {any[][]} Result (single value, row or table).
  */
 function CPT_average_qc(z, qc, D, B, author) {
-  return safe(() => G.CPT_average_qc(colNum(z), colNum(qc), num(D), num(B), str(author)));
+  const z_c = colNum(z);
+  const qc_c = colNum(qc);
+  return safeLifted(() => lift((e_z, e_qc, e_D, e_B, e_author) => G.CPT_average_qc(e_z, e_qc, num(e_D), num(e_B), e_author), [z_c, qc_c, D, B, author], [0, 1]));
 }
 
 /**

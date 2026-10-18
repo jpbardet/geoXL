@@ -82,8 +82,8 @@ pressure_forceMoment|F|d v, p v, d0 n
 Rankine_K|L|phi n, beta n
 Rankine_stress|F|phi n, coh n, alpha n, beta n, gz n, passive O
 sind|L|X n
-SPT_bearing|F|z v, N v, B n, D n, author s
-SPT_BurlandBurbidge_settlement|F|z v, N v, q n, B n, LB O, D_ O, H O, sc O
+SPT_bearing|L|z v, N v, B n, D n, author s
+SPT_BurlandBurbidge_settlement|L|z v, N v, q n, B n, LB os, D_ os, H os, sc os
 SPT_correction_depth|L|s n
 SPT_Correlation_friction|L|N n, author s, s os, pa os
 stress_ForceMoment|F|A p, B p, sa p, sb p
@@ -98,7 +98,7 @@ elastic_stripload_xy|R|B n, X n, Y n
 circle|F|pt p, rValue n, ta_ O, tb_ O, n_ O
 classify_CPT_LCPC|R|qc n, soil s, pile s
 classify_PMT_LCPC|R|pl n, soil s, pile s
-CPT_average_qc|F|z v, qc v, D n, B n, author s
+CPT_average_qc|L|z v, qc v, D n, B n, author s
 CPT_bearing_Meyerhof_k|L|B n, D n, dw n, m os
 CPT_bearing_Robertson_k|L|B n, D n, shape s, density s
 CPT_friction_angle|L|z n, qc n, g n, author_ s
