@@ -73,7 +73,7 @@ const calls = {
   VERSION: [], BEARING_CAPACITY: [S(10), S(30), S(20), S(18), S(2), S(10), S(1), S(0), S(100), S("vesic")],
   BEARING_DEPTHFACTORS: [S(0.5), S(30), S("hansen")], BEARING_FACTORS: [S(30), S("ec7")], BEARING_INCLINATIONFACTORS: [S(10), S(100), S(0.2), S(30), S(10), S("vesic")],
   BEARING_NQ: [S(30), S("vesic")], BEARING_SHAPEFACTORS: [S(0.2), S(30), S("hansen")], BEARING_SKEMPTON: [S(1), S(0.5)],
-  CLASSIFY_AASHTO: [S(60), S(45), S(40), S(35), S(20)], CLASSIFY_ASTM: [[["SW", "Well-graded sand"], ["SW", "Well-graded sand with gravel"]], S(85), S(3), S(7), S(2), S(0), S(0)],
+  CLASSIFY_AASHTO: [S(60), S(45), S(40), S(35), S(20)], ASTM_TABLE: [], CLASSIFY_ASTM: [[["SW", "Well-graded sand"], ["SW", "Well-graded sand with gravel"]], S(85), S(3), S(7), S(2), S(0), S(0)],
   CLASSIFY_PLASTICITY: [S(40), S(20)], CLASSIFY_USC: [S(85), S(8), S(7), S(1.5), S(30), S(24)],
   CONSOLIDATION_TEST: [M(T), M(Xr), S(0.2), S(5), S(20)], CONSOLIDATION_TV: [S(0.7)], CONSOLIDATION_U: [S(0.3), S("triangular_top")],
   CONSOLIDATION_UX: [M([0, 0.25, 0.5, 0.75, 1]), S(0.2)], CONSOLIDATION_U_APPROXIMATE: [S(0.3)], CONSOLIDATION_U_VARIABLE: [S(0.5), S(0.2)],

@@ -1,14 +1,31 @@
-"""Generate src/wrappers.js (Excel custom-function wrappers with JSDoc) from a compact spec table.
-Descriptions are taken from the GeoEXCEL LAMBDA library so both stay identical."""
-import re, sys, json
+"""Generate src/wrappers.js (Excel custom-function wrappers with JSDoc) and docs/index.html (help page)
+from a compact spec table. Function descriptions come from the GeoEXCEL LAMBDA library; argument help,
+returns and notes come from tools/help.txt."""
+import re, sys, json, os, html
 
-LIB = sys.argv[1]          # GeoEXCEL_v0.13.txt
-OUT = sys.argv[2]          # src/wrappers.js
+LIB = sys.argv[1]                                          # library/GeoEXCEL_v0.13.txt
+OUT = sys.argv[2]                                          # src/wrappers.js
+HELP = sys.argv[3] if len(sys.argv) > 3 else "tools/help.txt"
+PAGE = sys.argv[4] if len(sys.argv) > 4 else "docs/index.html"
+HELP_URL = "https://jpbardet.github.io/geoXL/index.html#"  # Excel's "Help on this function" link
 
 src = open(LIB, encoding="utf-8").read()
 desc = {}
-for m in re.finditer(r"/\*\*\s*(.*?)\s*\*/\s*\n\s*([A-Za-z_][\w]*)\s*=\s*LAMBDA", src, re.S):
+for m in re.finditer(r"/\*\*((?:(?!\*/).)*?)\*/\s*\n\s*([A-Za-z_][\w]*)\s*=\s*LAMBDA", src, re.S):
     desc[m.group(2)] = " ".join(m.group(1).split())
+
+# help.txt: [name] blocks with "argument: text", "returns: text", "notes: text" lines
+helpdb, cur = {}, None
+for ln in open(HELP, encoding="utf-8"):
+    ln = ln.rstrip("\n")
+    if not ln.strip() or ln.lstrip().startswith("#"): continue
+    m = re.match(r"\s*\[(\w+)\]\s*$", ln)
+    if m: cur = helpdb.setdefault(m.group(1), {"params": {}, "returns": "", "notes": []}); continue
+    if cur is None or ":" not in ln: raise SystemExit("help.txt: cannot read line: " + ln)
+    k, v = (t.strip() for t in ln.split(":", 1))
+    if k == "returns": cur["returns"] = v
+    elif k == "notes": cur["notes"].append(v)
+    else: cur["params"][k] = v
 
 # kind: L = element-by-element (scalar result), R = one row per element, F = whole result
 # param codes: n number, s text, on/os optional (lifted), v column, m table, p point {x,y},
@@ -23,6 +40,7 @@ bearing_Nq|L|Phi n, author_ s
 bearing_shapeFactors|F|BL n, phi n, author s, opt_ O
 bearing_Skempton|L|DB n, BL n
 classify_AASHTO|L|pf10_ n, pf40_ n, pf200_ n, LL_ os, PL_ os
+astm_table|F|
 classify_ASTM|L|list m, pf4_ n, pf200_ n, Cu_ os, Cc_ os, LL_ os, PL_ os, organic_ os
 classify_Plasticity|L|LL n, PL n, organic os
 classify_USC|L|pf4_ n, pf200_ n, Cu_ os, Cc_ os, LL_ os, PL_ os, organic_ os
@@ -193,16 +211,19 @@ lines = ["/* ===================================================================
          " * spills a column of results, as the LAMBDA versions do.",
          " * ==========================================================================================*/", ""]
 names = []
+pages = []
 for line in SPEC.strip().splitlines():
     name, kind, plist = line.split("|")
     params = [p.strip().split() for p in plist.split(",") if p.strip()]
     names.append(name)
     d = desc.get(name)
     if d is None: raise SystemExit("no description for " + name)
-    doc = ["/**", " * " + esc(d), " * @customfunction " + name.upper()]
+    doc = ["/**", " * " + esc(d), " * @customfunction " + name.upper(), " * @helpurl " + HELP_URL + name.upper()]
+    pages.append((name, params, d))
     for pn, pc in params:
         opt = pc in ("os", "on", "O")
-        label = PARAM_TEXT.get(pn, pn) + HINT[pc]
+        htext = helpdb.get(name, {}).get("params", {}).get(pn)
+        label = htext if htext else PARAM_TEXT.get(pn, pn) + HINT[pc]
         doc.append(f" * @param {{{TYPEDOC[pc]}}} {'[' + pn + ']' if opt else pn} {esc(label)}")
     doc.append(" * @returns {any[][]} Result (single value, row or table).")
     doc.append(" */")
@@ -242,3 +263,86 @@ lines.append('if (typeof CustomFunctions !== "undefined") { for (const [id, f] o
 lines.append('if (typeof module !== "undefined") module.exports = { G, GEOXL_FUNCTIONS };')
 open(OUT, "w", encoding="utf-8").write("\n".join(lines) + "\n")
 print(len(names), "wrappers written; descriptions found for all")
+
+# ---------------------------------------------------------------- help page (docs/index.html)
+GROUPS = [("Bearing capacity", ("bearing_", "spt_bearing", "cpt_bearing", "cpt_average", "pmt_bearing")),
+          ("Soil classification", ("classify_", "astm_table", "grainsize")),
+          ("Consolidation", ("consolidation_", "cutline")),
+          ("Earth pressure & walls", ("coulomb", "rankine", "pressure_", "shearmoment", "beam", "water_pressure")),
+          ("Elastic stresses", ("elastic_",)),
+          ("Settlement", ("settlement_", "spt_burland", "cpt_settlement", "pmt_settlement", "pmt_lambda", "pmt_moduli", "pmt_alpha")),
+          ("Piles", ("pile_", "lateralpile_", "pmt_pile", "pmt_shaft")),
+          ("In-situ tests (SPT, CPT, PMT)", ("spt_", "cpt_", "pmt_")),
+          ("Slope stability", ("slope_",)),
+          ("Stresses & Mohr circle", ("stress_",)),
+          ("Geometry & plotting", ("polygon", "polyline", "intersection_", "distance_", "circle", "logspiral", "vector_line", "stepprofile", "step_table")),
+          ("Math & utilities", ("",))]
+
+def group_of(n):
+    l = n.lower()
+    for g, pre in GROUPS:
+        if any(l.startswith(p) for p in pre): return g
+    return GROUPS[-1][0]
+
+E = lambda t: html.escape(t, quote=False)
+cards = {g: [] for g, _ in GROUPS}
+for name, params, d in pages:
+    h = helpdb.get(name, {"params": {}, "returns": "", "notes": []})
+    sig = ", ".join(("[" + pn + "]") if pc in ("os", "on", "O") else pn for pn, pc in params)
+    rows = "".join(f"<tr><td><code>{E(pn)}</code>{' <span class=opt>optional</span>' if pc in ('os','on','O') else ''}</td><td>{E(h['params'].get(pn, PARAM_TEXT.get(pn, pn)))}</td></tr>" for pn, pc in params)
+    body = f"<p class=desc>{E(d)}</p>"
+    if rows: body += f"<table class=args><thead><tr><th>Argument</th><th>Meaning</th></tr></thead><tbody>{rows}</tbody></table>"
+    if h["returns"]: body += f"<p><b>Returns:</b> {E(h['returns'])}</p>"
+    for nt in h["notes"]: body += f"<p class=note>{E(nt)}</p>"
+    cards[group_of(name)].append((name.upper(), f'<section class=fn id="{name.upper()}"><h3><a href="#{name.upper()}">=GEOXL.{name.upper()}</a><span class=sig>({E(sig)})</span></h3>{body}</section>'))
+
+nav, main = [], []
+for g, _ in GROUPS:
+    if not cards[g]: continue
+    gid = re.sub(r"[^a-z]+", "-", g.lower()).strip("-")
+    nav.append(f'<a href="#{gid}">{E(g)} <span>{len(cards[g])}</span></a>')
+    main.append(f'<h2 id="{gid}">{E(g)}</h2>' + "".join(c for _, c in sorted(cards[g])))
+
+page = f"""<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>geoXL functions</title>
+<style>
+:root{{--bg:#fff;--fg:#1d1d1f;--muted:#5f6368;--line:#e3e3e3;--accent:#1f4e79;--note:#fff6e0;--noteline:#e0b44c;--card:#fafafa}}
+@media (prefers-color-scheme: dark){{:root{{--bg:#16181b;--fg:#e8e8e8;--muted:#a0a4aa;--line:#2c3036;--accent:#7fb2e5;--note:#2e2716;--noteline:#9a7a2e;--card:#1c1f23}}}}
+*{{box-sizing:border-box}}
+body{{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}}
+.wrap{{max-width:1180px;margin:0 auto;padding:24px 16px;display:grid;grid-template-columns:230px 1fr;gap:28px}}
+@media (max-width:820px){{.wrap{{grid-template-columns:1fr}} nav{{position:static!important;max-height:none!important}}}}
+header{{grid-column:1/-1}} h1{{font-size:26px;margin:0 0 4px}} header p{{color:var(--muted);margin:0 0 12px}}
+input{{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);font-size:15px}}
+nav{{position:sticky;top:16px;align-self:start;max-height:calc(100vh - 32px);overflow:auto;font-size:14px}}
+nav a{{display:flex;justify-content:space-between;padding:5px 8px;border-radius:5px;color:var(--fg);text-decoration:none}}
+nav a:hover{{background:var(--card)}} nav span{{color:var(--muted)}}
+h2{{font-size:19px;margin:28px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--line)}} h2:first-child{{margin-top:0}}
+.fn{{border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0;background:var(--card);scroll-margin-top:12px}}
+.fn:target{{outline:2px solid var(--accent)}}
+h3{{margin:0 0 4px;font-size:15px;word-break:break-word}} h3 a{{color:var(--accent);text-decoration:none}}
+.sig{{color:var(--muted);font-weight:400;font-family:ui-monospace,Menlo,monospace;font-size:13px}}
+.desc{{margin:4px 0 8px}} p{{margin:6px 0}}
+.args{{width:100%;border-collapse:collapse;font-size:14px}} .args th{{text-align:left;color:var(--muted);font-weight:500;font-size:12px;padding:4px 6px}}
+.args td{{border-top:1px solid var(--line);padding:5px 6px;vertical-align:top}} .args td:first-child{{width:30%;white-space:nowrap}}
+code{{font-family:ui-monospace,Menlo,monospace;font-size:13px}}
+.opt{{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 4px;margin-left:4px}}
+.note{{background:var(--note);border-left:3px solid var(--noteline);padding:6px 10px;border-radius:4px;font-size:14px}}
+.hidden{{display:none}}
+</style></head><body><div class=wrap>
+<header><h1>geoXL</h1>
+<p>{len(pages)} geotechnical functions for Excel. Type <code>=GEOXL.</code> in a cell; Excel shows each argument's meaning as you type. Use one consistent unit system; angles are in degrees unless stated.</p>
+<input id=q type=search placeholder="Filter functions (e.g. bearing, pile, Mohr, settlement)…" aria-label="Filter functions"></header>
+<nav>{''.join(nav)}</nav>
+<main>{''.join(main)}</main></div>
+<script>
+const q=document.getElementById('q');
+q.addEventListener('input',()=>{{const t=q.value.trim().toLowerCase();
+document.querySelectorAll('.fn').forEach(s=>s.classList.toggle('hidden',t&&!s.textContent.toLowerCase().includes(t)));
+document.querySelectorAll('main h2').forEach(h=>{{let n=h.nextElementSibling,any=false;while(n&&n.tagName!=='H2'){{if(!n.classList.contains('hidden'))any=true;n=n.nextElementSibling;}}h.classList.toggle('hidden',!any);}});}});
+</script></body></html>
+"""
+os.makedirs(os.path.dirname(PAGE) or ".", exist_ok=True)
+open(PAGE, "w", encoding="utf-8").write(page)
+print("help page written:", PAGE, "-", sum(len(v) for v in cards.values()), "functions")

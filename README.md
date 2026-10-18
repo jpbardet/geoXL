@@ -12,7 +12,9 @@ Function descriptions are the same as in the LAMBDA library and show up in Excel
 | `docs/` | Everything GitHub Pages serves: `functions.js` (code), `functions.json` (descriptions), `functions.html` (loader), `index.html` (searchable function list), `assets/` (icons). |
 | `src/` | Source: `helpers.js` (Excel-like helpers), `core.js` (the engineering functions), `wrappers.js` (generated Excel wrappers). |
 | `tools/make_wrappers.py` | Generates `src/wrappers.js` from a compact table plus the LAMBDA library's descriptions. |
+| `tools/help.txt` | Help for every function: the meaning of each argument (shown by Excel as you type), what it returns, and notes. The build turns it into Excel's argument tips and the help page `docs/index.html`. |
 | `tests/test.js` | 45 textbook checks + a run of all 145 functions. `node tests/test.js` |
+| ASTM names | The 100-row ASTM D2487 name table (formerly the `ASTMtable` name) is built in: `=GEOXL.ASTM_TABLE()`; `CLASSIFY_ASTM` uses it when its first argument is `""`. |
 | `library/GeoEXCEL_v0.13.txt` | The LAMBDA source this version was translated from. |
 
 ## 1. Publish on GitHub Pages (once)
@@ -52,6 +54,13 @@ npm test
 Bump `?v=1.0.0` in `manifest.xml` and `docs/functions.html` when you publish, so Excel does not keep an old cached copy.
 Students who installed the manifest get the new code automatically the next time Excel loads the add-in.
 
+## Help text
+
+* **One-line description** of a function: the `/** … */` comment above it in `library/GeoEXCEL_v0.13.txt`.
+* **Argument meanings, returns, notes**: the function's `[name]` block in `tools/help.txt`, one `argument: meaning` line per argument.
+* Excel shows the argument meaning while you type the formula, and the *Insert Function* dialog links to the function's section
+  of `https://jpbardet.github.io/geoXL/index.html`. `npm run build` regenerates everything (GitHub does it for you if the build workflow is set up).
+
 ## Differences from the LAMBDA version
 
 * **Names**: `GeoEXCEL.water_pressure` → `GEOXL.WATER_PRESSURE` (Excel shows custom function names in capitals).
@@ -67,6 +76,7 @@ Students who installed the manifest get the new code automatically the next time
 * `consolidation_test`: `tc` and `xc` both come from the y value of the first intersection, so `Cv = 0.848 / xc²`.
 * `elastic_sector`: 361 rays (0° and 360° both counted) divided by 360.
 * `Step_table`: the LAMBDA uses `INDEX(y, 0)` for the first row; the add-in returns the first y value there.
+* `classify_ASTM`: the row choice for 30–50 % coarse fraction is inverted (`IF(gravel>15, 4, 5)` and `IF(sand>15, 6, 7)`), so e.g. 5 % gravel gives "Sandy fat clay with gravel". `classify_ASTM2487` gives the correct names and needs no table.
 * `slope_friction_circle`: translated line by line but **not yet checked against a worked example**. Please compare it with one of your workbooks.
 
 ## How it was checked

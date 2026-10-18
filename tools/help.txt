@@ -1,0 +1,1017 @@
+# geoXL help text: one block per function.
+#   [function_name]           exactly as in the SPEC table of make_wrappers.py
+#   argument: description     shown by Excel when you type the argument (keep under ~200 characters)
+#   returns: ...              what the function gives back (help page only)
+#   notes: ...                cautions, conventions, known behaviour (help page only; several notes lines allowed)
+# The one-line function description stays in library/GeoEXCEL_v0.13.txt (the /** */ comment).
+# Units: use one consistent system (e.g. m, kN, kPa) unless an argument says otherwise. Angles in degrees unless stated.
+
+[version]
+returns: Text with the add-in version and release date.
+
+[bearing_capacity]
+coh: Cohesion c (kPa)
+phi: Friction angle φ (degrees)
+q: Surcharge at footing level, γ·D (kPa)
+gam: Unit weight of the soil below the footing (kN/m³)
+B: Footing width (m)
+L: Footing length (m); use a large value for a strip
+D: Embedment depth of the footing (m)
+H: Horizontal load (kN); 0 for vertical loading
+V: Vertical load (kN)
+author: Method: "terzaghi", "prandtl", "meyerhof", "hansen", "vesic" or "ec7"
+A_: Optional effective footing area (m²), default 1
+returns: Ultimate bearing pressure qu (kPa) = Σ s·d·i·N·load for the c, q and γ terms.
+notes: A_ is accepted but, as in the LAMBDA, not passed on to the inclination factors.
+notes: Method names must be spelled exactly as listed.
+
+[bearing_depthFactors]
+DB: Depth ratio D/B
+phi: Friction angle φ (degrees)
+author: Method: "terzaghi", "prandtl", "meyerhof", "hansen", "vesic" or "ec7"
+returns: Column {dc; dq; dγ}.
+
+[bearing_factors]
+phi: Friction angle φ (degrees)
+author_: Method: "terzaghi", "prandtl", "meyerhof", "hansen", "vesic" or "ec7"
+returns: Column {Nc; Nq; Nγ}.
+
+[bearing_inclinationFactors]
+H: Horizontal load (kN)
+V: Vertical load (kN)
+BL: Shape ratio B/L
+phi: Friction angle φ (degrees)
+coh: Cohesion c (kPa)
+author: Method: "terzaghi", "prandtl", "meyerhof", "hansen", "vesic" or "ec7"
+A_: Optional footing area (m²), default 1
+returns: Column {ic; iq; iγ}.
+notes: Zero cohesion or zero loads can make some methods' expressions singular.
+
+[bearing_Nq]
+Phi: Friction angle φ (degrees)
+author_: Method: "terzaghi", "prandtl", "meyerhof", "hansen", "vesic" or "ec7"
+returns: Nq (dimensionless).
+
+[bearing_shapeFactors]
+BL: Shape ratio B/L (0 for a strip, 1 for a square)
+phi: Friction angle φ (degrees)
+author: Method: "terzaghi", "prandtl", "meyerhof", "hansen", "vesic" or "ec7"
+opt_: Optional: any value selects the alternative Terzaghi sγ
+returns: Column {sc; sq; sγ}.
+notes: Supplying opt_ (even FALSE) selects the alternative branch; only its presence matters.
+
+[bearing_Skempton]
+DB: Depth ratio D/B (capped at 6)
+BL: Shape ratio B/L
+returns: Skempton Nc (dimensionless) for undrained bearing, qu = cu·Nc + q.
+
+[classify_AASHTO]
+pf10_: Percent passing No. 10 sieve (enter 40 for 40 %)
+pf40_: Percent passing No. 40 sieve (%)
+pf200_: Percent passing No. 200 sieve (%)
+LL_: Liquid limit LL (%), optional
+PL_: Plastic limit PL (%), optional
+returns: AASHTO group (e.g. A-2-4) with group index, as text.
+notes: Percentages are entered as numbers (40), not fractions (0.40).
+
+[astm_table]
+returns: 100 × 2 table {group symbol, group name} of ASTM D2487 group names.
+notes: Replaces the ASTMtable name on the ASTMnames sheet; classify_ASTM uses it when its list argument is "".
+
+[classify_ASTM]
+list: Two-column table {symbol, group name}; enter "" to use the built-in ASTM_TABLE
+pf4_: Percent passing No. 4 sieve (%)
+pf200_: Percent passing No. 200 sieve (%)
+Cu_: Coefficient of uniformity Cu = D60/D10, optional
+Cc_: Coefficient of curvature Cc = D30²/(D10·D60), optional
+LL_: Liquid limit LL (%), optional
+PL_: Plastic limit PL (%), optional
+organic_: Organic indicator: omit or 0 = inorganic, 1 = organic
+returns: Text "symbol - group name", e.g. "CL - Lean clay with sand".
+notes: Known issues kept from the LAMBDA: for 30–50 % coarse fraction the "with sand / with gravel" endings are swapped; organic CL and CH soils are not flagged (the test reads "MC"); organic MH looks for "OMH", which is not in the table (#REF!).
+notes: Prefer CLASSIFY_ASTM2487, which follows the D2487 flow charts and needs no table.
+
+[classify_Plasticity]
+LL: Liquid limit LL (%)
+PL: Plastic limit PL (%)
+organic: Organic indicator: omit or 0 = inorganic, 1 = organic
+returns: Symbol from the plasticity chart: CL, CH, ML, MH, OL, OH or "CL & ML".
+
+[classify_USC]
+pf4_: Percent passing No. 4 sieve (%)
+pf200_: Percent passing No. 200 sieve (%)
+Cu_: Coefficient of uniformity Cu = D60/D10, optional
+Cc_: Coefficient of curvature Cc = D30²/(D10·D60), optional
+LL_: Liquid limit LL (%), optional
+PL_: Plastic limit PL (%), optional
+organic_: Organic indicator: omit or 0 = inorganic, 1 = organic
+returns: USCS group symbol (e.g. SW-SM, CL).
+notes: The "SM-SC / GM-GC" branch cannot be reached because classify_Plasticity returns "CL & ML", not "CL-ML".
+
+[consolidation_test]
+Tarray: Column of elapsed times (min)
+Xarray: Column of dial readings (same rows as Tarray)
+ta: Start of the straight-line fitting window (same unit as Tarray)
+tb: End of the fitting window
+hi: Initial specimen height (same unit as the readings)
+returns: 10 × 2 labelled table: Cv, initial height, initial reading, d0, d100, final reading, drainage length, initial/primary/secondary compression ratios.
+notes: As in the LAMBDA, tc and xc both come from the y value of the first intersection, so Cv = 0.848/xc². Check against a hand construction.
+
+[consolidation_Tv]
+U: Average degree of consolidation (fraction, 0 ≤ U < 1)
+returns: Time factor Tv.
+
+[consolidation_U]
+tv: Time factor Tv (single value or column)
+case_: Initial excess pore pressure shape: "uniform" (default), "triangular_top", "triangular_bottom", "vshape", "saw", "sine", "parabolic", "circular"
+returns: Average degree of consolidation U (fraction), one per tv.
+notes: The number of Fourier terms adapts to the smallest tv.
+
+[consolidation_Ux]
+Xarray: Column of normalized depths z/H
+tv: Time factor Tv
+case_: Initial pore pressure shape (same choices as consolidation_U)
+returns: Column of u/u0 at each depth.
+
+[consolidation_U_approximate]
+tv: Time factor Tv
+returns: Average degree of consolidation U (fraction), closed-form approximation.
+
+[consolidation_U_variable]
+tv: Time factor Tv
+tc: Time factor at the end of construction (load ramps up linearly until tc)
+returns: Average degree of consolidation U (fraction).
+
+[cosd]
+X: Angle (degrees)
+returns: cos(X).
+
+[Coulomb_cohesiveforces]
+t: Trial wedge (slip) angle (radians)
+phi: Friction angle φ (degrees)
+alpha: Wall inclination α (degrees; 90 = vertical)
+beta: Backfill slope β (degrees)
+delta: Wall friction angle δ (degrees)
+g: Unit weight γ (kN/m³)
+h: Wall height H (m)
+coh_: Cohesion c (kPa), optional, default 0
+returns: Column {W; R; P; Cs; Cw; z0; K}: wedge weight, soil reaction, wall thrust, cohesion forces on slip plane and wall, tension-crack depth, coefficient. Forces per unit length.
+notes: t is in radians while the other angles are in degrees.
+
+[Coulomb_forces]
+t: Trial wedge (slip) angle (radians)
+phi: Friction angle φ (degrees)
+alpha: Wall inclination α (degrees; 90 = vertical)
+beta: Backfill slope β (degrees)
+delta: Wall friction angle δ (degrees)
+g: Unit weight γ (kN/m³)
+h: Wall height H (m)
+returns: Column {W; R; P; K}, forces per unit wall length.
+
+[coulomb_K]
+phi: Friction angle φ (degrees)
+alpha: Wall inclination α (degrees; 90 = vertical)
+beta: Backfill slope β (degrees)
+delta: Wall friction angle δ (degrees)
+passive: Omit for active Ka; any value gives passive Kp
+returns: Coulomb Ka or Kp.
+notes: Supplying passive (even FALSE) selects Kp; only its presence matters.
+
+[Coulomb_maximum]
+a_: Lower search bound (any value on the first call)
+b_: Upper search bound (any value on the first call)
+phi: Friction angle φ (degrees)
+alpha: Wall inclination α (degrees; 90 = vertical)
+beta: Backfill slope β (degrees)
+delta: Wall friction angle δ (degrees)
+g: Unit weight γ (kN/m³)
+h: Wall height H (m)
+iter_: Leave empty (internal iteration counter)
+returns: Column {critical slip angle (degrees); W; R; P; K}.
+
+[coulomb_theta]
+phi: Friction angle φ (degrees)
+alpha: Wall inclination α (degrees; 90 = vertical)
+beta: Backfill slope β (degrees)
+delta: Wall friction angle δ (degrees)
+returns: Critical slip angle (degrees).
+
+[cutline]
+Xarray: Column of x values of the curve
+Yarray: Column of y values of the curve
+slope: Slope of the line
+intercept: Intercept of the line
+returns: Two columns {x, y} of the crossings, #N/A if none.
+
+[elastic_circular_radius]
+s: Stress ratio Δσz/q under the centre (0 ≤ s < 1)
+returns: Ratio r/z of a circular load giving that stress ratio (for influence charts).
+
+[elastic_circular_stress]
+rValue: Radius of the loaded circle (m)
+z: Depth below the centre (m)
+nu_: Poisson's ratio, optional, default 0.3
+returns: Row {label, Δσz/q, Δσr/q}. Multiply by the applied pressure.
+
+[elastic_embankment]
+b1z: Ratio b1/z (half crest width over depth)
+b2z: Ratio b2/z (horizontal length of the side slope over depth, ≠ 0)
+returns: Osterberg influence factor I; Δσz = I·q.
+
+[elastic_Janbu_mu0]
+DB: Depth ratio D/B
+LB: Length ratio L/B: 1, 2, 5, 10, 20, 50, 100 or 200
+returns: Janbu μ0 (chart interpolation).
+
+[elastic_Janbu_mu1]
+LB: Chart abscissa (H/B)
+DB: Curve: "circle" or L/B = 1, 2, 5, 10, 20, 50, 100
+returns: Janbu μ1 (chart interpolation on a log axis).
+notes: Argument names follow the LAMBDA; check the axis meaning against the original Janbu chart.
+
+[elastic_lineload]
+x: Horizontal offset from the load (m)
+y: Depth (m)
+returns: Row {label, σx, σy, τxy} per unit line load; multiply by the load (kN/m).
+
+[elastic_lineload_horizontal]
+x: Horizontal offset from the load (m)
+y: Depth (m)
+returns: Row {label, σx, σy, τxy} per unit horizontal line load.
+
+[elastic_Newmark_factor]
+m: Ratio B/z (rectangle side over depth)
+n: Ratio L/z (other side over depth)
+returns: Influence factor under a corner; Δσz = I·q.
+
+[elastic_Newmark_stress]
+x_: x coordinate of the point
+y_: y coordinate of the point
+z_: Depth of the point
+pt: Rectangle corners (4 rows × 2 columns, opposite corners in rows 1 and 3)
+returns: Influence factor at (x, y, z); Δσz = I·q.
+notes: z = 0 is replaced by z = 1, as in the LAMBDA.
+
+[elastic_pointload]
+rValue: Horizontal distance from the load (m)
+z: Depth (m)
+nu_: Poisson's ratio, optional, default 0.3
+returns: Row {label, σz, σr, σθ, τrz} per unit point load; multiply by P (kN).
+
+[elastic_sector]
+x: x coordinate of the point
+y: y coordinate of the point
+z: Depth
+pts: Polygon vertices (two columns x, y)
+returns: Influence factor; Δσz = I·q.
+
+[elastic_sector_row]
+txy: Row: ray angle (radians) followed by the flattened polygon coordinates
+returns: Contribution of one ray (helper for elastic_sector).
+
+[elastic_sector_slice]
+ra: Inner radius
+rb: Outer radius
+z: Depth
+dt: Angular weight (sector angle / 2π)
+returns: Contribution of one annular sector.
+
+[elastic_stripload]
+B: Full width of the strip (m)
+x: Horizontal offset from the strip centre (m)
+y: Depth (m)
+returns: Row {label, σy/q, σx/q, τxy/q}.
+notes: See elastic_stripload_xy for the {σx, σy, τxy} order used in retaining-wall sheets.
+
+[elastic_triangle]
+B: Loaded width (m)
+x: Horizontal offset (m)
+y: Depth (m)
+returns: Row {label, σy/q, σx/q, τxy/q}; q is the maximum pressure.
+
+[Interpolate]
+X: Value(s) at which to interpolate
+Xa: Column of known x values (increasing or decreasing)
+Ya: Column of known y values
+mode: "linear" (default), "logx", "logy" or "logxy"
+outside: Omit for #N/A outside the table, "extrapolate" or "clamp"
+returns: Interpolated y, one per X.
+
+[intersection_polygon_line]
+polygon: Polygon vertices (two columns x, y)
+pt: Point {x, y} on the line
+t: Line angle (radians)
+returns: Two columns {x, y}; {0, 0} if there is no intersection.
+
+[intersection_polygon_ray]
+polygon: Polygon vertices (two columns x, y)
+pt: Ray origin {x, y}
+t: Ray angle (radians)
+returns: Sorted distances to the boundary.
+
+[minimum]
+A: Lower bound of the search interval
+B: Upper bound
+iter_: Leave empty (internal counter)
+returns: x of the minimum of x³ + 5x² − 10x (teaching example of golden-section search).
+
+[polygon_centroidArea]
+polygon: Vertices (two columns x, y); the first vertex may be repeated at the end
+returns: 2 × 3 table {"Centroid =", xc, yc; "Area =", A, ""}.
+
+[polygon_weightMoment]
+XY: Block vertices (two columns x, y)
+g: Unit weight (kN/m³)
+Pt: Point {x, y} about which the moment is taken
+returns: Row {W, M} per unit thickness.
+
+[pressure_forceMoment]
+d: Column of depths (m)
+p: Column of pressures (kPa)
+d0: Depth of the moment centre (m)
+returns: Row {F (kN/m), M (kN·m/m)}.
+
+[Rankine_K]
+phi: Friction angle φ (degrees)
+beta: Backfill slope β (degrees)
+returns: Rankine active coefficient Ka.
+
+[Rankine_stress]
+phi: Friction angle φ (degrees)
+coh: Cohesion c (kPa)
+alpha: Wall angle α (degrees)
+beta: Backfill slope β (degrees)
+gz: Vertical stress γ·z (kPa)
+passive: Omit for active; any value for passive
+returns: 4 × 3 labelled table: coefficient and stress inclination, stresses on the slope, pole and wall.
+
+[sind]
+X: Angle (degrees)
+returns: sin(X).
+
+[SPT_bearing]
+z: Column of depths (m)
+N: Column of SPT N values (or a single N)
+B: Footing width (m)
+D: Footing depth (m)
+author: "bowles", "meyerhof" or "terzaghi"
+returns: Allowable bearing pressure (kPa) with N averaged from D to D + B.
+
+[SPT_BurlandBurbidge_settlement]
+z: Column of depths (m)
+N: Column of SPT N values
+q: Applied pressure (kPa)
+B: Footing width (m)
+LB: Ratio L/B, optional (shape correction)
+D_: Footing depth (m), optional, default 0
+H: Thickness of the compressible layer (m), optional (thin-layer correction)
+sc: Preconsolidation pressure σ'p (kPa), optional
+returns: Settlement (mm) = fs·fl·B^0.7·Ic·q'.
+
+[SPT_correction_depth]
+s: Effective vertical stress σ'v (kPa)
+returns: Overburden correction CN = 10/√σ'v, at most 2.
+
+[SPT_Correlation_friction]
+N: SPT blow count N
+author: "peck", "schmertman" or "hatanaka"
+s: Effective vertical stress σ'v (needed by schmertman and hatanaka; kPa for hatanaka)
+pa: Atmospheric pressure in the same unit as s (needed by schmertman)
+returns: Friction angle φ (degrees).
+
+[stress_ForceMoment]
+A: Segment start {x, y}
+B: Segment end {x, y}
+sa: Stresses at A {normal, shear}
+sb: Stresses at B {normal, shear}
+returns: 3 × 3 table: force components, moment and point of application.
+notes: A zero mean normal stress makes the point of application undefined.
+
+[Stress_Mohr]
+sa: Normal stress at the pole (kPa)
+ta: Shear stress at the pole (kPa)
+alpha: Plane angle (degrees)
+sm: Centre of the Mohr circle (kPa)
+returns: Row {σ, τ} on the plane.
+
+[stress_Mohr_failure]
+sa: Known normal stress (kPa)
+ta: Known shear stress (kPa)
+A: Angle of the plane carrying (sa, ta) (degrees)
+phi: Friction angle φ (degrees)
+coh: Cohesion c (kPa)
+passive: Omit for active; any value for passive
+returns: 9 × 4 labelled table: centre, radius, pole, principal and failure-plane stresses.
+
+[stress_Mohr_pole]
+sa: Normal stress on plane A (kPa)
+ta: Shear stress on plane A (kPa)
+A: Angle of plane A (degrees)
+sb: Normal stress on the perpendicular plane (kPa)
+returns: 7 × 4 labelled table: centre, radius, pole and principal stresses.
+
+[stress_Mohrcircle]
+sm: Centre of the circle (kPa)
+rValue: Radius of the circle (kPa)
+returns: 22 × 2 table: header + 21 points {σ, τ} for an XY scatter chart.
+
+[tand]
+X: Angle (degrees)
+returns: tan(X).
+
+[vector_line]
+ptA: Segment start {x, y}
+ptB: Segment end {x, y}
+sigA: Stresses at A {normal, shear}
+sigB: Stresses at B {normal, shear}
+M: Number of vectors drawn along the segment
+s: Display scale (length per unit stress)
+returns: Two columns {x, y} for a scatter chart, vectors separated by #N/A rows.
+
+[water_pressure]
+depth: Depth below the ground surface (m)
+waterTableDepth: Depth of the water table below the ground surface (m)
+unitWeight: Unit weight of water, optional, default 9.81 kN/m³
+returns: Pore water pressure u (kPa); 0 above the water table.
+
+[elastic_stripload_xy]
+B: Full width of the strip (m)
+X: Horizontal offset from the strip centre (m)
+Y: Depth (m)
+returns: Row {label, σx/q, σy/q, τxy/q} (retaining-wall order).
+
+[circle]
+pt: Centre {x, y}
+rValue: Radius
+ta_: Start angle (degrees), optional, default 0
+tb_: End angle (degrees), optional, default 360
+n_: Number of segments, optional, default 100
+returns: Header + n+1 points {x, y} for a scatter chart.
+
+[classify_CPT_LCPC]
+qc: Cone resistance qc (MPa)
+soil: "clay", "silt", "sand", "gravel" or "chalk"
+pile: Pile type: "drilled", "cast", "steel" or "concrete"
+returns: Row {category, kc, β, qs max (MPa)} for the LCPC method.
+
+[classify_PMT_LCPC]
+pl: Limit pressure pl (MPa)
+soil: Soil type ("clay" … "rock")
+pile: Pile installation type
+returns: Row {kp, shaft-friction curve number}.
+
+[CPT_average_qc]
+z: Column of depths (m)
+qc: Column of cone resistances qc
+D: Footing depth (m)
+B: Footing width (m)
+author: "meyerhof" (D to D + 1.5B) or "robertson" (D to D + B)
+returns: Average qc over the influence zone.
+
+[CPT_bearing_Meyerhof_k]
+B: Footing width (m)
+D: Footing depth (m)
+dw: Depth of the water table (m)
+m: Optional: any value selects the 12.19 divisor instead of 40
+returns: Factor k including the water-table corrections Cw1, Cw2; multiply by the average qc.
+
+[CPT_bearing_Robertson_k]
+B: Footing width (m)
+D: Footing depth (m)
+shape: "square" or "circular"
+density: "dense" or "loose"
+returns: Bearing factor k (chart fit); qu = k·qc.
+
+[CPT_friction_angle]
+z: Depth (m)
+qc: Cone resistance qc (same unit as γ·z, so qc/σv is dimensionless)
+g: Unit weight γ (consistent with qc and z)
+author_: "robertson", "kulhawy", "ricceri" or "lee"
+returns: Friction angle φ (degrees).
+
+[CPT_Olsen_layers]
+cpt: Output table of CPT_Olsen_SCN with depth in column 1 and SCN in column 6
+returns: Header + layer thicknesses with SCN + 3.
+
+[CPT_Olsen_SCN]
+dqs: Three-column table {depth, qc, fs}
+pa: Atmospheric pressure (same unit as qc)
+n: Stress exponent for normalization
+g: Total unit weight of the soil
+gw: Unit weight of water
+dw: Depth of the water table
+returns: Table {Qn, Fr (%), SCN, soil name}, one row per depth.
+
+[CPT_Olsen_SCN_row]
+Qt: Normalized tip resistance
+Fr: Friction ratio (%)
+returns: Zone index 1–7 (helper for CPT_Olsen_SCN).
+
+[CPT_Robertson_classification_chart]
+x_: Friction ratio Fr (%)
+sel: Boundary curve letter "A" … "H"
+returns: Qt on that boundary (to draw the chart).
+
+[CPT_Robertson_layers]
+cpt: Output table of CPT_Robertson_SBT (depth in column 1, SBT in column 6, SBT(Ic) in column 9)
+returns: Layer thicknesses for SBT and SBT(Ic).
+
+[CPT_Robertson_SBT]
+dqs: Three-column table {depth, qc, fs}
+pa: Atmospheric pressure (same unit as qc)
+n: Stress exponent for normalization
+g: Total unit weight of the soil
+gw: Unit weight of water
+dw: Depth of the water table
+returns: Table {Qn, Fr, SBT, name, Ic, SBT(Ic), name}, one row per depth.
+
+[CPT_Robertson_SBT_row]
+Qt_: Normalized tip resistance
+Fr_: Friction ratio (%)
+returns: SBT zone 1–9, 0 if outside the chart (helper for CPT_Robertson_SBT).
+
+[CPT_settlement]
+zqc: Two-column table {depth (m), qc}
+k: Modulus factor E/qc (e.g. 2.5 square, 3.5 strip)
+B: Footing width (m)
+D: Footing depth (m)
+L: Footing length (m)
+qn: Net applied pressure (same unit as qc)
+g: Unit weight above footing level
+returns: "Settlement =" row, then a table {depth, qc, E, Iz, ε} for the influence zone.
+
+[CPT_settlement_Iz]
+z: Depth(s) (m)
+B: Footing width (m)
+D: Footing depth (m)
+L: Footing length (m)
+qn: Net applied pressure
+g: Unit weight above footing level
+returns: Schmertmann strain influence factor Iz at each depth.
+
+[distance_point_polyline]
+M: Point {x, y}
+pl: Polyline vertices (two columns x, y)
+returns: Distance from M to the line through each segment.
+
+[interpolate_table]
+x: Value along the first row of the table
+Y: Value along the first column of the table
+XY: Table: x values in row 1, y values in column 1 (ascending), data inside
+returns: Bilinear interpolation at (x, Y).
+notes: As in the LAMBDA, the fourth corner uses INDEX(Za, r+1, c) like another corner; it was probably meant to be INDEX(Za, r, c+1). Check results near table cells.
+
+[intersection_polyline_circle]
+pline: Polyline vertices (two columns x, y)
+center: Circle centre {x, y}
+radius: Circle radius
+returns: Intersection points {x, y}.
+
+[intersection_polyline_polyline]
+pl: First polyline (two columns x, y)
+ql: Second polyline (two columns x, y)
+m: Optional: keep only the m intersections with the largest x
+returns: Rows {segment parameter, x, y}.
+
+[intersection_segment_polyline]
+row: Flattened row: segment end points, then the polyline coordinates
+returns: Segment parameter of the intersection (helper).
+
+[intersection_spiral_segment]
+AB_: Segment end points (2 rows × 2 columns)
+pt: Spiral centre {x, y}
+rValue: Spiral initial radius
+phi: Friction angle φ of the spiral (degrees)
+x_: Optional starting guess
+iter_: Leave empty (internal counter)
+returns: Intersection point {x, y} (Newton iteration).
+
+[lateralpile_Broms_cohesionless]
+D: Embedded length of the pile (m)
+phi: Friction angle φ (degrees)
+g: Unit weight γ (kN/m³)
+B: Pile diameter (m)
+e: Height of the load above the ground (m)
+returns: Column {ultimate lateral load V; depth of maximum moment; Mmax}.
+
+[lateralpile_Broms_cohesive]
+V: Lateral load (kN)
+e: Height of the load above the ground (m)
+Su: Undrained shear strength (kPa)
+B: Pile diameter (m)
+returns: Column {required embedment D; rotation depth Dr; depth of max moment; Mmax}.
+
+[lateralpile_cohesionless_reaction_shear_moment]
+D: Embedded length (m)
+phi: Friction angle φ (degrees)
+g: Unit weight γ (kN/m³)
+B: Pile diameter (m)
+e: Height of the load above the ground (m)
+returns: Header + 100 rows of depth, soil reaction, shear and moment.
+
+[lateralpile_cohesive_reaction_shear_moment]
+V: Lateral load (kN)
+e: Height of the load above the ground (m)
+Su: Undrained shear strength (kPa)
+B: Pile diameter (m)
+D_: Embedded length (m), optional (default from Broms)
+Dr_: Rotation depth (m), optional (default from Broms)
+returns: Table of depth, soil reaction, shear and moment.
+
+[logSpiral]
+pt: Centre {x, y}
+rValue: Initial radius r0
+phi: Friction angle φ (degrees)
+ta_: Start angle (degrees), optional, default 0
+tb_: End angle (degrees), optional, default −180
+n_: Number of segments, optional, default 100
+returns: n+1 points {x, y} of r = r0·exp(−θ·tanφ) for a scatter chart.
+
+[pile_capacity_CPT_Schmertman]
+z_qc_fs_soil: Table {depth (m), qc, fs, optional soil ("clay", "silt", "sand", "gravel"; default sand)}
+A: Pile tip area (m²)
+p: Pile perimeter (m)
+L: Pile length (m)
+pile: "steel", "concrete" or "timber"
+returns: Labelled table: ultimate, shaft and tip capacity, average fs and qc.
+
+[pile_shaft_alpha]
+z: Column of depths (m)
+Su: Column of undrained shear strengths (kPa)
+pa: Atmospheric pressure (kPa, about 101)
+p: Pile perimeter (m)
+L: Pile length (m)
+author: "terzaghi" or "reese"
+returns: Ultimate shaft resistance (kN).
+
+[pile_sidefriction_alpha]
+Su: Normalized strength Su/pa
+author: "terzaghi" or "reese"
+returns: Adhesion factor α.
+
+[pile_sidefriction_lambda]
+D_: Pile length (m, or ft if ft is supplied)
+ft: Optional: any value means D_ is in feet
+returns: λ coefficient (Vijayvergiya–Focht).
+
+[pile_tip_Meyerhof]
+pa: Atmospheric pressure (kPa)
+cValue: Cohesion c (kPa)
+phi: Friction angle φ (degrees)
+returns: Labelled ultimate tip pressure c·Nc + pa·Nq·tanφ/2.
+
+[pile_tip_meyerhof_factor]
+phi: Friction angle φ (degrees)
+returns: Column {Nq; Nc}.
+
+[pile_tip_vesic]
+sv: Vertical effective stress at the tip (kPa)
+pa: Atmospheric pressure (kPa)
+cValue: Cohesion c (kPa)
+phi_: Friction angle φ (degrees), optional, default 0
+Dr_: Relative density (fraction), optional, default 0.1
+returns: Labelled column {qu; Nq; Nc; reduced rigidity index Irr; mean stress σm}.
+
+[pile_tip_vesic_factor]
+phi: Friction angle φ (degrees)
+Ir: Rigidity index Ir
+returns: Column {Nq; Nc}.
+
+[PMT_alpha]
+soil: "peat", "clay", "silt", "sand", "gravel" or "rock"
+Epl: Ratio E/pl
+returns: Ménard rheological factor α.
+
+[PMT_bearing_limitPressure]
+z: Column of test depths (m)
+pl: Column of limit pressures pl
+B: Footing width (m)
+D: Footing depth (m)
+returns: Column {ple; De}: equivalent limit pressure (geometric mean from D to D + 1.5B) and equivalent embedment.
+
+[PMT_bearing_Menard]
+z: Column of test depths (m)
+pl: Column of limit pressures pl
+B: Footing width (m)
+D: Footing depth (m)
+L: Footing length (m)
+soil: Ménard category "I", "II", "III" or "IIIA"
+g: Unit weight above footing level
+returns: Labelled column {qu; ple; k}, qu = k·ple + γ·De.
+
+[PMT_bearing_Menard_k]
+H: Ratio De/(B/2)
+BL: Shape ratio B/L
+soil: Ménard category "I", "II", "III" or "IIIA"
+returns: Bearing factor k, interpolated between strip and square.
+
+[PMT_layers]
+B: Footing width (m)
+D: Footing depth (m)
+returns: Plotting lines of the 16 Ménard sub-layers of thickness B/2.
+
+[stepProfile]
+x: Column of depths
+y: Column of values
+returns: Two columns for a step plot.
+
+[SPT_stepProfile]
+x: Column of depths
+y: Column of N values
+returns: Two columns for a step plot (plotting tool, not an SPT correction).
+
+[CPT_stepProfile]
+x: Column of depths
+y: Column of CPT values
+returns: Two columns for a step plot.
+
+[PMT_staircase]
+x: Column of depths
+y: Column of pressuremeter values
+returns: Two columns for a step plot.
+
+[polygon_area_centroid]
+polygon: Vertices (two columns x, y); the first vertex may be repeated at the end
+returns: 2 × 3 table {"Centroid =", xc, yc; "Area =", A, ""}.
+
+[Polygon_inside]
+x: x of the point
+y: y of the point
+xa: Column of polygon x coordinates
+ya: Column of polygon y coordinates
+returns: TRUE if the point lies below exactly one polygon edge (vertical-ray test).
+
+[polyline_subdivide]
+X: x value
+polyline: Polyline vertices (two columns x, y)
+returns: y at X by linear interpolation along the polyline.
+
+[settlement_Schmertman_factor]
+z: Depth (m)
+Imax: Peak strain influence factor Izp
+B: Footing width (m)
+za: Depth of the footing base (m)
+BL_: Optional shape: 0 = square/axisymmetric (default), 1 = strip
+returns: Strain influence factor Iz at z.
+
+[slope_circle_cohesive]
+pline: Ground surface polyline (two columns x, y)
+center: Circle centre {x, y}
+radius: Circle radius (m)
+cu: Undrained shear strength (kPa)
+unitweight: Unit weight (kN/m³)
+detail: Optional: any value returns the details table instead of FS only
+returns: Factor of safety; with detail: FS, area, arc length, centroid, entry and exit points.
+
+[slope_circle_polyline]
+pl: Ground surface polyline (two columns x, y)
+center: Circle centre {x, y}
+radius: Circle radius
+returns: Centroid, entry/exit points and angles and area of the sliding mass.
+
+[slope_circle_polyline_cohesive]
+pline: Ground surface polyline (two columns x, y)
+center: Circle centre {x, y}
+radius: Circle radius (m)
+cu: Undrained shear strength (kPa)
+unitweight: Unit weight (kN/m³)
+detail: Optional: any value returns the details table
+returns: Factor of safety (or details) using polygon geometry.
+
+[slope_friction_circle]
+pline: Ground surface polyline (two columns x, y)
+pt: Circle centre {x, y}
+rValue: Circle radius (m)
+coh: Cohesion c (kPa)
+phi: Friction angle φ (degrees)
+g: Unit weight γ (kN/m³)
+opt_: Optional: any value uses the alternative Taylor factor
+returns: Labelled table: factor of safety and force polygon.
+notes: Not yet checked against a worked example; compare with a hand solution before teaching use.
+
+[slope_friction_circle_fct]
+FS: Trial frictional factor of safety (accepts a column)
+f: Friction angle (radians)
+coh: Cohesion c
+w: Weight of the sliding mass
+kr: Taylor factor k
+rValue: Circle radius
+OD: Distance used for the line of action of the weight
+DM: Lever arm of the cohesion resultant
+alpha: Direction of the cohesion resultant (radians)
+Lc: Chord length
+returns: Cohesion factor of safety for each trial FS (helper).
+
+[slope_friction_circle_Taylor]
+t: Central angle of the arc (radians)
+opt: 1 selects the alternative formula
+returns: Taylor friction-circle radius factor k.
+
+[slope_friction_FS]
+FS: Trial factor of safety
+f: Friction angle (radians)
+coh: Cohesion c
+w: Weight of the sliding mass
+kr: Taylor factor k
+rValue: Circle radius
+a: Distance used for the line of action of the weight
+DM: Lever arm of the cohesion resultant
+alpha: Direction of the cohesion resultant (radians)
+ab: Chord length
+returns: Residual FS − FSc (helper for root finding).
+
+[slope_logSpiral]
+pl: Ground surface polyline (two columns x, y)
+pt: Spiral centre {x, y}
+rValue: Initial radius
+phi: Friction angle φ (degrees)
+coh: Cohesion c (kPa)
+g: Unit weight γ (kN/m³)
+returns: Factor of safety, centroid, weight, entry/exit points, resisting and driving moments.
+
+[SPT_depthCorrection]
+s: Effective vertical stress σ'v (kPa)
+returns: Overburden correction CN, at most 2.
+
+[SPT_frictionAngle]
+N: SPT blow count N
+spa_: Ratio σ'v/pa, optional, default 1
+author_: "peck" (default), "schmertman" or "hatanaka"
+returns: Friction angle φ (degrees).
+
+[Step_table]
+x: Column of x values
+y: Column of y values
+returns: Staircase table for a step plot.
+notes: The first row uses the first y value (the LAMBDA uses INDEX(y, 0)).
+
+[intersection_polygon_line_slope]
+polyline: Closed polygon (two columns x, y)
+M: Point {x, y} on the line
+t: Line angle (radians)
+returns: Intersections {x, y}; {0, 0} if none.
+
+[grainsizeanalysis]
+d: Column of particle diameters (mm)
+p: Column of percent passing (%), any order
+returns: Column {D10; D30; D60; Cu; Cc; % clay; % silt; % sand; % gravel}.
+
+[pile_capacity_alpha]
+zSu: Two-column table {depth (m), Su (kPa)}
+pa: Atmospheric pressure (kPa)
+a: Pile tip area (m²)
+p: Pile perimeter (m)
+L: Pile length (m)
+author: "terzaghi" or "reese"
+D_: Depth of the pile top (m), optional, default 0
+returns: Labelled column {ultimate; shaft; tip} (kN), tip = 9·Su·A.
+
+[pile_capacity_CPT_LCPC]
+z_qc_soil: Table {depth (m), qc (MPa), soil}
+a: Pile tip area (m²)
+p: Pile perimeter (m)
+L: Pile length (m)
+pile: Pile type ("drilled", "cast", "steel", "concrete")
+returns: Labelled table: ultimate, shaft, tip, average qc at the tip, average qs, kc.
+
+[pile_capacity_Fellenius]
+z_phi_sv_soil: Table {depth (m), φ (degrees), σ'v (kPa), soil ("clay", "silt", "sand", "gravel")}
+a: Pile tip area (m²)
+p: Pile perimeter (m)
+L: Pile length (m)
+D_: Depth of the pile top (m), optional, default 0
+returns: Labelled column {ultimate; shaft; tip} (kN).
+notes: Depths outside the table give #N/A.
+
+[pile_capacity_PMT_LCPC]
+z_pl_sv_soil: Table {depth (m), pl (MPa), σv, soil}
+a: Pile tip area (m²)
+p: Pile perimeter (m)
+L: Pile length (m)
+pile: Pile installation type
+returns: Labelled column {ultimate; shaft; tip}.
+
+[pile_capacity_SPT_Meyerhof]
+zN: Two-column table {depth (m), N}
+pa: Atmospheric pressure (kPa)
+a: Pile tip area (m²)
+p: Pile perimeter (m)
+L: Pile length (m)
+disp: Optional: any value = displacement (driven) pile
+returns: Labelled table: ultimate, shaft, tip, average N along the shaft and at the tip.
+
+[pile_shaft_lambda]
+z_Su_sv: Table {depth, Su, σ'v}
+p: Pile perimeter
+L: Pile length (m, or ft if ft is supplied)
+ft: Optional: any value means lengths are in feet
+returns: Labelled table: shaft capacity, λ, average Su and σ'v.
+
+[PMT_shaftFriction]
+pl: Limit pressure pl (MPa); accepts a column
+i: LCPC curve number 1–7
+returns: Unit shaft friction qs (MPa).
+
+[PMT_pile_shaftFriction]
+pl: Limit pressure pl (MPa)
+classi: Curve "q1" … "q7"
+returns: Unit shaft friction qs (MPa).
+
+[PMT_settlement_lambda]
+LB: Ratio L/B
+opt_: Optional: "v" = λc only, "d" = λd only; omit for both
+returns: Column {λc; λd} (0 if L/B < 1).
+
+[PMT_lambda]
+LB: Ratio L/B
+returns: Column {λc; λd}.
+
+[PMT_moduli]
+yEpl: Table {depth (m), E, pl}
+B: Footing width (m)
+D: Footing depth (m)
+returns: Labelled table: Ec, Ed and equivalent pl, then the 16 sub-layer values.
+
+[PMT_bearing_Eurocode]
+z: Column of test depths (m)
+pl: Column of limit pressures pl (MPa)
+B: Footing width (m)
+D: Footing depth (m)
+L: Footing length (m)
+soil: "clay silt", "sand gravel" or "chalk"
+g: Unit weight above footing level
+returns: Labelled column {qu; ple; k}.
+
+[PMT_bearing_eurocode_k]
+B: Footing width (m)
+L: Footing length (m)
+D: Embedment (m)
+pl: Limit pressure pl (MPa)
+soil_: "clay silt", "sand gravel" or "chalk"
+returns: Bearing factor k.
+
+[PMT_settlement_basic]
+q: Net applied pressure
+Ec: Volumetric (spherical) modulus Ec, same unit as q
+Ed: Deviatoric modulus Ed
+B: Footing width (m)
+LB: Ratio L/B
+ac: Rheological factor α for the volumetric term
+ad: Rheological factor α for the deviatoric term
+B0_: Reference width (m), optional, default 1
+returns: Column {sc; sd; total} (m).
+
+[PMT_settlement]
+q: Net applied pressure
+yEpl: Table {depth (m), E, pl}
+B: Footing width (m)
+D: Footing depth (m)
+L: Footing length (m)
+soil: "peat", "clay", "silt", "sand", "gravel" or "rock"
+ft_: Optional units flag: omit for B0 = 0.6 m; any value for B0 = 2 ft
+returns: Labelled table: total, volumetric and deviatoric settlement, α, λ, Ec, Ed.
+notes: Supplying ft_ (even FALSE) selects B0 = 2; omitting it selects B0 = 0.6.
+
+[shearMoment]
+d: Column of depths (m)
+p: Column of pressures (kPa)
+k: Subdivisions per segment
+returns: Columns {depth, pressure, shear, moment}.
+
+[beam]
+d: Column of depths (m)
+p: Column of pressures (kPa)
+n: Subdivisions per segment, optional, default 20
+returns: Columns {depth, pressure, shear, moment}, no header.
+
+[pressure_shear_moment]
+d: Column of depths (m)
+p: Column of pressures (kPa)
+n: Subdivisions per segment, optional, default 20
+returns: Header + columns {depth, pressure, shear, moment}.
+
+[pressure_shear_moment_anchor]
+d: Column of depths (m)
+p: Column of pressures (kPa)
+da: Depth of the anchor (m)
+Ta: Anchor force (kN/m)
+n: Subdivisions per segment, optional, default 20
+returns: Header + columns {depth, pressure, shear, moment} including the anchor force.
+
+[SPT_bearing_direct]
+N: SPT blow count N (average below the footing)
+B: Footing width (m)
+D: Footing depth (m)
+author: "bowles", "meyerhof" or "terzaghi"
+returns: Allowable bearing pressure (kPa).
+
+[classify_ASTM2487]
+pf4: Percent passing No. 4 sieve (%)
+pf200: Percent passing No. 200 sieve (%)
+cu_: Coefficient of uniformity Cu = D60/D10, optional
+cc_: Coefficient of curvature Cc = D30²/(D10·D60), optional
+ll_: Liquid limit LL (%), optional
+pl_: Plastic limit PL (%), optional
+ratio_: LL oven-dried / LL not dried, optional (below 0.75 = organic; blank = inorganic)
+returns: Row {group symbol, group name}, e.g. {"SC", "Clayey sand with gravel"}.
+notes: Peat (Pt) is identified visually and is not returned.
