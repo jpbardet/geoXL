@@ -315,6 +315,12 @@ async function patchAFE(zip,lib,legacy,warnings,aliases=dottedAliases(lib)) {
   return changed;
 }
 function dIsLambda(formula){return /^_xlfn\.LAMBDA\(/i.test(formula);}
+// Older dotted functions whose arguments differ from the underscore function of the same name:
+// they continue under a different current name with the old arguments.
+const RENAMED={'spt.bearing':'SPT_bearing_direct','pmt.settlement':'PMT_settlement_basic'};
+// Calls already renamed by an earlier update but still written with the old arguments:
+// name -> {argument count: current function with those arguments}.
+const BY_ARGUMENTS={'spt_bearing':{4:'SPT_bearing_direct'},'pmt_settlement':{8:'PMT_settlement_basic'}};
 // Rename only aliases that map unambiguously to a name in the selected library.
 function dottedAliases(lib,existing=[]) {
   const aliases=new Map();
@@ -325,14 +331,36 @@ function dottedAliases(lib,existing=[]) {
     aliases.set(alias,d.name);
   }
   for(const node of existing) {
-    const name=node.getAttribute('name'),key=name.toLowerCase(),target=name.replace(/\./g,'_');
+    const name=node.getAttribute('name'),key=name.toLowerCase(),target=name.replace(/^(?:geoexcel|geoxl)\./i,'').replace(/\./g,'_');
     if(!name.includes('.')||/^_+(?:xlnm|xlchart|xlfn|xlpm|xlop)\./i.test(name))continue;
     if(lib.defs.has(key))fail('The selected library still defines a dotted name: '+name);
     const canonical=lib.all.find(d=>d.name.toLowerCase()===target.toLowerCase());
     if(canonical)aliases.set(key,canonical.name);
     else if(/^\s*=?\s*(?:_xlfn\.)?LAMBDA\s*\(/i.test(decodeFormula(node.textContent)))aliases.set(key,target);
   }
+  // A defined older dotted function keeps its own arguments: map it to the current function with the same count.
+  for(const node of existing) {
+    const key=node.getAttribute('name').toLowerCase(),alt=RENAMED[key];
+    if(!alt||!aliases.has(key))continue;
+    const count=lambdaParameterCount(decodeFormula(node.textContent));
+    const pick=[aliases.get(key),alt].map(n=>lib.defs.get(n.toLowerCase())).find(d=>d&&lambdaParameterCount(d.compiled)===count);
+    if(pick)aliases.set(key,pick.name);
+  }
+  aliases.libNames=new Map(lib.all.map(d=>[d.name.toLowerCase(),d.name]));
+  aliases.argumentRules={};
+  for(const [name,rule] of Object.entries(BY_ARGUMENTS)) {
+    if(!lib.defs.has(name))continue;
+    const ok=Object.fromEntries(Object.entries(rule).filter(([,t])=>lib.defs.has(t.toLowerCase())).map(([n,t])=>[n,lib.defs.get(t.toLowerCase()).name]));
+    if(Object.keys(ok).length)aliases.argumentRules[name]=ok;
+  }
   return aliases;
+}
+function lambdaParameterCount(formula) {
+  const t=formulaTokens(formula.replace(/^\s*=\s*/,''));let i=0;
+  if(!t.length||!/^(?:_xlfn\.)?LAMBDA$/i.test(t[0].v)||t[1]?.v!=='(')return -1;
+  let depth=0,commas=0;
+  for(i=1;i<t.length;i++){const v=t[i].v;if(v==='('||v==='{')depth++;else if(v===')'||v==='}'){depth--;if(!depth)break;}else if(v===','&&depth===1)commas++;}
+  return commas;   // arguments before the body
 }
 function formulaTokens(s) {
   const tokens=[];let i=0;
@@ -359,7 +387,7 @@ function formulaTokens(s) {
   return tokens;
 }
 function migrateFormula(s,aliases) {
-  const t=formulaTokens(s),scopes=[],stack=[],issues=[],changes=[];
+  const t=formulaTokens(s),scopes=[],stack=[],issues=[],changes=[],argumentRenames=[],moved=[],prefixedCalls=[];
   const normalized=v=>v.replace(/^_xlfn\./i,'').replace(/^_xlpm\./i,'').toLowerCase();
   for(let i=0;i<t.length;i++) {
     if(t[i].v==='(')stack.push({start:i,name:i?normalized(t[i-1].v):'',splits:[i+1],braces:0});
@@ -368,6 +396,11 @@ function migrateFormula(s,aliases) {
     else if(t[i].v===','&&stack.length&&!stack.at(-1).braces)stack.at(-1).splits.push(i+1);
     else if(t[i].v===')') {
       const frame=stack.pop();if(!frame)fail('Unmatched formula parenthesis.');
+      const rule=(aliases.argumentRules||{})[frame.name.replace(/\./g,'_')];
+      if(rule&&frame.start>0&&t[frame.start-1].kind==='name'&&t[frame.start-2]?.v!=='!') {
+        const count=i===frame.start+1?0:frame.splits.length,target=rule[count];
+        if(target&&target.toLowerCase()!==frame.name)argumentRenames.push({index:frame.start-1,target});
+      }
       if(frame.name==='let'||frame.name==='lambda') {
         const names=new Set(),ends=[...frame.splits.slice(1).map(n=>n-1),i];
         const stride=frame.name==='let'?2:1;
@@ -380,6 +413,15 @@ function migrateFormula(s,aliases) {
   for(let i=0;i<t.length;i++) {
     const token=t[i];if(token.kind!=='name')continue;
     const key=token.v.replace(/^_xlfn\./i,'').toLowerCase();
+    // GeoEXCEL.name (Excel Labs module), GEOXL.NAME / _xldudf_GEOXL_NAME (former JavaScript add-in)
+    const prefixed=key.match(/^(?:_xldudf_(?:geoxl|geoexcel)_|(?:geoxl|geoexcel)\.)(.+)$/);
+    const fromPrefix=prefixed&&t[i+1]?.v==='('?aliases.libNames?.get(prefixed[1].replace(/\./g,'_')):null;
+    if(fromPrefix) {
+      let start=token.start;
+      if(t[i-1]?.v==='!'&&t[i-2]){start=t[i-2].start;if(t[i-3]?.kind==='bracket'&&t[i-3].end===t[i-2].start)start=t[i-3].start;}   // drop the FUNCRES.XLAM!/[1]! qualifier
+      if(!scopes.some(scope=>scope.start<i&&i<scope.end&&scope.names.has(normalized(token.v)))){changes.push({start,end:token.end,target:fromPrefix});prefixedCalls.push(token.v.replace(/^_xldudf_(geoxl|geoexcel)_/i,(m,p)=>p.toUpperCase()+'.')+' → '+fromPrefix);}
+      continue;
+    }
     const target=aliases.get(key)||([...aliases.values()].find(n=>key.includes('.')&&n.toLowerCase()===key.replace(/\./g,'_')));
     if(!target||BUILTINS.has(token.v.toUpperCase()))continue;
     if(scopes.some(scope=>scope.start<i&&i<scope.end&&scope.names.has(normalized(token.v))))continue;
@@ -393,8 +435,15 @@ function migrateFormula(s,aliases) {
     changes.push({start:token.start,end:token.end,target});
   }
   if(t.some(token=>normalized(token.v)==='indirect')&&t.some(token=>token.kind==='quoted'&&[...aliases.keys()].some(alias=>token.v.toLowerCase().includes(alias))))issues.push('INDIRECT text contains an old name; cannot safely retire that definition.');
+  for(const r of argumentRenames) {
+    const token=t[r.index];
+    if(scopes.some(scope=>scope.start<r.index&&r.index<scope.end&&scope.names.has(normalized(token.v))))continue;
+    const k=changes.findIndex(c=>c.start===token.start);if(k>=0)changes.splice(k,1);   // the argument rule wins over a plain rename
+    changes.push({start:token.start,end:token.end,target:r.target});moved.push(token.v+' → '+r.target);
+  }
+  changes.sort((a,b)=>a.start-b.start);
   let result=s;for(const c of changes.slice().reverse())result=result.slice(0,c.start)+c.target+result.slice(c.end);
-  return {formula:result,count:changes.length,issues};
+  return {formula:result,count:changes.length,issues,moved,prefixed:prefixedCalls};
 }
 function migrateFormulaXml(source,tags,aliases,part,stats) {
   const alternatives=tags.join('|');
@@ -405,13 +454,15 @@ function migrateFormulaXml(source,tags,aliases,part,stats) {
     const formula=decodeFormula(xml('<v>'+body+'</v>').documentElement.textContent);
     const result=migrateFormula(formula,aliases);
     if(result.issues.length)stats.review.push({part,issues:result.issues});
+    for(const m of result.moved||[])stats.moved.set(m,(stats.moved.get(m)||0)+1);
+    for(const m of result.prefixed||[])stats.prefixed.set(m,(stats.prefixed.get(m)||0)+1);
     if(!result.count)return whole;
     stats.formulas++;stats.references+=result.count;stats.parts.add(part);
     return open+esc(encodeFormula(result.formula))+close;
   });
 }
 async function migrateDottedReferences(zip,lib,workbook,aliases=dottedAliases(lib)) {
-  const stats={formulas:0,references:0,parts:new Set(),review:[]};
+  const stats={formulas:0,references:0,parts:new Set(),review:[],moved:new Map(),prefixed:new Map()};
   workbook=migrateFormulaXml(workbook,['definedName'],aliases,'xl/workbook.xml',stats);
   for(const path of Object.keys(zip.files)) {
     let tags;
@@ -478,6 +529,9 @@ async function updateWorkbook(bytes,filename,lib,options={}) {
   const migration=await migrateDottedReferences(zip,lib,workbook,aliases);
   workbook=migration.workbook;xml(workbook);
   counts.renamedFormulas=migration.stats.formulas;counts.renamedReferences=migration.stats.references;
+  if(migration.stats.prefixed.size){const total=[...migration.stats.prefixed.values()].reduce((a,b)=>a+b,0),names=[...new Set([...migration.stats.prefixed.keys()].map(k=>k.split(' → ')[1]))];
+    warnings.push(total+' call'+(total>1?'s':'')+' with the old GeoEXCEL. / GEOXL. prefix converted to the plain names ('+names.slice(0,8).join(', ')+(names.length>8?', …':'')+').');}
+  for(const [m,n] of migration.stats.moved)warnings.push(n+' call'+(n>1?'s':'')+' written with the older arguments renamed: '+m);
   if(migration.stats.review.length)fail('Cannot safely retire old names: '+migration.stats.review.map(r=>r.part+': '+r.issues.join('; ')).join(' | '));
   zip.file('xl/workbook.xml',workbook);
   const changed=[...new Set(['xl/workbook.xml',...migration.stats.parts,...await patchAFE(zip,lib,!!options.legacy,warnings,aliases)])];
