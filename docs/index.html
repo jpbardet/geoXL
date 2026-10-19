@@ -41,14 +41,15 @@ main h2{font-size:19px;margin:28px 0 8px;padding-bottom:4px;border-bottom:2px so
 .fn:target{outline:2px solid var(--accent)}.fn h3{margin:0 0 4px;font-size:15px;word-break:break-word;font-family:ui-monospace,Menlo,monospace}.fn h3 a{text-decoration:none}
 .args{width:100%;border-collapse:collapse;font-size:14px}.args th{text-align:left;color:var(--muted);font-weight:500;font-size:12px;padding:4px 6px}
 .args td{border-top:1px solid var(--line);padding:5px 6px;vertical-align:top}.args td:first-child{width:30%;white-space:nowrap}
+.guide ol{margin:6px 0 6px 22px;padding:0}.guide li{margin:3px 0}.guide .args td:first-child{white-space:normal;width:34%}
 .opt{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 4px;margin-left:4px}
 </style></head><body>
 <div class=top><p class=brand>geo<span>XL</span></p>
 <p class=lead><b>geoXL</b> is the library of geotechnical engineering functions used in this course: bearing capacity, settlement, consolidation, earth pressure, piles, slope stability, soil classification and more. The functions are Excel LAMBDA formulas stored inside each workbook, so they work in Excel without add-ins or macros.</p>
 </div>
-<div class=tabs role=tablist aria-label="geoXL"><button class=tab role=tab id=tab-install aria-controls=install aria-selected=true>Install / update</button><button class=tab role=tab id=tab-reference aria-controls=reference aria-selected=false>Function reference</button></div>
+<div class=tabs role=tablist aria-label="geoXL"><button class=tab role=tab id=tab-install aria-controls=install aria-selected=true>Install / update</button><button class=tab role=tab id=tab-guide aria-controls=guide aria-selected=false>Student guide</button><button class=tab role=tab id=tab-reference aria-controls=reference aria-selected=false>Function reference</button></div>
 <div class=install id=install role=tabpanel aria-labelledby=tab-install><section class=panel><h2>Install or update geoXL in a workbook</h2>
-<p>Works with any <code>.xlsx</code> workbook: a new blank workbook, a course template, or a workbook with an older geoXL / GeoEXCEL version. You download a new copy with the current functions; your original is not changed.</p>
+<p>Works with any <code>.xlsx</code> workbook: a new blank workbook, a course template, or a workbook with an older geoXL / GeoEXCEL version. You download a new copy with the current functions; your original is not changed. New to geoXL? Read the <a href="#guide">Student guide</a>.</p>
 <div class=version role=status><span id=dot class=dot></span><span id=libraryStatus>Loading the current geoXL version…</span><button id=load class="secondary hidden">Try again</button></div>
 <div class=steps>
 <div class=step><h3>1. Choose your workbook</h3><p>Save and close it in Excel first. Only <code>.xlsx</code> workbooks; save <code>.xls</code> or <code>.xlsm</code> files as <code>.xlsx</code> in Excel first.</p>
@@ -57,6 +58,105 @@ main h2{font-size:19px;margin:28px 0 8px;padding-bottom:4px;border-bottom:2px so
 <div class=step><h3>2. Install or update, then download</h3><button id=run disabled>Install / update geoXL</button>
 <div id=progress class=status role=status aria-live=polite></div><a id=download class="download hidden">Download</a></div>
 </div></section></div>
+<div class="install guide hidden" id=guide role=tabpanel aria-labelledby=tab-guide><section class=panel id=guide-intro>
+<h2>What geoXL is</h2>
+<p>geoXL is the library of geotechnical engineering functions used in this course: bearing capacity, settlement, consolidation, earth pressure and walls, piles, in-situ tests, elastic stresses, slope stability, soil classification, and the geometry and plotting helpers they rely on. Release 0.15 contains 148 functions.</p>
+<p>The functions are ordinary Excel formulas (named LAMBDA functions) stored <em>inside</em> each workbook. Once a workbook has them:</p>
+<ul>
+<li>you call them by name in any cell, for example <code>=bearing_factors(30, "vesic")</code>;</li>
+<li>nothing has to be installed in Excel: no add-in and no macros;</li>
+<li>the workbook calculates offline, on your computer, like any other formula;</li>
+<li>Solver and Goal Seek work with them, because they recalculate instantly like built-in functions.</li>
+</ul>
+</section>
+
+<section class=panel id=guide-needs>
+<h2>What you need</h2>
+<ul>
+<li>A version of Excel that supports LAMBDA functions: Microsoft 365 (Windows or Mac) or Excel 2024. Older versions such as Excel 2019 or 2021 show <code>#NAME?</code>.</li>
+<li>A web browser (Chrome, Edge, Safari or Firefox) and an internet connection, only while you install or update a workbook.</li>
+<li>Solver, for the exercises that use it: enable it once in Excel under <em>Add-ins › Solver Add-in</em>.</li>
+<li>The course example workbooks, which are distributed through Canvas.</li>
+</ul>
+</section>
+
+<section class=panel id=guide-update>
+<h2>Install or update geoXL in a workbook</h2>
+<p>The <a href="#install">Install / update</a> tab installs geoXL in a new workbook and updates a workbook that already has an older version. It always gives you a <em>new copy</em>; your original file is never changed.</p>
+<ol>
+<li>Save the workbook and close it in Excel. Only <code>.xlsx</code> files are accepted; save <code>.xls</code> or <code>.xlsm</code> files as <code>.xlsx</code> first.</li>
+<li>Open the <a href="#install">Install / update</a> tab and wait until it shows the current version (geoXL 0.15, verified).</li>
+<li>Under <em>1. Choose your workbook</em>, select your file.</li>
+<li>Click <em>Install / update geoXL</em>, then the download link. The copy is named after your workbook with the version added, for example <code>Slopes (geoXL 0.15).xlsx</code>.</li>
+<li>Open the downloaded copy in Excel and let it calculate. Type <code>=version()</code> in an empty cell to check the installed release.</li>
+<li>Keep working in the new copy. Keep the original as a backup until you are satisfied.</li>
+</ol>
+<p class=note><b>Privacy.</b> Everything happens in your browser. Your workbook is read and rewritten on your own computer; it is not uploaded anywhere. The internet is only used to load this page and the published library, which the page checks against its published fingerprint before using it.</p>
+<p><b>What the update changes.</b> It adds or replaces the geoXL functions, converts older names in the formulas that use them (for example <code>bearing.capacity</code> → <code>bearing_capacity</code>, or <code>GeoEXCEL.bearing_capacity</code> → <code>bearing_capacity</code>), and records the installed release. Your sheets, data, formulas, charts and formatting are kept. If something cannot be updated safely (a digitally signed workbook, or a name you defined yourself that clashes with a geoXL name), the page tells you instead of guessing.</p>
+<p><b>What it cannot change.</b> Workbooks written for the old VBA add-ins (GeoKit, UtilKit) may call functions such as <code>SlicesFS</code> or <code>Friction_Circle</code>, whose arguments differ from the geoXL functions. These are not converted and show <code>#NAME?</code>; use the current course version of that workbook from Canvas, or ask your instructor.</p>
+<p><b>When to update.</b> When your instructor announces a new release, or when a workbook shows <code>#NAME?</code> for a geoXL function. Updating again with the same release changes nothing.</p>
+</section>
+
+<section class=panel id=guide-using>
+<h2>Using the functions</h2>
+<ul>
+<li><b>Function reference.</b> The <a href="#reference">Function reference</a> tab groups the functions by topic. Each entry gives the call, the meaning and units of every argument, what is returned, and notes. When you type a function in Excel, its description and argument hints also appear.</li>
+<li><b>Units.</b> Use one consistent system (for example m, kN, kPa). Angles are in degrees unless the help says otherwise.</li>
+<li><b>Optional arguments</b> are shown in brackets, e.g. <code>[detail_]</code>. Leave them out, or leave an empty place between commas: <code>=f(a, b, , d)</code>.</li>
+<li><b>Results that are tables.</b> Many functions return several values at once. Enter the formula in one cell; the results “spill” into the cells below and to the right. Keep those cells empty, otherwise Excel shows <code>#SPILL!</code>.</li>
+<li><b>Geometry inputs.</b> Ground lines and water lines are entered as two columns (x, y) with x increasing from left to right; a point such as a circle centre is a row of two cells {x, y}.</li>
+</ul>
+</section>
+
+<section class=panel id=guide-slopes>
+<h2>Slope stability</h2>
+<p>The slope functions cover the four classical methods used in the course:</p>
+<table class=args>
+<thead><tr><th>Method</th><th>Functions</th></tr></thead>
+<tbody>
+<tr><td>Undrained clay (φ = 0), circular slip</td><td><a href="#SLOPE_CIRCLE_COHESIVE"><code>slope_circle_cohesive</code></a>, <a href="#SLOPE_CIRCLE_POLYLINE_COHESIVE"><code>slope_circle_polyline_cohesive</code></a></td></tr>
+<tr><td>Friction circle (c–φ)</td><td><a href="#SLOPE_FRICTION_CIRCLE"><code>slope_friction_circle</code></a></td></tr>
+<tr><td>Logarithmic spiral</td><td><a href="#SLOPE_LOGSPIRAL"><code>slope_logSpiral</code></a></td></tr>
+<tr><td>Method of slices: Fellenius or simplified Bishop, optional water table</td><td><a href="#SLOPE_SLICES"><code>slope_slices</code></a>, <a href="#SLOPE_SLICES_PLOT"><code>slope_slices_plot</code></a></td></tr>
+</tbody></table>
+<p>A typical call of the method of slices, with the ground line in <code>B11:C13</code>, the circle centre in <code>B7:C7</code>, the radius in <code>D7</code>, c, φ, γ in <code>F11</code>, <code>E11</code>, <code>D11</code> and 20 slices:</p>
+<p><code>=slope_slices(B11:C13, B7:C7, D7, F11, E11, D11, 20, , , "Bishop")</code></p>
+<p>Add a phreatic line and the unit weight of water as the 8th and 9th arguments to include pore pressure, and any value as the last argument to get the slice-by-slice table. <code>slope_slices_plot</code> returns the points that draw the same slices in a chart.</p>
+</section>
+
+<section class=panel id=guide-solver>
+<h2>Finding the critical surface with Solver</h2>
+<p>The functions give the factor of safety of <em>one</em> trial surface. To find the critical (minimum) one, use Solver:</p>
+<ol>
+<li><em>Set Objective</em>: the cell with the factor of safety; select <em>Min</em>.</li>
+<li><em>By Changing Variable Cells</em>: the circle centre and radius (or only the centre when the radius is fixed by a constraint, e.g. a circle through the toe).</li>
+<li>Choose <em>GRG Nonlinear</em> and click <em>Solve</em>.</li>
+<li>Check that the solution makes sense: the circle must still cross the ground line twice. If Solver wanders into a circle that misses the slope, start again from a better guess.</li>
+</ol>
+<p>Goal Seek is used in the same way when one input must be adjusted until a result reaches a target (for example the manual friction-circle iteration, where F<sub>φ</sub> = F<sub>c</sub>). A stored Solver answer does not update itself: if you change the slope or the soil properties, run Solver again.</p>
+</section>
+
+<section class=panel id=guide-trouble>
+<h2>Troubleshooting</h2>
+<table class=args>
+<thead><tr><th>What you see</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td><code>#NAME?</code> on a geoXL function</td><td>The workbook does not have the function or still uses an old name: run it through <a href="#install">Install / update</a>. On Excel 2019/2021 LAMBDA is not supported.</td></tr>
+<tr><td><code>#NAME?</code> after updating an old workbook</td><td>The cell calls a function from the old VBA add-ins (e.g. <code>SlicesFS</code>), which cannot be converted automatically. Use the current course version of the workbook or ask your instructor.</td></tr>
+<tr><td><code>#SPILL!</code></td><td>Clear the cells where the result needs to spill.</td></tr>
+<tr><td><code>#N/A</code> from a slope function</td><td>The trial surface does not cross the ground line twice: move the centre or change the radius.</td></tr>
+<tr><td><code>#VALUE!</code></td><td>Check the argument order and that ranges have the expected shape (two columns for polylines, one row for a centre).</td></tr>
+<tr><td>Excel offers to “repair” the file</td><td>Accept; keep the original. If results look wrong, run the original through the updater again and report it.</td></tr>
+<tr><td>The page refuses the file</td><td>Save it as a plain <code>.xlsx</code> workbook (not signed, not password-protected) and try again.</td></tr>
+</tbody></table>
+</section>
+
+<section class=panel id=guide-releases>
+<h2>Release notes</h2>
+<p><b>0.15 (October 19, 2026).</b> New <a href="#SLOPE_SLICES"><code>slope_slices</code></a> (method of slices: Fellenius or simplified Bishop, uniform soil, optional water table) and <a href="#SLOPE_SLICES_PLOT"><code>slope_slices_plot</code></a>. <a href="#SLOPE_FRICTION_CIRCLE"><code>slope_friction_circle</code></a> fixed: it returned <code>#N/A</code> in 0.14. All other functions are unchanged, so workbooks updated with 0.14 keep working; update them to get the new slope functions.</p>
+<p><b>0.14 (October 18, 2026).</b> The ASTM classification table is built into the library; <code>classify_ASTM</code> and <code>classify_USC</code> were corrected.</p>
+<p class=small>Questions and problems: contact your instructor, and say which workbook, sheet and cell, and the value returned by <code>=version()</code>.</p>
+</section></div>
 <div class="wrap hidden" id=reference role=tabpanel aria-labelledby=tab-reference><div class=refhead><h2>Function reference</h2>
 <p>geoXL 0.15 · <span id=resultcount>148 functions</span>. Call them by name in any cell, for example <code>=bearing_factors(30, "vesic")</code>. Use consistent units; angles are in degrees unless stated.</p>
 <input id=q type=search placeholder="Search functions, arguments or topics (e.g. bearing, pile, Mohr, settlement)…" aria-label="Search functions"></div>
@@ -647,15 +747,14 @@ $('collapseAll').onclick=()=>document.querySelectorAll('nav details').forEach(d=
 function mark(id){document.querySelectorAll('nav .fnlink.current').forEach(a=>a.classList.remove('current'));
   const a=document.querySelector('nav .fnlink[data-fn="'+id+'"]');if(a){a.classList.add('current');a.closest('details').open=true;}
   const g=document.querySelector('nav details[data-group="'+id+'"]');if(g)g.open=true;}
-function show(which,anchor){const ref=which==='reference';
-  $('install').classList.toggle('hidden',ref);$('reference').classList.toggle('hidden',!ref);
-  $('tab-install').setAttribute('aria-selected',String(!ref));$('tab-reference').setAttribute('aria-selected',String(ref));
-  if(anchor){const el=document.getElementById(anchor);if(el)requestAnimationFrame(()=>el.scrollIntoView());mark(anchor);}}
-function route(){const h=decodeURIComponent(location.hash.slice(1));
-  if(!h||h==='install')show('install');else if(h==='reference')show('reference');
-  else if(document.getElementById(h)&&$('reference').contains(document.getElementById(h)))show('reference',h);}
-$('tab-install').onclick=()=>{history.replaceState(null,'','#install');show('install');window.scrollTo(0,0);};
-$('tab-reference').onclick=()=>{history.replaceState(null,'','#reference');show('reference');window.scrollTo(0,0);};
+const PANELS=['install','guide','reference'];
+function show(which,anchor){
+  for(const p of PANELS){$(p).classList.toggle('hidden',p!==which);$('tab-'+p).setAttribute('aria-selected',String(p===which));}
+  if(anchor){const el=document.getElementById(anchor);if(el)requestAnimationFrame(()=>el.scrollIntoView());if(which==='reference')mark(anchor);}}
+function route(){const h=decodeURIComponent(location.hash.slice(1)),el=h&&document.getElementById(h);
+  if(!h||PANELS.includes(h)){show(h||'install');return;}
+  for(const p of PANELS)if(el&&$(p).contains(el)){show(p,h);return;}}
+for(const p of PANELS)$('tab-'+p).onclick=()=>{history.replaceState(null,'','#'+p);show(p);window.scrollTo(0,0);};
 document.querySelectorAll('.tab').forEach((t,i,all)=>t.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){const n=all[(i+(e.key==='ArrowRight'?1:all.length-1))%all.length];n.focus();n.click();}}));
 window.addEventListener('hashchange',route);route();
 loadLibrary();
