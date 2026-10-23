@@ -13,7 +13,7 @@ The textbook explains the teaching workbooks.
 
 The updater reads `docs/library/current.json` and verifies the version and
 SHA256 of its published library snapshot. It does not fetch the development
-Gist. Current published version: 0.16 (2026-10-22); earlier snapshots are kept under `docs/library/releases/`. Native Excel
+Gist. Current published version: 0.17 (2026-10-23); earlier snapshots are kept under `docs/library/releases/`. Native Excel
 numerical and iterative-tool release validation remains pending.
 
 Development tools, candidate testing and future release approval are maintained
@@ -25,3 +25,5 @@ Version 0.16 promotes the tested lateral-pile V2 integration under the original
 function names. The updater migrates temporary _v2 names and preserves earlier
 library snapshots. Independent analytical and browser checks passed; native
 Excel numerical and iterative-tool validation remains pending.
+
+Version 0.17 adds nine seepage_ functions for head interpolation, gradients, stream functions, contours/flow lines and segment profiles/statistics. Original formulas are preserved. The reference documents rectangular-grid, bottom-boundary and contour-plotting assumptions.
