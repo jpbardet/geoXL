@@ -1,0 +1,2128 @@
+// GeoEXCEL version 0.19 — complete consolidated named-LAMBDA library (documented)
+// Module name: GeoEXCEL
+// Paste this entire file into the GeoEXCEL module in Excel Labs.
+// Local names use underscores. Worksheet example: =GeoEXCEL.water_pressure(3, 2)
+// Check the installed version with =GeoEXCEL.version()
+// Each function has a /** */ comment; Excel shows it as the function description.
+// Angles are in degrees unless stated otherwise. Use consistent units throughout.
+// 0.11 (2026-10-16): version() added; pressure_shear_moment_anchor local r renamed profileRows;
+//                    Stress2024.xlsx checked: its 3 LAMBDAs are already in the library as
+//                    Stress_Mohr, stress_Mohr_pole, stress_Mohrcircle (same formulas).
+// 0.12 (2026-10-16): classify_ASTM2487 added (ASTM D2487 flowchart workbook).
+// 0.13 (2026-10-16): tree_lines and tree_path removed; the flowchart workbook now draws paths with plain formulas.
+// 0.14 (2026-10-18, candidate): ASTMtable restored as a library constant (100 ASTM group names, no worksheet needed);
+//                    classify_ASTM accepts "" for its list to use ASTMtable.
+//                    classify_ASTM fixes: "with sand"/"with gravel" endings for 30-50 % coarse fraction (were swapped);
+//                    organic CL/CH now flagged (the test read "MC"); organic soils use the OML/OCH rows, organic clay or
+//                    organic silt chosen from the plasticity symbol, and are reported as OL/OH; CL & ML fines use the CL-ML rows; coarse soils pick
+//                    "with sand"/"with gravel" from the other coarse fraction (was always the sand fraction).
+//                    classify_USC: coarse soils with CL-ML fines return SC-SM / GC-GM (branch was unreachable);
+//                    equal sand and gravel fractions classify as sand (gravel needs more than half the coarse fraction).
+// 0.15 (2026-10-19, candidate): slope_friction_circle: chord angle alpha is ATAN2(A−B) (was B−A, off by π, so FS was #N/A).
+//                    slope_slices added: method of slices on a circle, Fellenius or simplified Bishop, uniform soil,
+//                    optional phreatic line for pore pressure. slope_slices_plot added: slice outline for charts.
+//                    Critical circles are found with Solver (no minimizer in the library).
+
+// 0.16 (2026-10-22): lateral-pile reaction/shear/moment functions now reuse shearMoment;
+//                    cohesive pressure jumps use repeated depths, not epsilon ramps.
+//                    Original function names and argument lists are retained.
+
+// 0.17 (2026-10-23): nine seepage_ functions imported from Seeepage_FD_FlowNet_5.xlsx.
+//                    Bilinear interpolation, gradients, stream function, contour traces and segment results.
+//                    Formulas preserved; see function help for boundary and chart limitations.
+
+// 0.18 (2026-10-24): import ten seepage_* definitions from SeepageForce_Examples_fixed2_1.xlsx;
+//                    masked cells, wall slots, cell-traced contours and revised derivative handling.
+
+// 0.19 (2026-10-24): corrected seepage_gradgrid third-point boundary selection for descending axes;
+//                    use SIGN(iq-i), preserving all other function bodies and signatures.
+
+/** Library version and release date, as text. Use =GeoEXCEL.version() to check which version is installed. */
+version = LAMBDA("GeoEXCEL 0.19 (2026-10-24)");
+
+/** Ultimate bearing pressure combining N factors with shape, depth and inclination factors. Inputs: coh, phi (deg), q surcharge, gam unit weight, B, L, D footing width/length/depth, H, V loads, author (terzaghi, prandtl, meyerhof, hansen, vesic, ec7). */
+bearing_capacity = LAMBDA(coh, phi, q, gam, B, L, D, H, V, author, [A_],
+    LET(
+        BL, B/L,
+        DB, D/B,
+        load, VSTACK(coh, q, gam*B/2),
+        shape, bearing_shapeFactors(BL, phi, author),
+        depth, bearing_depthFactors(DB, phi, author),
+        inclination, bearing_inclinationFactors(H, V, BL, phi, coh, author, ),
+        factors, bearing_factors(phi, author),
+        SUMPRODUCT(shape, depth, inclination, factors, load)
+    ));
+
+/** Depth factors {dc; dq; dγ} for the selected bearing method. Inputs: DB = D/B, phi (deg), author. */
+bearing_depthFactors = LAMBDA(DB, phi, author,
+    LET(
+        authors, {"terzaghi", "prandtl", "meyerhof", "hansen", "vesic", "ec7"},
+        f, RADIANS(phi),
+        a, IFERROR(XMATCH(LOWER(author), authors, 1), 0),
+        dq, SWITCH(a, 3, IF(phi<10, 1, 1+0.1*DB*TAN(PI()/4+f/2)), 4, 1+2*IF(DB>1, ATAN(DB), DB)*TAN(f)*(1-SIN(f))^2, 5, 1+2*IF(DB>1, ATAN(DB), DB)*TAN(f)*(1-SIN(f))^2, 1),
+        dc, SWITCH(a, 3, 1+0.2*DB*TAN(PI()/4+f/2), 4, 1+0.4*IF(DB>1, ATAN(DB), DB), 5, 1+0.4*IF(DB>1, ATAN(DB), DB), 1),
+        dg, SWITCH(a, 3, dq, 1),
+        VSTACK(dc, dq, dg)
+    ));
+
+/** Bearing capacity factors {Nc; Nq; Nγ} for the selected method. Inputs: phi (deg), author_. */
+bearing_factors = LAMBDA(phi, author_,
+    LET(
+        authors, {"terzaghi", "prandtl", "meyerhof", "hansen", "vesic", "ec7"},
+        f, RADIANS(phi),
+        a, IFERROR(XMATCH(LOWER(author_), authors, 1), 0),
+        Nq, IFS(a=1, EXP((3*PI()/2-f)*TAN(f))/2/COS(PI()/4+f/2)^2, a>1, EXP(PI()*TAN(f))*TAN(PI()/4+f/2)^2, TRUE, 0),
+        Nc, IFS(AND(a=1, phi=0), 1+3*PI()/2, AND(a>1, phi=0), 2+PI(), TRUE, (Nq-1)/TAN(f)),
+        Ng, SWITCH(a, 1, 2*(Nq+1)*TAN(f)/(1+0.4*SIN(f)), 2, 0, 3, (Nq-1)*TAN(1.4*f), 4, 1.5*(Nq-1)*TAN(f), 5, 2*(Nq+1)*TAN(f), 6, 2*(Nq-1)*TAN(f), 0, "Error"),
+        VSTACK(Nc, Nq, Ng)
+    ));
+
+/** Load inclination factors {ic; iq; iγ}. Inputs: H, V horizontal/vertical loads, BL = B/L, phi (deg), coh, author, optional A_ area (default 1). */
+bearing_inclinationFactors = LAMBDA(H, V, BL, phi, coh, author, [A_],
+    LET(
+        authors, {"terzaghi", "prandtl", "meyerhof", "hansen", "vesic", "ec7"},
+        f, RADIANS(phi),
+        auth, IFERROR(XMATCH(LOWER(author), authors, 1), 0),
+        ach, coh*IF(ISOMITTED(A_), 1, A_),
+        ac, IF(ach>H, H, ach),
+        t, IF(V=0, 0, ATAN(H/V)),
+        m, (2+BL)/(1+BL),
+        tt, ABS(H/(V+ac)),
+        Ns, bearing_factors(phi, author),
+        Nc, INDEX(Ns, 1),
+        Nq, INDEX(Ns, 2),
+        iq, SWITCH(auth, 3, IF(phi=0, 0, (1-IF(t/f>1, 1, t/f))^2), 4, ABS(1-tt/2)^3, 5, ABS(1-tt)^m, 6, 1-t, 1),
+        ig, SWITCH(auth, 3, IF(phi=0, 0, (1-IF(t/f>1, 1, t/f))^2), 4, ABS(1-0.7*tt)^3, 5, ABS(1-tt)^m, 6, IF(V=0, 1, 1-H/V), 1),
+        ic, SWITCH(auth, 3, iq, 4, IF(phi=0, 0.5-SQRT(1-H/ac), (iq*Nq-1)/(Nq-1)), 5, IF(phi=0, 1-H*m/ac/Nc, (iq*Nq-1)/(Nq-1)), 6, IF(phi=0, 0.5+0.5*SQRT(1-H/ac), (iq*Nq-1)/(Nq-1)), 1),
+        VSTACK(IF(ic<0, 0, ic), IF(iq<0, 0, iq), IF(ig<0, 0, ig))
+    ));
+
+/** Bearing factor Nq for the selected method (row 2 of bearing_factors). Inputs: Phi (deg), author_. */
+bearing_Nq = LAMBDA(Phi, author_, INDEX(bearing_factors(Phi, author_), 2));
+
+/** Shape factors {sc; sq; sγ} for the selected method. Inputs: BL = B/L, phi (deg), author, opt_ (any value selects the alternative Terzaghi sγ). */
+bearing_shapeFactors = LAMBDA(BL, phi, author, [opt_],
+    LET(
+        opt, ISOMITTED(opt_),
+        authors, {"terzaghi", "prandtl", "meyerhof", "hansen", "vesic", "ec7"},
+        f, RADIANS(phi),
+        auth, IFERROR(XMATCH(LOWER(author), authors, 1), 0),
+        Ns, bearing_factors(phi, author),
+        Nc, INDEX(Ns, 1),
+        Nq, INDEX(Ns, 2),
+        Kp, TAN(PI()/4+f/2)^2,
+        sq, SWITCH(auth, 3, IF(phi<0, 1, 1+0.1*BL*Kp), 4, 1+BL*SIN(f), 5, 1+BL*TAN(f), 1),
+        sc, SWITCH(auth, 1, 1+0.3*BL, 3, 1+0.2*BL*Kp, 4, IF(phi=0, 0.2*BL, 1+BL*Nq/Nc), 5, IF(phi=0, 0.2*BL, 1+BL*Nq/Nc), 1),
+        sg, SWITCH(auth, 1, IF(NOT(opt), 0.6, 1-0.2*BL), 3, sq, 4, MAX(0.6, 1-0.4*BL), 5, MAX(0.6, 1-0.4*BL), 1),
+        VSTACK(sc, sq, sg)
+    ));
+
+/** Skempton Nc for undrained bearing (polynomial fit). Inputs: DB = D/B (capped at 6), BL = B/L. */
+bearing_Skempton = LAMBDA(DB, BL,
+    LET(
+        x, IF(DB>6, 6, DB),
+        Nc1_, -0.0027*x^4+0.0607*x^3-0.5116*x^2+1.9247*x+6.2304,
+        Nc0_, -0.0021*x^4+0.0504*x^3-0.4354*x^2+1.6433*x+PI()+2,
+        Nc0_+(Nc1_-Nc0_)*BL
+    ));
+
+/** AASHTO soil classification with group index, as text. Inputs: % passing No.10, No.40, No.200 (enter 40 for 40%), LL_, PL_. */
+classify_AASHTO = LAMBDA(pf10_, pf40_, pf200_, LL_, PL_,
+    LET(
+        LL, IF(ISOMITTED(LL_), 0, LL_),
+        PL, IF(ISOMITTED(PL_), 0, PL_),
+        PI, LL-PL,
+        g, MAX(0, (pf200_-35)*(0.2+0.005*(LL-40))+0.01*(pf200_-15)*(PI-10)),
+        GI, "("&g&")",
+        IFS(pf10_<pf40_, "% passing No.10 must be larger than % passing No.40", pf40_<pf200_, "% passing No.40 must be larger than % passing No.200", LL<PL, "liquid limit must be larger or equal plastic limit", AND(pf10_<50, pf40_<30, pf200_<15, PI<6), "A-1a - Stone fragment gravel and sand", AND(pf40_<50, pf200_<25, PI<6), "A-1b - Stone fragment gravel and sand", AND(pf40_>51, pf200_<10, PL<=0), "A-3 - Fine sand", AND(pf200_<35, LL<40, PI<10), "A-2-4"&GI&" - Silty or clayey gravel sand", AND(pf200_<35, LL>41, PI<10), "A-2-5"&GI&" - Silty or clayey gravel sand", AND(pf200_<35, LL<40, PI>11), "A-2-6"&GI&" - Silty or clayey gravel sand", AND(pf200_<35, LL>41, PI>11), "A-2-7"&GI&" - Silty or clayey gravel sand", AND(pf200_>=36, LL<40, PI<10), "A-4"&GI&" - Silty soil", AND(pf200_>=36, LL>41, PI<10), "A-5"&GI&" - Silty soil", AND(pf200_>=36, LL<40, PI>11), "A-6"&GI&" - Clayey soil", AND(pf200_>=36, LL>41, PI>11, PL>30), "A-7-5"&GI&" - Clayey soil", AND(pf200_>=36, LL>41, PI>11, PL<30), "A-7-6"&GI&" - Clayey soil", TRUE, "N-C")
+    ));
+
+/** ASTM classification lookup: 100 rows {group symbol, group name}, in the original row order with repeated symbols. Use ASTMtable as the first argument of classify_ASTM. Stored in the library, so no ASTMnames worksheet is needed. */
+ASTMtable = {"Pt","Peat";"SW","Well-graded sand";"SW","Well-graded sand with gravel";"SP","Poorly graded sand";"SP","Poorly graded sand with gravel";"SW-SM","Well-graded sand with silt";"SW-SM","Well-graded sand with silt and gravel";"SW-SC","Well-graded sand with clay (or silty clay)";"SW-SC","Well-graded sand with clay and gravel (or silty clay and gravel)";"SP-SM","Poorly graded sand with silt";"SP-SM","Poorly graded sand with silt and gravel";"SP-SC","Poorly graded sand with clay (or silty clay)";"SP-SC","Poorly graded sand with clay and gravel (or silty clay and gravel)";"SM","Silty sand";"SM","Silty sand with gravel";"SC","Clayey sand";"SC","Clayey sand with gravel";"SC-SM","silty, clayey sand";"SC-SM","silty, clayey sand with gravel";"GW","Well-graded gravel";"GW","Well-graded gravel with sand";"GP","Poorly graded gravel";"GP","Poorly graded gravel with sand";"GW-GM","Well-graded gravel with silt";"GW-GM","Well-graded gravel with silt and sand";"GW-GC","Well-graded gravel with clay (or silty clay)";"GW-GC","Well-graded gravel with clay and sand (or silty clay and sand)";"GP-GM","Poorly graded gravel with silt";"GP-GM","Poorly graded gravel with silt and sand";"GP-GC","Poorly graded gravel with clay (or silty clay)";"GP-GC","Poorly graded gravel with clay and sand (or silty clay and sand)";"GM","Silty gravel";"GM","Silty gravel with sand";"GC","Clayey gravel";"GC","Clayey gravel with sand";"GC-GM","silty, clayey gravel";"GC-GM","silty, clayey gravel with sand";"CL","Lean clay";"CL","Lean clay with sand";"CL","Lean clay with gravel";"CL","Sandy lean clay";"CL","Sandy lean clay with gravel";"CL","Gravelly lean clay";"CL","Gravelly lean clay with sand";"CL-ML","Silty clay";"CL-ML","Silty clay with sand";"CL-ML","Silty clay with gravel";"CL-ML","Sandy silty clay";"CL-ML","Sandy silty clay with gravel";"CL-ML","Gravelly silty clay";"CL-ML","Gravelly silty clay with sand";"ML","Silt";"ML","Silt with sand";"ML","Silt with gravel";"ML","Sandy silt";"ML","Sandy silt with gravel";"ML","Gravelly silt";"ML","Gravelly silt with sand";"OML","Organic silt";"OML","Organic silt with sand";"OML","Organic silt with gravel";"OML","Sandy organic silt";"OML","Sandy organic silt with gravel";"OML","Gravelly organic silt";"OML","Gravelly organic silt with sand";"OML","Organic clay";"OML","Organic clay with sand";"OML","Organic clay with gravel";"OML","Sandy organic clay";"OML","Sandy organic clay with gravel";"OML","Gravelly organic clay";"OML","Gravelly organic clay with sand";"CH","Fat clay";"CH","Fat clay with sand";"CH","Fat clay with gravel";"CH","Sandy fat clay";"CH","Sandy fat clay with gravel";"CH","Gravelly fat clay";"CH","Gravelly fat clay with sand";"MH","Elastic silt";"MH","Elastic silt with sand";"MH","Elastic silt with gravel";"MH","Sandy elastic silt";"MH","Sandy elastic silt with gravel";"MH","Gravelly elastic silt";"MH","Gravelly elastic silt with sand";"OCH","Organic clay";"OCH","Organic clay with sand";"OCH","Organic clay with gravel";"OCH","Sandy organic clay";"OCH","Sandy organic clay with gravel";"OCH","Gravelly organic clay";"OCH","Gravelly organic clay with sand";"OCH","Organic silt";"OCH","Organic silt with sand";"OCH","Organic silt with gravel";"OCH","Sandy organic silt";"OCH","Sandy organic silt with gravel";"OCH","Gravelly organic silt";"OCH","Gravelly organic silt with sand"};
+
+/** USCS symbol with ASTM group name from a two-column lookup table (symbol | descriptions). Inputs: list (normally ASTMtable; "" also uses ASTMtable), % passing No.4 and No.200, optional Cu, Cc, LL, PL, organic. */
+classify_ASTM = LAMBDA(list, pf4_, pf200_, [Cu_], [Cc_], [LL_], [PL_], [organic_],
+    LET(
+        organic, IF(ISOMITTED(organic_), 0, organic_),
+        Cu, IF(ISOMITTED(Cu_), 0, Cu_),
+        Cc, IF(ISOMITTED(Cc_), 0, Cc_),
+        LL, IF(ISOMITTED(LL_), 0, LL_),
+        PL, IF(ISOMITTED(PL_), 0, PL_),
+        sand, pf4_-pf200_,
+        gravel, 100-pf4_,
+        plus, 100-pf200_,
+        USC_, classify_USC(pf4_, pf200_, Cu, Cc, LL, PL, organic),
+        sym, IF(USC_="CL & ML", "CL-ML", USC_),
+        isOrg, AND(organic>0, OR(sym="ML", sym="CL", sym="CL-ML", sym="MH", sym="CH")),
+        key, IF(isOrg, IF(OR(sym="MH", sym="CH"), "OCH", "OML"), sym),
+        offset, IF(AND(isOrg, OR(sym="CL", sym="CL-ML", sym="MH")), 7, 0),
+        i, IFS(plus<15, 1, plus<30, IF(sand>=gravel, 2, 3), sand>=gravel, IF(gravel>=15, 5, 4), TRUE, IF(sand>=15, 7, 6)),
+        other, IF(LEFT(sym, 1)="G", sand, gravel),
+        j, IF(key="Pt", 1, IF(pf200_>=50, i+offset, IF(other<15, 1, 2))),
+        tbl, IF(COLUMNS(list)<2, ASTMtable, list),
+        g, FILTER(tbl, CHOOSECOLS(tbl, 1)=key, ""),
+        IF(isOrg, IF(key="OCH", "OH", "OL"), INDEX(g, j, 1))&" - "&INDEX(g, j, 2)
+    ));
+
+/** Fine-grained soil symbol from the plasticity chart (CL, CH, ML, MH, OL, OH, CL & ML). Inputs: LL, PL in %, optional organic (0 = inorganic). */
+classify_Plasticity = LAMBDA(LL, PL, [organic],
+    LET(
+        organic_, IF(ISOMITTED(organic), 0, organic),
+        PI, LL-PL,
+        isAboveUline, IFS(LL<7, PI>LL, AND(7<=LL, LL<=15), PI>7, TRUE, PI>0.9*(LL-8)),
+        isAboveAline, IF(LL<25.48, PI>4, PI>0.73*(LL-20)),
+        IFS(LL<PL, "Error: Liquid limit must be larger or equal to plastic limit", isAboveUline, "Error: Above U line in plasticity chart", AND(4<=PI, PI<=7, LL>PI, PI>=0.73*(LL-20)), "CL & ML", isAboveAline, IF(organic=0, "C", "O")&IF(LL>50, "H", "L"), TRUE, IF(organic=0, "M", "O")&IF(LL>50, "H", "L"))
+    ));
+
+/** USCS group symbol from gradation and plasticity. Inputs: % passing No.4 and No.200, optional Cu = D60/D10, Cc = D30²/(D10·D60), LL, PL, organic. */
+classify_USC = LAMBDA(pf4_, pf200_, [Cu_], [Cc_], [LL_], [PL_], [organic_],
+    LET(
+        organic, IF(ISOMITTED(organic_), 0, organic_),
+        Cu, IF(ISOMITTED(Cu_), 0, Cu_),
+        Cc, IF(ISOMITTED(Cc_), 0, Cc_),
+        LL, IF(ISOMITTED(LL_), 0, LL_),
+        PL, IF(ISOMITTED(PL_), 0, PL_),
+        fines, classify_Plasticity(LL, PL),
+        clayFines, LEFT(fines, 1)="C",
+        isSand, pf4_-pf200_>=100-pf4_,
+        isWellGraded, IF(isSand, AND(Cu>6, Cc>1, Cc<3), AND(Cu>4, Cc>1, Cc<3)),
+        IFS(pf4_<pf200_, "Error: Percent passing No.4 must be larger than percent passing No.200", organic>90, "Pt", LEFT(fines, 3)="Err", fines, AND(0<=pf200_, pf200_<5), IF(isSand, IF(isWellGraded, "SW", "SP"), IF(isWellGraded, "GW", "GP")), AND(5<=pf200_, pf200_<12, isSand), IF(isWellGraded, IF(clayFines, "SW-SC", "SW-SM"), IF(clayFines, "SP-SC", "SP-SM")), AND(5<=pf200_, pf200_<12, NOT(isSand)), IF(isWellGraded, IF(clayFines, "GW-GC", "GW-GM"), IF(clayFines, "GP-GC", "GP-GM")), AND(12<=pf200_, pf200_<50, fines="CL & ML"), IF(isSand, "SC-SM", "GC-GM"), AND(12<=pf200_, pf200_<50), IF(clayFines, IF(isSand, "SC", "GC"), IF(isSand, "SM", "GM")), pf200_>=50, fines)
+    ));
+
+/** Square-root-of-time analysis of a consolidation test: Cv, d0, d100, drainage length and compression ratios. Inputs: time and dial-reading columns, fitting window ta–tb, initial height hi. */
+consolidation_test = LAMBDA(Tarray, Xarray, ta, tb, hi,
+    LET(
+        lbl, {"Consolidation coefficient Cv =";"Initial height =";"Initial reading =";"Reading at consolidation beginning d0 =";"Reading at consolidation end d100 =";"Final reading =";"Average drainage length =";"Initial compression ri =";"Primary compression rp =";"Secondary compression rs ="},
+        tf, FILTER(Tarray, (Tarray>ta)*(Tarray<=tb)),
+        xf, FILTER(Xarray, (Tarray>ta)*(Tarray<=tb)),
+        sqtf, SQRT(tf),
+        a, SLOPE(xf, sqtf)/1.15,
+        B, INTERCEPT(xf, sqtf),
+        sTarray, SQRT(Tarray),
+        Xcut, cutline(sTarray, Xarray, a, B),
+        tc, TAKE(Xcut, 1, -1)^2,
+        xc, TAKE(Xcut, 1, -1),
+        Cv, 0.848*xc^2/tc^2,
+        xe, TAKE(Xarray, -1),
+        xs, INDEX(Xarray, 1),
+        xp, B+(xc-B)/0.9,
+        dx, xs-xe,
+        ri, (xs-B)/dx,
+        rp, (B-xp)/dx,
+        rs, (xp-xe)/dx,
+        h, (hi+xe-(B+xp)/2)/2,
+        HSTACK(lbl, VSTACK(Cv, hi, xs, B, xp, xe, h, ri, rp, rs))
+    ));
+
+/** Time factor Tv from average degree of consolidation U (fraction, 0 ≤ U < 1), approximate formula. */
+consolidation_Tv = LAMBDA(U, IF(U>0.6, -0.085-0.933*LOG(1-U), PI()/4*U^2));
+
+/** Average degree of consolidation U (fraction) from time factor tv by Fourier series. case_: uniform (default), triangular_top, triangular_bottom, vshape, saw, sine, parabolic, circular. */
+consolidation_U = LAMBDA(tv, [case_],
+    LET(
+        cases, {"uniform", "triangular_top", "triangular_bottom", "vshape", "saw", "sine", "parabolic", "circular"},
+        caseIndex, IF(ISOMITTED(case_), 1, XMATCH(LOWER(case_), cases, 0)),
+        n, SEQUENCE(1, MIN(1000, 2+INT(SQRT(160/MAX(MIN(tv), 1E-6))/PI()))),
+        np, n*PI(),
+        sn, IF(MOD(n, 2), (-1)^((n-1)/2), 0),
+        en, IF(np^2*tv/4>700, 0, 1/EXP(np^2*tv/4)),
+        cm, SWITCH(caseIndex, 1, 8*sn^4/np^2, 2, IF(MOD(n, 2), 8/np^2, 0), 3, IF(MOD(n, 2), 8/np^2, 0), 4, 16*sn^3*(np*sn-2)/np^3, 5, 32*sn^3/np^3, 6, IF(n=1, 1, 0), 7, IF(MOD(n, 2), 96/np^4, 0), 8, IF(MOD(n, 2), -16*(-1)^((n+1)/2)*BESSELJ(np/2, 1)/np^2, 0), 0, 0),
+        1-BYROW(cm*en, LAMBDA(x, SUM(x)))
+    ));
+
+/** Excess pore pressure ratio u/u0 along normalized depth at time factor tv. Inputs: Xarray (z/H column), tv, case_ (same cases as consolidation_U). */
+consolidation_Ux = LAMBDA(Xarray, tv, [case_],
+    LET(
+        cases, {"uniform", "triangular_top", "triangular_bottom", "vshape", "saw", "sine", "parabolic", "circular"},
+        caseIndex, IF(ISOMITTED(case_), 1, XMATCH(LOWER(case_), cases, 0)),
+        n, SEQUENCE(1, MIN(1000, 2+INT(SQRT(160/MAX(MIN(tv), 1E-6))/PI()))),
+        np, n*PI(),
+        sn, IF(MOD(n, 2), (-1)^((n-1)/2), 0),
+        en, IF(np^2*tv/4>700, 0, 1/EXP(np^2*tv/4)),
+        cm, SWITCH(caseIndex, 1, 4*sn^2/np, 2, -2*(-1)^n/np, 3, 2/np, 4, 4*sn*(np*sn-2)/np^2, 5, 8*sn/np^2, 6, IF(n=1, 1, 0), 7, IF(MOD(n, 2), -8*(-1)^n/np^3, 0), 8, 2*sn/n*BESSELJ(np/2, 1), 0, 0),
+        BYROW(Xarray, LAMBDA(x, SUM(cm*en*SIN(np*x))))
+    ));
+
+/** Average degree of consolidation U (fraction) from tv, closed-form approximation. */
+consolidation_U_approximate = LAMBDA(tv,
+    LET(
+        U, 2*SQRT(tv/PI()),
+        IF(U<0.6, U, 1-8/PI()^2/EXP(PI()^2/4*tv))
+    ));
+
+/** Average consolidation U for a load applied linearly over construction time factor tc. Inputs: tv, tc. */
+consolidation_U_variable = LAMBDA(tv, tc, IF(tv<tc, consolidation_U(tv/2)*tv/tc, consolidation_U(tv-tc/2)));
+
+/** Cosine of an angle in degrees. */
+cosd = LAMBDA(X, COS(RADIANS(X)));
+
+/** Coulomb trial wedge with cohesion: {W; R; P; Cs; Cw; z0; K}. Inputs: t wedge angle (radians), phi, alpha wall, beta slope, delta (deg), g unit weight, h wall height, optional coh_. */
+Coulomb_cohesiveforces = LAMBDA(t, phi, alpha, beta, delta, g, h, [coh_],
+    LET(
+        f, RADIANS(phi),
+        ar, RADIANS(alpha),
+        br, RADIANS(beta),
+        dr, RADIANS(delta),
+        BC, h*SIN(br-ar)/SIN(br-t)/SIN(ar),
+        AB, h*SQRT(1+COT(ar)^2),
+        Ka, (1-SIN(f))/(1+SIN(f)),
+        coh, IF(ISOMITTED(coh_), 0, coh_),
+        z0, 2*coh/g/SQRT(Ka),
+        Cw, coh*MAX(0, AB-z0),
+        Cs, coh*MAX(0, BC-z0),
+        W, g*AB*BC*SIN(ar-t)/2,
+        den, SIN(f+ar+dr-t),
+        rValue, (W*SIN(ar+dr)-Cw*COS(dr)-Cs*COS(ar+dr-t))/den,
+        p, (W*SIN(t-f)-Cs*COS(f)-Cw*COS(ar+f-t))/den,
+        K, p/(g*h^2/2),
+        VSTACK(W, rValue, p, Cs, Cw, z0, K)
+    ));
+
+/** Coulomb trial wedge forces {W; R; P; K} for slip angle t (radians). Inputs: phi, alpha wall (90 = vertical), beta slope, delta (deg), g, h. */
+Coulomb_forces = LAMBDA(t, phi, alpha, beta, delta, g, h,
+    LET(
+        f, RADIANS(phi),
+        ar, RADIANS(alpha),
+        br, RADIANS(beta),
+        dr, RADIANS(delta),
+        BC, h*SIN(br-ar)/SIN(br-t)/SIN(ar),
+        AB, h*SQRT(1+COT(ar)^2),
+        W, g*AB*BC*SIN(ar-t)/2,
+        den, SIN(t-f-ar-dr),
+        rValue, -W*SIN(ar+dr)/den,
+        p, W*SIN(f-t)/den,
+        K, p/(g*h^2/2),
+        VSTACK(W, rValue, p, K)
+    ));
+
+/** Coulomb earth pressure coefficient. Inputs: phi, alpha, beta, delta (deg); passive: omit for Ka, any value for Kp. */
+coulomb_K = LAMBDA(phi, alpha, beta, delta, [passive],
+    LET(
+        f, RADIANS(phi),
+        ar, RADIANS(alpha),
+        br, RADIANS(beta),
+        dr, RADIANS(delta),
+        Ka, (SIN(ar-f)/SIN(ar)/(SQRT(SIN(ar+dr))+SQRT(SIN(f+dr)*SIN(f-br)/SIN(ar-br))))^2,
+        Kp, (SIN(ar+f)/SIN(ar)/(SQRT(SIN(ar-dr))-SQRT(SIN(f+dr)*SIN(f+br)/SIN(ar-br))))^2,
+        IF(ISOMITTED(passive), Ka, Kp)
+    ));
+
+/** Critical Coulomb wedge by golden-section search: {slip angle (deg); W; R; P; K}. Inputs: a_, b_ (any values on first call), phi, alpha, beta, delta, g, h. */
+Coulomb_maximum = LAMBDA(a_, b_, phi, alpha, beta, delta, g, h, [iter_],
+    LET(
+        niter, 10,
+        gr, (SQRT(5)+1)/2,
+        iter, IF(ISOMITTED(iter_), 1, iter_),
+        A, IF(iter=1, PI()/2, a_),
+        B, IF(iter=1, RADIANS(beta)+0.01, b_),
+        cValue, B-(B-A)/gr,
+        d, A+(B-A)/gr,
+        Yc, -INDEX(Coulomb_forces(cValue, phi, alpha, beta, delta, g, h), 3),
+        yd, -INDEX(Coulomb_forces(d, phi, alpha, beta, delta, g, h), 3),
+        IF(iter<niter, IF(Yc<yd, Coulomb_maximum(A, d, phi, alpha, beta, delta, g, h, iter+1), Coulomb_maximum(cValue, B, phi, alpha, beta, delta, g, h, iter+1)), VSTACK(DEGREES((A+B)/2), Coulomb_forces((A+B)/2, phi, alpha, beta, delta, g, h)))
+    ));
+
+/** Critical Coulomb slip angle (deg), closed form. Inputs: phi, alpha, beta, delta (deg). */
+coulomb_theta = LAMBDA(phi, alpha, beta, delta,
+    LET(
+        angA, RADIANS(alpha-beta),
+        angB, RADIANS(beta-phi),
+        angD, RADIANS(alpha+delta+phi-beta),
+        coefA, SIN(angA)*SIN(angB),
+        coefB, SIN(angA-angB),
+        coefC, -COS(angA)*COS(angB),
+        coefD, SIN(angD),
+        coefE, -COS(angD),
+        quadA, coefA*coefD,
+        quadB, 2*coefA*coefE,
+        quadC, coefB*coefE-coefC*coefD,
+        disc, quadB^2-4*quadA*quadC,
+        root, (-quadB-SQRT(disc))/(2*quadA),
+        beta+DEGREES(ATAN2(root, 1))
+    ));
+
+/** Intersections {x, y} of a sampled curve with the line y = slope·x + intercept. Inputs: Xarray, Yarray columns, slope, intercept. */
+cutline = LAMBDA(Xarray, Yarray, slope, intercept,
+    LET(
+        Xa, DROP(Xarray, -1),
+        xb, DROP(Xarray, 1),
+        Ya, DROP(Yarray, -1),
+        yb, DROP(Yarray, 1),
+        denominator, yb-Ya+slope*(Xa-xb),
+        z, IF(denominator<>0, (intercept-Ya+slope*Xa)/denominator, -10),
+        Xcut, HSTACK(Xa+z*(xb-Xa), Ya+z*(yb-Ya)),
+        FILTER(Xcut, (z>0)*(z<=1))
+    ));
+
+/** Normalized radius r/z of a circular load giving vertical stress ratio s (0 ≤ s < 1). Used to build influence charts. */
+elastic_circular_radius = LAMBDA(s, SQRT(1/(1-s)^(2/3)-1));
+
+/** Stress ratios {sz, sr} under the centre of a uniformly loaded circle. Inputs: rValue load radius, z depth, optional nu_ (default 0.3). Multiply by the load pressure. */
+elastic_circular_stress = LAMBDA(rValue, z, [nu_],
+    LET(
+        nu, IF(ISOMITTED(nu_), 0.3, nu_),
+        D, rValue^2+z^2,
+        sz, 1-1/(1+(rValue/z)^2)^1.5,
+        sr, 1/2*(1+2*nu-2*(1+nu)*z/SQRT(D)+z^3/D^1.5),
+        HSTACK("Stress sz, sr =", sz, sr)
+    ));
+
+/** Vertical stress influence factor under an embankment (Osterberg). Inputs: b1z = b1/z, b2z = b2/z (b2z ≠ 0). */
+elastic_embankment = LAMBDA(b1z, b2z, (ATAN(b1z)+(b1z+b2z)/b2z*(ATAN(b1z+b2z)-ATAN(b1z)))/PI());
+
+/** Janbu μ0 settlement factor from digitized chart. Inputs: DB = D/B, LB = L/B (1, 2, 5, 10, 20, 50, 100 or 200). */
+elastic_Janbu_mu0 = LAMBDA(DB, LB,
+    LET(
+        XY, SWITCH(LB, 1, {0.1, 0.475, 0.615, 0.892, 1.17, 1.876, 2.965, 4.12, 6.994, 12.393, 21.647, 1000;1, 0.859, 0.816, 0.755, 0.703, 0.633, 0.586, 0.556, 0.53, 0.509, 0.501, 0.5}, 2, {0.1, 0.606, 0.867, 1.154, 1.603, 2.498, 3.836, 6.511, 12.043, 19.585, 30, 1000;1, 0.869, 0.81, 0.76, 0.706, 0.643, 0.598, 0.562, 0.527, 0.514, 0.508, 0.5}, 5, {0.1, 0.972, 1.45, 2.196, 2.645, 4.301, 7.095, 12.393, 21.037, 40, 1000;1, 0.851, 0.793, 0.729, 0.702, 0.641, 0.588, 0.547, 0.523, 0.51, 0.505}, 10, {0.1, 1, 1.389, 2.015, 3.52, 6.149, 10.589, 17.22, 28.406, 40.039, 1000;1, 0.881, 0.838, 0.789, 0.714, 0.647, 0.593, 0.555, 0.526, 0.516, 0.505}, 20, {0.1, 1.65, 2.721, 4.301, 5.891, 10.29, 17.975, 32.774, 67.002, 95.8, 1000;1, 0.848, 0.799, 0.742, 0.702, 0.643, 0.592, 0.545, 0.517, 0.515, 0.505}, 50, {0.1, 0.819, 1.275, 1.931, 2.882, 4.822, 7.301, 9.858, 18.763, 34.703, 67.002, 123.928, 207.382, 400, 1000;1, 0.929, 0.896, 0.864, 0.831, 0.784, 0.739, 0.705, 0.642, 0.591, 0.551, 0.527, 0.515, 0.51, 0.505}, 100, {0.1, 2.228, 3.325, 4.686, 6.895, 10.144, 14.095, 24.621, 40.616, 67.967, 127.523, 213.399, 400, 1000;1, 0.874, 0.838, 0.809, 0.773, 0.74, 0.706, 0.655, 0.617, 0.581, 0.546, 0.529, 0.51, 0.505}, 200, {0.1, 1.137, 2.044, 3.051, 4.24, 5.891, 8.185, 11.872, 16.975, 23.927, 33.246, 48.915, 71.969, 108.96, 177.193, 288.156, 455.392, 660.504;1, 0.937, 0.894, 0.863, 0.839, 0.812, 0.783, 0.756, 0.727, 0.698, 0.674, 0.642, 0.616, 0.587, 0.56, 0.536, 0.521, 0.51}),
+        n, COUNT(XY)/2,
+        m, SEQUENCE(1, n),
+        X, INDEX(XY, 1, m),
+        Y, INDEX(XY, 2, m),
+        Interpolate(DB, X, Y, "logx")
+    ));
+
+/** Janbu μ1 settlement factor from digitized chart. Inputs: LB (chart abscissa), DB curve selector ("circle", 1, 2, 5, 10, 20, 50 or 100). */
+elastic_Janbu_mu1 = LAMBDA(LB, DB,
+    LET(
+        XY, SWITCH(DB, "circle", {0.1, 0.149, 0.201, 0.284, 0.488, 0.749, 1.288, 2.185, 3.602, 6.023, 12.657, 32.948, 94.786, 319.063, 1000;0.063, 0.087, 0.128, 0.186, 0.267, 0.349, 0.447, 0.529, 0.57, 0.611, 0.625, 0.63, 0.631, 0.633, 0.64}, 1, {0.1, 0.149, 0.201, 0.816, 1.326, 2.249, 3.654, 6.948, 14.6, 1000;0.063, 0.087, 0.128, 0.395, 0.493, 0.58, 0.644, 0.698, 0.717, 0.739}, 2, {0.1, 0.149, 0.201, 0.707, 1.345, 3.079, 6.287, 14.81, 30.678, 85.77, 1000;0.063, 0.087, 0.128, 0.394, 0.59, 0.787, 0.909, 0.991, 1.028, 1.042, 1.053}, 5, {0.1, 0.149, 0.201, 0.284, 0.467, 0.771, 1.345, 2.094, 3.354, 6.469, 14.6, 32.02, 84.554, 210.878, 541.17, 1000;0.063, 0.087, 0.128, 0.186, 0.32, 0.486, 0.693, 0.884, 1.034, 1.23, 1.358, 1.428, 1.482, 1.496, 1.504, 1.506}, 10, {0.1, 0.149, 0.201, 0.284, 0.467, 0.771, 1.345, 2.094, 5.529, 8.984, 18.087, 34.885, 82.173, 199.17, 430.634, 1000;0.063, 0.087, 0.128, 0.186, 0.32, 0.486, 0.693, 0.884, 1.264, 1.414, 1.559, 1.646, 1.723, 1.765, 1.79, 1.798}, 20, {0.1, 0.149, 0.201, 0.284, 0.467, 0.771, 1.345, 2.381, 3.551, 5.222, 8.365, 14.81, 25.847, 43.839, 88.254, 172.667, 368.037;0.063, 0.087, 0.128, 0.186, 0.32, 0.486, 0.693, 0.947, 1.137, 1.309, 1.534, 1.707, 1.84, 1.95, 2.026, 2.074, 2.099}, 50, {0.1, 0.149, 0.201, 0.284, 0.467, 0.771, 1.345, 2.381, 3.551, 5.222, 8.365, 25.48, 42.001, 70.228, 127.931, 268.817, 518.476;0.063, 0.087, 0.128, 0.186, 0.32, 0.486, 0.693, 0.947, 1.137, 1.309, 1.534, 2.052, 2.213, 2.335, 2.417, 2.481, 2.506}, 100, {0.1, 0.149, 0.201, 0.284, 0.467, 0.771, 1.345, 2.381, 3.551, 5.222, 8.365, 89.524, 145.476, 257.545, 469.157, 1000;0.063, 0.087, 0.128, 0.186, 0.32, 0.486, 0.693, 0.947, 1.137, 1.309, 1.534, 2.633, 2.72, 2.773, 2.798, 2.805}),
+        n, COUNT(XY)/2,
+        m, SEQUENCE(1, n),
+        X, INDEX(XY, 1, m),
+        Y, INDEX(XY, 2, m),
+        Interpolate(LB, X, Y, "logx")
+    ));
+
+/** Stresses {sx, sy, sxy} per unit vertical line load (Flamant). Inputs: x horizontal offset, y depth. Multiply by the line load. */
+elastic_lineload = LAMBDA(x, y,
+    LET(
+        temp, 2/PI()/(x^2+y^2)^2,
+        sy, temp*y^3,
+        sx, temp*x^2*y,
+        sxy, temp*x*y^2,
+        HSTACK("Stress sx,sy,sxy =", sx, sy, sxy)
+    ));
+
+/** Stresses {sx, sy, sxy} per unit horizontal line load. Inputs: x horizontal offset, y depth. Multiply by the line load. */
+elastic_lineload_horizontal = LAMBDA(x, y,
+    LET(
+        temp, 2/PI()/(x^2+y^2)^2,
+        sy, temp*x*y^2,
+        sx, temp*x^3,
+        sxy, temp*x^2*y,
+        HSTACK("Stress sx,sy,sxy =", sx, sy, sxy)
+    ));
+
+/** Newmark influence factor under the corner of a uniformly loaded rectangle. Inputs: m = B/z, n = L/z. */
+elastic_Newmark_factor = LAMBDA(m, n,
+    LET(
+        v, 1+m^2+n^2,
+        u, ATAN(m*n/SQRT(v)),
+        1/(2*PI())*(m*n*(1+v)/SQRT(v)/(1+m^2)/(1+n^2)+u)
+    ));
+
+/** Vertical stress factor at any point (x_, y_, z_) under a loaded rectangle by superposition of corner factors. pt: 4 corners, opposite corners in rows 1 and 3. */
+elastic_Newmark_stress = LAMBDA(x_, y_, z_, pt,
+    LET(
+        z, IF(z_=0, 1, z_),
+        x, x_/z,
+        y, y_/z,
+        xa, INDEX(pt, 1, 1)/z,
+        xb, INDEX(pt, 3, 1)/z,
+        ya, INDEX(pt, 1, 2)/z,
+        yb, INDEX(pt, 3, 2)/z,
+        Ibb, SIGN((x-xb)*(y-yb))*elastic_Newmark_factor(ABS(x-xb), ABS(y-yb)),
+        Iaa, SIGN((x-xa)*(y-ya))*elastic_Newmark_factor(ABS(x-xa), ABS(y-ya)),
+        Iba, SIGN((xb-x)*(y-ya))*elastic_Newmark_factor(ABS(xb-x), ABS(y-ya)),
+        Iab, SIGN((xa-x)*(y-yb))*elastic_Newmark_factor(ABS(xa-x), ABS(y-yb)),
+        Iaa+Ibb+Iab+Iba
+    ));
+
+/** Stresses {sz, sr, st, srz} per unit point load (Boussinesq). Inputs: rValue radial offset, z depth, optional nu_ (default 0.3). */
+elastic_pointload = LAMBDA(rValue, z, [nu_],
+    LET(
+        nu, IF(ISOMITTED(nu_), 0.3, nu_),
+        D, rValue^2+z^2,
+        sz, 3/(2*PI()*z^2)/(1+(rValue/z)^2)^2.5,
+        sr, PI()/2*(3*rValue^2*z/D^2.5-(1-2*nu)/(D+z*SQRT(D))),
+        st, -1/2/PI()*(1-2*nu)*(z/D^1.5-1/(rValue^2+z^2+z*SQRT(D))),
+        srz, 3/2/PI()*rValue*z^2/D^2.5,
+        HSTACK("Stress sz,sr,st,srz =", sz, sr, st, srz)
+    ));
+
+/** Vertical stress factor under a point (x, y) at depth z for a uniformly loaded polygon, by integration over 1° sectors. pts: polygon vertices (two columns). */
+elastic_sector = LAMBDA(x, y, z, pts,
+    LET(
+        n, 360,
+        t, RADIANS(SEQUENCE(n+1, 1, 0, 1)),
+        pt, HSTACK(x, y),
+        ptz, TOROW((pts-pt)/z),
+        txy, HSTACK(t, IF(SEQUENCE(n+1), ptz)),
+        s, BYROW(txy, LAMBDA(x, elastic_sector_row(x))),
+        SUM(s)/n
+    ));
+
+/** Helper for elastic_sector: contribution of one ray. Input: row with angle (radians) followed by flattened polygon coordinates. */
+elastic_sector_row = LAMBDA(txy,
+    LET(
+        t, INDEX(txy, 1),
+        V, DROP(txy, , 1),
+        pts, WRAPROWS(V, 2),
+        rs, intersection_polygon_ray(pts, {0, 0}, t),
+        s, 1-1/(1+rs^2)^1.5,
+        IFERROR(IF(COUNT(s)=2, ABS(INDEX(s, 2)-INDEX(s, 1)), s), 0)
+    ));
+
+/** Vertical stress contribution of an annular sector between radii ra and rb at depth z. dt: angular weight (sector angle / 2π). */
+elastic_sector_slice = LAMBDA(ra, rb, z, dt, dt*(1/(1+ra^2/z^2)^(3/2)-1/(1+rb^2/z^2)^(3/2)));
+
+/** Stress ratios {sy, sx, sxy} under a uniform strip load. Inputs: B full width, x offset from centre, y depth. Multiply by the pressure. */
+elastic_stripload = LAMBDA(B, x, y,
+    LET(
+        tm, ATAN2(y, x-B/2),
+        tp, ATAN2(y, x+B/2),
+        sy, 1/PI()*(tp-tm+SIN(tp-tm)*COS(tp+tm)),
+        sx, 1/PI()*(tp-tm-SIN(tp-tm)*COS(tp+tm)),
+        sxy, 1/PI()*(SIN(tp-tm)*SIN(tp+tm)),
+        HSTACK("Stress sy,sx and sxy", sy, sx, sxy)
+    ));
+
+/** Stress ratios {sy, sx, sxy} under a triangular strip load. Inputs: B loaded width, x offset, y depth. Multiply by the maximum pressure. */
+elastic_triangle = LAMBDA(B, x, y,
+    LET(
+        a, ATAN(x/y)+ATAN((B-x)/y),
+        rValue, x^2+y^2,
+        D, rValue+B^2-2*B*x,
+        sy, (x*a+y*(1-(rValue-B*x)/D))/B/PI(),
+        sx, y*(LN(D/rValue)+rValue/D-1+x/y*a-B*x/D)/B/PI(),
+        sxy, (y^2/D-y/B*a)/PI(),
+        HSTACK("Stress sy, sx, sxy =", sy, sx, sxy)
+    ));
+
+/** Interpolate y at X from (Xa, Ya); X may be a column. Xa may be increasing or decreasing. mode: "linear" (default), "logx", "logy", "logxy". outside: omitted = #N/A, "extrapolate", "clamp". */
+Interpolate = LAMBDA(X, Xa, Ya, [mode], [outside],
+    LET(
+        md, IF(ISOMITTED(mode), "LINEAR", UPPER(mode)),
+        od, IF(ISOMITTED(outside), "ERROR", UPPER(outside)),
+        lx, OR(md = "LOGX", md = "LOGXY"),
+        ly, OR(md = "LOGY", md = "LOGXY"),
+        xs, SORTBY(TOCOL(Xa), TOCOL(Xa)),
+        ys, SORTBY(TOCOL(Ya), TOCOL(Xa)),
+        n, ROWS(xs),
+        xlo, INDEX(xs, 1),
+        xhi, INDEX(xs, n),
+        q, IF(od = "CLAMP", IF(X < xlo, xlo, IF(X > xhi, xhi, X)), X),
+        iRaw, IFERROR(XMATCH(q, xs, -1, 2), 1),
+        i, IF(iRaw > n - 1, n - 1, iRaw),
+        xA, INDEX(xs, i),
+        xB, INDEX(xs, i + 1),
+        yA, INDEX(ys, i),
+        yB, INDEX(ys, i + 1),
+        t, IF(lx, LN(q/xA)/LN(xB/xA), (q - xA)/(xB - xA)),
+        y, IF(ly, yA*(yB/yA)^t, yA + t*(yB - yA)),
+        outRange, (q < xlo) + (q > xhi),
+        IF(outRange*(od = "ERROR"), NA(), IF(xB = xA, yA, y))
+    ));
+
+/** Intersections {x, y} of a polygon with the infinite line through pt at angle t (radians). Returns {0, 0} if none. */
+intersection_polygon_line = LAMBDA(polygon, pt, t,
+    LET(
+        X_, CHOOSECOLS(polygon, 1),
+        Y_, CHOOSECOLS(polygon, 2),
+        n, COUNT(X_),
+        closed, AND(INDEX(X_, 1)=INDEX(X_, n), INDEX(Y_, 1)=INDEX(Y_, n)),
+        X, IF(closed, X_, VSTACK(X_, INDEX(X_, 1))),
+        Y, IF(closed, Y_, VSTACK(Y_, INDEX(Y_, 1))),
+        xp, INDEX(pt, 1),
+        yp, INDEX(pt, 2),
+        Xa, DROP(X, -1),
+        Xb, DROP(X, 1),
+        dX, Xb-Xa,
+        Ya, DROP(Y, -1),
+        Yb, DROP(Y, 1),
+        dY, Yb-Ya,
+        det, SIN(t)*dX-COS(t)*dY,
+        a, IF(det<>0, (SIN(t)*(Xb-xp)+COS(t)*(yp-Yb))/det, 0),
+        b, IF(det<>0, (a>=0)*(a<=1)*(-Xa*Yb+Ya*Xb+xp*dY-yp*dX)/det, 0),
+        bu, UNIQUE(FILTER(b, b<>0)),
+        IFERROR(HSTACK(xp+bu*COS(t), yp+bu*SIN(t)), HSTACK(0, 0))
+    ));
+
+/** Sorted distances from pt to the polygon boundary along a ray at angle t (radians). */
+intersection_polygon_ray = LAMBDA(polygon, pt, t,
+    LET(
+        XY, intersection_polygon_line(polygon, pt, t),
+        X, CHOOSECOLS(XY, 1)-INDEX(pt, 1),
+        Y, CHOOSECOLS(XY, 2)-INDEX(pt, 2),
+        proj, X*COS(t)+Y*SIN(t),
+        rValue, ROUND(SQRT(X^2+Y^2), 8)*(proj>0),
+        SORT(UNIQUE(FILTER(rValue, rValue<>0)))
+    ));
+
+/** Teaching example of golden-section minimization of x³ + 5x² − 10x on [A, B]. */
+minimum = LAMBDA(A, B, [iter_],
+    LET(
+        niter, 10,
+        gr, (SQRT(5)+1)/2,
+        iter, IF(ISOMITTED(iter_), 1, iter_),
+        cValue, B-(B-A)/gr,
+        d, A+(B-A)/gr,
+        Yc, cValue^3+5*cValue^2-10*cValue,
+        yd, d^3+5*d^2-10*d,
+        IF(iter<niter, IF(Yc<yd, minimum(A, d, iter+1), minimum(cValue, B, iter+1)), (A+B)/2)
+    ));
+
+/** Alias of polygon_area_centroid: centroid and area of a polygon. */
+polygon_centroidArea = LAMBDA(polygon, polygon_area_centroid(polygon));
+
+/** Weight and moment {W, M} of a polygonal block about point Pt. Inputs: XY vertices, g unit weight, Pt {x, y}. Per unit thickness. */
+polygon_weightMoment = LAMBDA(XY, g, Pt,
+    LET(
+        CA, polygon_centroidArea(XY),
+        A, INDEX(CA, 2, 2),
+        Xc, INDEX(CA, 1, 2),
+        W, g*A,
+        M, W*(INDEX(Pt, 1, 1)-Xc),
+        HSTACK(W, M)
+    ));
+
+/** Resultant force and moment {F, M} of a piecewise-linear pressure profile about depth d0. Inputs: d depth column, p pressure column, d0. */
+pressure_forceMoment = LAMBDA(d, p, d0,
+    LET(
+        n, COUNT(d),
+        dt, DROP(d, 1),
+        db, DROP(d, -1),
+        Pt, DROP(p, 1),
+        pb, DROP(p, -1),
+        force, SUMPRODUCT(Pt+pb, dt-db)/2,
+        moment, SUMPRODUCT(dt-db, db*(2*pb+Pt)+dt*(2*Pt+pb)-3*d0*(Pt+pb))/6,
+        HSTACK(force, moment)
+    ));
+
+/** Rankine active coefficient for a sloping backfill. Inputs: phi, beta (deg). */
+Rankine_K = LAMBDA(phi, beta,
+    LET(
+        f, RADIANS(phi),
+        b, RADIANS(beta),
+        (COS(b)-SQRT(COS(b)^2-COS(f)^2))/(COS(b)+SQRT(COS(b)^2-COS(f)^2))
+    ));
+
+/** Rankine stresses on a wall from the Mohr circle (labelled table). Inputs: phi, coh, alpha wall angle, beta slope (deg), gz vertical stress, passive (omit = active). */
+Rankine_stress = LAMBDA(phi, coh, alpha, beta, gz, [passive],
+    LET(
+        f, RADIANS(phi),
+        br, RADIANS(beta),
+        sa, gz*COS(br)^2,
+        ta, gz*SIN(br)*COS(br),
+        smf, IF(ISOMITTED(passive), stress_Mohr_failure(sa, ta, beta, phi, coh), stress_Mohr_failure(sa, ta, beta, phi, coh, 1)),
+        sm, INDEX(smf, 1, 2),
+        sp, INDEX(smf, 4, 2),
+        tp, INDEX(smf, 4, 3),
+        st, Stress_Mohr(sp, tp, alpha, sm),
+        sb, INDEX(st, 1),
+        tb, INDEX(st, 2),
+        ib, DEGREES(ATAN2(sb, tb)),
+        label, {"Lateral pressure coefficient and inclination =";"Normal and shear stress parallel to slope =";"Normal and shear stress at pole =";"Normal and shear stress on wall ="},
+        sta, HSTACK(sa, ta),
+        stp, HSTACK(sp, tp),
+        stb, HSTACK(sb, tb),
+        HSTACK(label, VSTACK(HSTACK(sb/sa, ib), sta, stp, stb))
+    ));
+
+/** Sine of an angle in degrees. */
+sind = LAMBDA(X, SIN(RADIANS(X)));
+
+/** Allowable bearing pressure from SPT N averaged between D and D + B. Inputs: z, N columns (or scalar N), B, D (m), author: bowles, meyerhof, terzaghi. */
+SPT_bearing = LAMBDA(z, N, B, D, author,
+    LET(
+        DpB, B+D,
+        Na, IF(COUNT(N)=1, N, AVERAGEIFS(N, z, "<="&DpB, z, ">="&D)),
+        authors, {"bowles", "meyerhof", "terzaghi"},
+        a, IFERROR(XMATCH(LOWER(author), authors, 1), 0),
+        k, 1+0.33*D/B,
+        kB, ((B+0.3)/B)^2,
+        q6_, 10.417*Na-20.605,
+        q0_, 13.032*Na-16.488,
+        B0_, 1.24,
+        SWITCH(a, 1, k*Na*IF(12.5*kB>=20, 20, 12.5*kB), 2, k*Na*IF(8.94*kB>=13.41, 13.41, 8.94*kB), 3, IF(B<B0_, q0_, IF(B>6, q6_, q6_+(q0_-q6_)*((B-B0_)/(6-B0_)-1)^2)), 0)
+    ));
+
+/** Burland–Burbidge settlement from SPT. Inputs: z, N columns, q pressure, B width, optional LB = L/B, D_ depth, H layer thickness, sc preconsolidation pressure. */
+SPT_BurlandBurbidge_settlement = LAMBDA(z, N, q, B, [LB], [D_], [H], [sc],
+    LET(
+        D, IF(ISOMITTED(D_), 0, D_),
+        ZI, 0.9*B^0.79,
+        ZID, ZI+D,
+        Na, AVERAGEIFS(N, z, "<="&ZID, z, ">="&D),
+        Ic, 1.71/Na^1.4,
+        fs, IF(ISOMITTED(LB), 1, (1.25*LB/(LB+0.25))^2),
+        fl, IF(ISOMITTED(H), 1, H/ZI*(2-H/ZI)),
+        qc, IF(ISOMITTED(sc), q, IF(q>sc, q-2*sc/3, q)),
+        fs*fl*B^0.7*Ic*qc
+    ));
+
+/** SPT overburden correction CN = 10/√σ'v (kPa), capped at 2. */
+SPT_correction_depth = LAMBDA(s,
+    LET(
+        CN, IF(s=0, 2, 10/SQRT(s)),
+        IF(CN<2, CN, 2)
+    ));
+
+/** Friction angle (deg) from SPT N. author: peck, schmertman (needs s and pa), hatanaka (needs s, in kPa). */
+SPT_Correlation_friction = LAMBDA(N, author, [s], [pa],
+    LET(
+        authors, {"peck", "schmertman", "hatanaka"},
+        a, IFERROR(XMATCH(LOWER(author), authors, 1), 0),
+        no_s, ISOMITTED(s),
+        no_spa, OR(no_s, ISOMITTED(pa)),
+        CN, SPT_correction_depth(s),
+        SWITCH(a, 1, 27.1+0.3*N-0.00054*N^2, 2, IF(no_spa, NA(), DEGREES(ATAN((N/(12.2+20.3*s/pa))^0.34))), 3, IF(no_s, NA(), SQRT(20*N*CN)+20), 0)
+    ));
+
+/** Resultant force, moment and point of application of normal/shear stresses varying linearly along segment AB. Inputs: A, B {x, y}; sa, sb {normal, shear}. */
+stress_ForceMoment = LAMBDA(A, B, sa, sb,
+    LET(
+        v, B-A,
+        AB, SQRT(INDEX(v, 1)^2+INDEX(v, 2)^2),
+        sm, (sa+sb)/2,
+        fx, -(INDEX(sm, 1)*INDEX(v, 2)-INDEX(sm, 2)*INDEX(v, 1)),
+        fy, (INDEX(sm, 1)*INDEX(v, 1)+INDEX(sm, 2)*INDEX(v, 2)),
+        moment, (INDEX(sa, 1)+2*INDEX(sb, 1))*AB^2/6,
+        zP, (INDEX(sa, 1)+2*INDEX(sb, 1))/INDEX(sm, 1)/6,
+        p, A*(1-zP)+zP*B,
+        VSTACK(HSTACK("Force =", fx, fy), HSTACK("Moment =", moment, ""), HSTACK("Point of application =", p))
+    ));
+
+/** Normal and shear stress {s, t} on a plane at angle alpha (deg) using the Mohr circle pole. Inputs: sa, ta pole stresses, alpha, sm circle centre. */
+Stress_Mohr = LAMBDA(sa, ta, alpha, sm,
+    LET(
+        ar, RADIANS(alpha),
+        am, 2*(sm-sa)*COS(ar)-2*ta*SIN(ar),
+        s, sa+am*COS(ar),
+        t, ta+am*SIN(ar),
+        HSTACK(s, t)
+    ));
+
+/** Mohr–Coulomb failure circle through a known stress (sa, ta) on plane A (deg): centre, radius, pole, principal and failure stresses. passive: omit = active. */
+stress_Mohr_failure = LAMBDA(sa, ta, A, phi, coh, [passive],
+    LET(
+        f, RADIANS(phi),
+        sgn, IF(ISOMITTED(passive), -1, 1),
+        sm, sa/COS(f)^2+coh*TAN(f)+sgn*SQRT((coh+sa*TAN(f))^2-ta^2)/COS(f),
+        rValue, SQRT((sa-sm)^2+ta^2),
+        ar, IF(A=0, 0.000001, RADIANS(A)),
+        am, 2*(sm-sa)*COS(ar)-2*ta*SIN(ar),
+        sp, sa+am*COS(ar),
+        tp, ta+am*SIN(ar),
+        s1_, sm+rValue,
+        s3_, sm-rValue,
+        a1_, DEGREES(ATAN2(s1_-sp, -tp)),
+        a3_, DEGREES(ATAN2(s3_-sp, -tp)),
+        ap, DEGREES(ATAN2(sm-sp, -tp))+90,
+        sf, sm*COS(f)^2-coh*SIN(2*f)/2,
+        tfp, coh*COS(f)^2+sm*SIN(f)*COS(f),
+        afp, DEGREES(ATAN2(sf-sp, tfp-tp)),
+        tfn, -tfp,
+        afn, DEGREES(ATAN2(sf-sp, tfn-tp)),
+        header, {"", "Normal stress", "Shear stress", "Surface orientation (deg)"},
+        ra, HSTACK("Center =", sm, "", ""),
+        rb, HSTACK("Radius =", rValue, "", ""),
+        rj, HSTACK(header),
+        rd, HSTACK("Pole", sp, tp, ap),
+        re, HSTACK("Major principal stress", s1_, 0, a1_),
+        rf, HSTACK("Minor principal stress", s3_, 0, a3_),
+        rg, HSTACK("Minor principal stress", s3_, 0, a3_),
+        rh, HSTACK("Failure stress", sf, tfp, afp),
+        ri, HSTACK("Failure stress", sf, tfn, afn),
+        VSTACK(ra, rb, rj, rd, re, rf, rg, rh, ri)
+    ));
+
+/** Mohr circle and pole from stresses on two perpendicular planes: centre, radius, pole, principal stresses. Inputs: sa, ta on plane A (deg), sb normal stress on the perpendicular plane. */
+stress_Mohr_pole = LAMBDA(sa, ta, A, sb,
+    LET(
+        tb, -ta,
+        B, A+90,
+        sm, (sa+sb)/2,
+        rValue, SQRT((sa-sb)^2/4+ta^2),
+        ar, IF(A=0, 0.000001, RADIANS(A)),
+        am, 2*(sm-sa)*COS(ar)-2*ta*SIN(ar),
+        sp, sa+am*COS(ar),
+        tp, ta+am*SIN(ar),
+        s1_, sm+rValue,
+        s3_, sm-rValue,
+        a1_, DEGREES(ATAN2(s1_-sp, -tp)),
+        a3_, DEGREES(ATAN2(s3_-sp, -tp)),
+        ap, DEGREES(ATAN2(sm-sp, -tp))+90,
+        header, {"", "Normal stress", "Shear stress", "Surface orientation (deg)"},
+        VSTACK(HSTACK("Center =", sm, "", ""), HSTACK("Radius =", rValue, "", ""), HSTACK(header), HSTACK("Stress b", sb, tb, B), HSTACK("Pole", sp, tp, ap), HSTACK("Major principal stress", s1_, 0, a1_), HSTACK("Minor principal stress", s3_, 0, a3_))
+    ));
+
+/** Plotting points {σ, τ} of a Mohr circle with centre sm and radius rValue (header + 21 points). */
+stress_Mohrcircle = LAMBDA(sm, rValue,
+    LET(
+        a, SEQUENCE(21)*PI()/10,
+        s, sm+rValue*COS(a),
+        t, rValue*SIN(a),
+        header, {"sig", "tau"},
+        VSTACK(header, HSTACK(s, t))
+    ));
+
+/** Tangent of an angle in degrees. */
+tand = LAMBDA(X, TAN(RADIANS(X)));
+
+/** Plotting coordinates of stress vectors along segment ptA–ptB (rows separated by #N/A). Inputs: sigA, sigB {normal, shear}, M divisions, s display scale. */
+vector_line = LAMBDA(ptA, ptB, sigA, sigB, M, s,
+    LET(
+        AB, ptB-ptA,
+        lAB, SQRT(SUMSQ(AB)),
+        t, AB/lAB,
+        n, HSTACK(-INDEX(t, 2), INDEX(t, 1)),
+        vA, n*INDEX(sigA, 1)+t*INDEX(sigA, 2),
+        vB, n*INDEX(sigB, 1)+t*INDEX(sigB, 2),
+        A, SEQUENCE(M+1, 1, 0, 1)/M,
+        p, (1-A)*ptA+A*ptB,
+        v, (1-A)*vA+A*vB,
+        pv, p+s*v,
+        bl, IF(SEQUENCE(M+1), {#N/A, #N/A}),
+        sq, SEQUENCE(M+1, 1, 1, 3),
+        all, VSTACK(HSTACK(p, sq), HSTACK(pv, sq+1), HSTACK(bl, sq+2)),
+        DROP(SORT(all, 3), , -1)
+    ));
+
+/** Hydrostatic pore pressure at depth below the water table (0 above it). Optional unitWeight, default 9.81 kN/m³. */
+water_pressure = LAMBDA(depth, waterTableDepth, [unitWeight],
+    LET(
+        gw, IF(ISOMITTED(unitWeight), 9.81, unitWeight),
+        IF(depth>=waterTableDepth, gw*(depth-waterTableDepth), 0)
+    ));
+
+/** Strip-load stress ratios in the order {sx, sy, sxy} (retaining-wall convention). Inputs: B full width, X offset, Y depth. */
+elastic_stripload_xy = LAMBDA(B, X, Y,
+    LET(
+        tm, ATAN2(Y, X-B/2),
+        tp, ATAN2(Y, X+B/2),
+        sy, 1/PI()*(tp-tm+SIN(tp-tm)*COS(tp+tm)),
+        sx, 1/PI()*(tp-tm-SIN(tp-tm)*COS(tp+tm)),
+        sxy, 1/PI()*(SIN(tp-tm)*SIN(tp+tm)),
+        HSTACK("sigx, sigy and tauxy =", sx, sy, sxy)
+    ));
+
+/** Plotting points of a circle or arc (header + n+1 points). Inputs: pt centre {x, y}, rValue radius, optional ta_, tb_ start/end angles (deg), n_ points (default 100). */
+circle = LAMBDA(pt, rValue, [ta_], [tb_], [n_],
+    LET(
+        n, IF(ISOMITTED(n_), 100, n_),
+        ta, IF(ISOMITTED(ta_), 0, RADIANS(ta_)),
+        tb, IF(ISOMITTED(tb_), 2*PI(), RADIANS(tb_)),
+        a, ta+SEQUENCE(n+1, 1, 0, 1)*(tb-ta)/n,
+        X, pt+rValue*HSTACK(COS(a), SIN(a)),
+        header, {"x", "y"},
+        VSTACK(header, X)
+    ));
+
+/** LCPC CPT pile parameters {category, kc, β, qs max (MPa)}. Inputs: qc (MPa), soil (clay, silt, sand, gravel, chalk), pile (drilled, cast, steel, concrete). */
+classify_CPT_LCPC = LAMBDA(qc, soil, pile,
+    LET(
+        soils, {"clay", "silt", "sand", "gravel", "chalk"},
+        s, IFERROR(XMATCH(LOWER(soil), soils, 1), 0),
+        piles, {"drilled", "cast", "steel", "concrete"},
+        k, IFERROR(XMATCH(LOWER(pile), piles, 1), 0),
+        j, IFS(s<=2, IF(qc<3, 1, IF(qc>6, 3, 2)), s=5, IF(qc<5, 7, 8), TRUE, IF(qc<5, 4, IF(qc>20, 6, 5))),
+        betas, {0.000001, 0.000001, 0.000001, 200, 200, 200, 125, 80;0.000001, 100, 0.000001, 250, 250, 300, 125, 100;0.000001, 120, 150, 300, 300, 300, 1, 1;0.000001, 75, 0.000001, 150, 150, 150, 1, 1},
+        qms, {15, 40, 40, 1000000, 1000000, 120, 40, 120;15, 40, 40, 1000000, 40, 120, 40, 80;15, 40, 40, 1000000, 1000000, 120, 1, 1;15, 80, 80, 1000000, 1000000, 120, 1, 1},
+        ks, {0.4, 0.4, 0.4, 0.15, 0.15, 0.15, 0.2, 0.3;0.55, 0.55, 0.55, 0.5, 0.5, 0.5, 0.3, 0.45},
+        beta, INDEX(betas, k, j),
+        qmax, INDEX(qms, k, j)/1000,
+        kc, IF(k<=2, INDEX(ks, 1, j), INDEX(ks, 2, j)),
+        type, {"A", "B", "C", "A", "B", "C", "A", "B"},
+        HSTACK(INDEX(type, j), kc, beta, qmax)
+    ));
+
+/** LCPC pressuremeter pile parameters {kp, shaft-friction curve number}. Inputs: pl limit pressure (MPa), soil (clay … rock), pile installation type. */
+classify_PMT_LCPC = LAMBDA(pl, soil, pile,
+    LET(
+        soils, {"clay", "silt", "sand", "gravel", "chalk", "marl", "rock"},
+        s, IFERROR(XMATCH(LOWER(soil), soils, 1), 0),
+        piles, {"dry", "mud", "temporary", "permanent", "pier", "steel", "concrete", "moulded", "coated", "low", "high"},
+        k, IFERROR(XMATCH(LOWER(pile), piles, 1), 0),
+        j, IFS(s<=2, IF(pl<0.7, 1, IF(pl>2.5, 3, 2)), s<=4, IF(pl<0.5, 4, IF(pl>2.5, 6, 5)), s=5, IF(pl<0.7, 7, IF(pl>3, 9, 8)), s=6, IF(pl>4.5, 11, 10), TRUE, IF(pl>4.5, 13, 12)),
+        kpi, {1.1, 1.2, 1.3, 1, 1.1, 1.2, 1.1, 1.4, 1.8, 0, 1.8, 1.5, 0;1.4, 1.5, 1.6, 4.2, 3.7, 3.2, 1.6, 2.2, 2.6, 0, 2.6, 2, 0},
+        qi, {1, 1, 2, 0, 0, 0, 1, 3, 4, 3, 4, 6, 6;1, 1, 1, 1, 2, 3, 1, 3, 4, 3, 4, 6, 6;1, 1, 1, 1, 2, 3, 1, 2, 3, 3, 4, 0, 0;1, 1, 1, 1, 1, 2, 0, 0, 0, 2, 3, 0, 0;1, 2, 3, 0, 0, 0, 1, 2, 3, 4, 5, 6, 6;1, 2, 2, 2, 2, 3, 0, 0, 0, 3, 4, 4, 4;1, 2, 2, 3, 3, 3, 0, 0, 0, 3, 4, 4, 4;1, 2, 2, 2, 2, 3, 1, 2, 3, 3, 4, 0, 0;1, 2, 2, 3, 3, 3, 0, 0, 0, 3, 4, 0, 0;1, 2, 2, 3, 3, 3, 2, 3, 4, 5, 5, 0, 0;0, 4, 5, 5, 5, 6, 0, 5, 6, 6, 6, 7, 7},
+        qsi, INDEX(qi, k, j),
+        ip, IF(k<=5, 1, 2),
+        kp, INDEX(kpi, ip, j),
+        HSTACK(kp, qsi)
+    ));
+
+/** Average CPT qc below a footing: D to D + 1.5B (meyerhof) or D to D + B (robertson). Inputs: z, qc columns, D, B, author. */
+CPT_average_qc = LAMBDA(z, qc, D, B, author,
+    LET(
+        authors, {"meyerhof", "robertson"},
+        a, IFERROR(XMATCH(LOWER(author), authors, 1), 0),
+        Db, D+IF(a=1, 1.5, 1)*B,
+        qa, FILTER(qc, (z-D)*(z-Db)<=0, 0),
+        AVERAGE(qa)
+    ));
+
+/** Meyerhof CPT bearing factor with water-table corrections Cw1, Cw2. Inputs: B, D, dw water depth, optional m (any value selects the 12.19 divisor). */
+CPT_bearing_Meyerhof_k = LAMBDA(B, D, dw, [m],
+    LET(
+        x, (dw-D)/B/3,
+        Cw1_, 0.5+IF(x>0.5, 0.5, x),
+        Cw2_, 0.5+IF(dw/D/2>0.5, 0.5, dw/D/2),
+        B/IF(ISOMITTED(m), 40, 12.19)*(Cw1_+Cw2_*D/B)
+    ));
+
+/** Robertson CPT bearing factor k from chart fits. Inputs: B, D, shape (square, circular), density (dense, loose). */
+CPT_bearing_Robertson_k = LAMBDA(B, D, shape, density,
+    LET(
+        densities, {"dense", "loose"},
+        shapes, {"square", "circular"},
+        rValue, IFERROR(XMATCH(LOWER(density), densities, 1), 0),
+        s, IFERROR(XMATCH(LOWER(shape), shapes, 1), 0),
+        x, IF(B/D>0, LOG(B/D), 0),
+        IFS(AND(rValue=1, s=1), -0.246*x^5+0.3589*x^4-0.0096*x^3+0.0482*x^2-0.1284*x+0.2738, AND(rValue=1, s=2), 0.143*x^4-0.1806*x^3+0.1497*x^2-0.119*x+0.2466, AND(rValue=2, s=1), 0.0352*x^4-0.0868*x^3+0.1904*x^2-0.1779*x+0.2325, AND(rValue=2, s=2), 0.00253*x^5+0.0351*x^4-0.1409*x^3+0.1905*x^2-0.1684*x+0.2172, TRUE, 0)
+    ));
+
+/** Friction angle (deg) from CPT qc. Inputs: z depth, qc, g unit weight (consistent units), author_: robertson, kulhawy, ricceri, lee. */
+CPT_friction_angle = LAMBDA(z, qc, g, author_,
+    LET(
+        authors, {"robertson", "kulhawy", "ricceri", "lee"},
+        a, IFERROR(XMATCH(LOWER(author_), authors, 1), 0),
+        qcs, qc/(g*z),
+        SWITCH(a, 1, DEGREES(ATAN((LOG(qcs)+0.29)/2.68)), 2, DEGREES(ATAN(0.1+0.38*LOG(qcs))), 3, DEGREES(ATAN(0.38+0.27*LOG(qcs))), 4, 15.575*qcs^0.1714, 0)
+    ));
+
+/** Layer thicknesses from an Olsen SCN profile (header + thickness, SCN+3). Input: cpt table with depth in column 1 and SCN in column 6. */
+CPT_Olsen_layers = LAMBDA(cpt,
+    LET(
+        d, CHOOSECOLS(cpt, 1),
+        CSN, CHOOSECOLS(cpt, 6)+3,
+        CSNshifted, VSTACK(0, DROP(CSN, -1)),
+        n, COUNTA(d),
+        dlast, HSTACK(INDEX(d, n), INDEX(CSN, n)),
+        dCSN, VSTACK(FILTER(HSTACK(d, CSN), CSN<>CSNshifted), dlast),
+        ds, CHOOSECOLS(dCSN, 1),
+        dshifted, VSTACK(0, DROP(ds, -1)),
+        h, ds-dshifted,
+        hCSN, CHOOSECOLS(dCSN, 2),
+        header, {"Layer thickness", "SCN+3"},
+        VSTACK(header, HSTACK(h, hCSN))
+    ));
+
+/** Olsen soil classification number (SCN) for a CPT profile: {Qn, Fr, SCN, name}. Inputs: dqs (depth, qc, fs), pa, n exponent, g, gw, dw. */
+CPT_Olsen_SCN = LAMBDA(dqs, pa, n, g, gw, dw,
+    LET(
+        name, {"organic clay and unstable clayey silts", "clays", "silt mixtures", "sand mixtures", "sands", "sands and gravels", "NA"},
+        SCNs, {-2, -1, 0, 1, 2, 3, 10},
+        d, CHOOSECOLS(dqs, 1),
+        Q, CHOOSECOLS(dqs, 2),
+        F, CHOOSECOLS(dqs, 3),
+        sigt, g*d,
+        sige, sigt-gw*IF(d>dw, d-dw, 0),
+        Qn, (Q-sigt)/pa*(pa/sige)^n,
+        Fr, F/(Q-sigt)*100,
+        QR, HSTACK(Qn, Fr),
+        i, BYROW(QR, LAMBDA(A, CPT_Olsen_SCN_row(CHOOSECOLS(A, 1), CHOOSECOLS(A, 2)))),
+        SCNname, INDEX(name, 1, i),
+        SCN, INDEX(SCNs, 1, i),
+        HSTACK(QR, SCN, SCNname)
+    ));
+
+/** Helper for CPT_Olsen_SCN: zone index (1–7) for one point. Inputs: Qt normalized tip resistance, Fr friction ratio (%). */
+CPT_Olsen_SCN_row = LAMBDA(Qt, Fr,
+    LET(
+        x, IF(Fr>0, LOG(Fr), -2),
+        LQ, IF(Qt>0, LOG(Qt), -2),
+        SCNm2_, IF(x>2.7, 4.5744*x^3-11.185*x^2+10.632*x-2.8426, -10),
+        SCNm1_, IF(x>0.5, IF(x<0.28, -1.7487*x^2+1.44*x+0.6477, -0.573*x^2+1.9578*x+0.4221), -10),
+        SCN0_, IF(x>0.13, IF(x<0.28, 1.0897*x^3-0.024*x^2+0.5916*x+1.3354, -0.1418*x^2+1.2107*x+1.198), -10),
+        SCN1_, IF(x<0.32, -0.285*x^2+0.448*x+1.8288, -0.1418*x^2+1.2107*x+1.198),
+        SCN2_, IF(x<0.42, -0.2941*x^2+0.2949*x+2.3987, 1.0434*x+2.043),
+        c_100, 0.368*x^4-0.4032*x^3+0.0574*x^2-0.2932*x+0.6,
+        c_75, 0.5603*x^4-1.6268*x^3+1.9913*x^2-1.5054*x+1.0874,
+        c_55, -4.3048*x^5+10.575*x^4-9.5464*x^3+5.0903*x^2-3.0234*x+1.972,
+        c_35, -2.4517*x^3+6.4029*x^2-6.2359*x+3.5253,
+        c_15, -5.888*x^3+14.974*x^2-13.77*x+6.1366,
+        IFS(OR(-1>x, x>1, LQ<0, LQ>3), 7, LQ<=SCNm2_, 1, LQ<=SCNm1_, 2, LQ<=SCN0_, 3, LQ<=SCN1_, 4, LQ<=SCN2_, 5, TRUE, 6)
+    ));
+
+/** Boundary curve A–H of the Robertson CPT classification chart: Qt at friction ratio x_ (%). sel: letter of the curve. */
+CPT_Robertson_classification_chart = LAMBDA(x_, sel,
+    LET(
+        x, LOG(x_),
+        y, SWITCH(UPPER(sel), "A", -0.6662*x^3-1.7072*x^2-1.5868*x+0.4627, "B", 1.2802*x^3-1.2855*x^2+1.0234*x-0.1389, "C", 1.1037*x^3-0.009*x^2+0.6298*x+0.7673, "D", 1.0659*x^3-0.0174*x^2-2.6277*x+3.3431, "E", 0.7223*x^4+0.6844*x^3+0.4039*x^2+0.6797*x+1.2115, "F", 0.2897*x^3+0.8671*x^2+0.9718*x+1.8201, "G", 1.8669*x^4+4.5888*x^3+4.4977*x^2+2.5417*x+2.9667, "H", 9.682*x-3.7227),
+        10^y
+    ));
+
+/** Layer thicknesses from Robertson SBT and SBT(Ic) profiles. Input: cpt table with depth in column 1, SBT in column 6, SBT(Ic) in column 9. */
+CPT_Robertson_layers = LAMBDA(cpt,
+    LET(
+        d, CHOOSECOLS(cpt, 1),
+        SBT, CHOOSECOLS(cpt, 6),
+        SBTn, CHOOSECOLS(cpt, 9),
+        SBTshifted, VSTACK(0, DROP(SBT, -1)),
+        n, COUNT(d),
+        dlast, HSTACK(INDEX(d, n), INDEX(SBT, n)),
+        dnlast, HSTACK(INDEX(d, n), INDEX(SBTn, n)),
+        dSBT, VSTACK(FILTER(HSTACK(d, SBT), SBT<>SBTshifted), dlast),
+        ds, CHOOSECOLS(dSBT, 1),
+        dshifted, VSTACK(0, DROP(ds, -1)),
+        h, ds-dshifted,
+        SBTnshifted, VSTACK(0, DROP(SBTn, -1)),
+        dSBTn, VSTACK(FILTER(HSTACK(d, SBTn), SBTn<>SBTnshifted), dnlast),
+        dns, CHOOSECOLS(dSBTn, 1),
+        dnshifted, VSTACK(0, DROP(dns, -1)),
+        hn, dns-dnshifted,
+        header, {"SBT thickness", "SBT", "SBTIc thickness", "SBTIc"},
+        hSBT, CHOOSECOLS(dSBT, 2),
+        hSBTn, CHOOSECOLS(dSBTn, 2),
+        VSTACK(header, HSTACK(h, hSBT, hn, hSBTn))
+    ));
+
+/** Robertson soil behaviour type for a CPT profile: {Qn, Fr, SBT, name, Ic, SBT(Ic), name}. Inputs: dqs (depth, qc, fs), pa, n exponent, g, gw, dw. */
+CPT_Robertson_SBT = LAMBDA(dqs, pa, n, g, gw, dw,
+    LET(
+        name, {"Sensitive fine-grained", "Clay - organic soil", "Clays: clay to silty clay", "Silt mixtures: clayey silt & silty clay", "Sand mixtures: silty sand to sandy silt", "Sands: clean sands to silty sands", "Dense sand to gravelly sand", "Stiff sand to clayey sand", "Stiff fine-grained", "NA"},
+        d, CHOOSECOLS(dqs, 1),
+        Q, CHOOSECOLS(dqs, 2),
+        F, CHOOSECOLS(dqs, 3),
+        sigt, g*d,
+        sige, sigt-gw*IF(d>dw, d-dw, 0),
+        Qn, (Q-sigt)/pa*(pa/sige)^n,
+        Fr, F/(Q-sigt)*100,
+        QR, HSTACK(Qn, Fr),
+        SBT, BYROW(QR, LAMBDA(A, CPT_Robertson_SBT_row(CHOOSECOLS(A, 1), CHOOSECOLS(A, 2)))),
+        SBTname, INDEX(name, 1, SBT),
+        Ic, SQRT((3.47-LOG(ABS(Qn)))^2+(1.22+IF(Fr>0, LOG(Fr), -4))^2),
+        SBTIc, ROUND(9.2-1.877*Ic, 0),
+        SBTnameIc, INDEX(name, 1, SBTIc),
+        HSTACK(QR, SBT, SBTname, Ic, SBTIc, SBTnameIc)
+    ));
+
+/** Helper for CPT_Robertson_SBT: SBT zone (1–9, 0 = outside chart) for one point. Inputs: Qt_, Fr_ (%). */
+CPT_Robertson_SBT_row = LAMBDA([Qt_], [Fr_],
+    LET(
+        Qt, IF(OR(ISOMITTED(Qt_), ISBLANK(Qt_)), -1, Qt_),
+        Fr, IF(OR(ISOMITTED(Fr_), ISBLANK(Fr_)), -1, Fr_),
+        x, IF(Fr>0, LOG(Fr), -2),
+        LQ, IF(Qt>0, LOG(Qt), -2),
+        a, -0.6662*x^3-1.7072*x^2-1.5868*x+0.4627,
+        b, 1.2802*x^3-1.2855*x^2+1.0234*x-0.1389,
+        cValue, 1.1037*x^3-0.009*x^2+0.6298*x+0.7673,
+        d, 1.0659*x^3-0.0174*x^2-2.6277*x+3.3431,
+        e, 0.7223*x^4+0.6844*x^3+0.4039*x^2+0.6797*x+1.2115,
+        f, 0.2897*x^3+0.8671*x^2+0.9718*x+1.8201,
+        g, 1.8669*x^4+4.5888*x^3+4.4977*x^2+2.5417*x+2.9667,
+        h, 9.682*x-3.7227,
+        IFS(OR(-1>x, x>1, Qt<0, LQ>3), 0, LQ<=a, 1, LQ<=b, 2, LQ>g, 7, AND(LQ>d, LQ>h), 8, AND(LQ>d, LQ<=h), 9, LQ<=cValue, 3, LQ<=e, 4, LQ<=f, 5, TRUE, 6)
+    ));
+
+/** Schmertmann settlement from a CPT profile (total settlement + layer table). Inputs: zqc (depth, qc), k = E/qc, B, D, L, qn net pressure, g unit weight. */
+CPT_settlement = LAMBDA(zqc, k, B, D, L, qn, g,
+    LET(
+        z, CHOOSECOLS(zqc, 1),
+        qc, CHOOSECOLS(zqc, 2),
+        za, (DROP(z, 1)+DROP(z, -1))/2,
+        qca, (DROP(qc, 1)+DROP(qc, -1))/2,
+        Iz, CPT_settlement_Iz(za, B, D, L, qn, g),
+        cValue, MAX(1-g*D/qn/2, 0.5),
+        dz, DROP(z, 1)-DROP(z, -1),
+        E, k*qca,
+        eps, IF(E>0, cValue*Iz*qn/E, 0),
+        s, SUM(eps*dz),
+        zE, FILTER(HSTACK(za, qca, E, Iz, eps), Iz>0),
+        label, {"depth", "qc", "E", "I", "eps"},
+        VSTACK(HSTACK("Settlement =", s, "", "", ""), label, zE)
+    ));
+
+/** Schmertmann strain influence factor Iz at depth z (accepts a column). Inputs: z, B, D, L, qn net pressure, g unit weight. */
+CPT_settlement_Iz = LAMBDA(z, B, D, L, qn, g,
+    LET(
+        x, 1-B/L/2,
+        zm, D+B*x,
+        zl, D+4*B*x,
+        ID, 0.2*x,
+        sm, g*zm,
+        Im, 0.5+0.1*SQRT(qn/sm),
+        (D<=z)*(z<zm)*(ID+(Im-ID)*(z-D)/(zm-D))+(zm<=z)*(z<=zl)*(Im-Im*(z-zm)/(zl-zm))
+    ));
+
+/** Perpendicular distances from point M {x, y} to the line through each segment of polyline pl. */
+distance_point_polyline = LAMBDA(M, pl,
+    LET(
+        A, DROP(pl, -1),
+        B, DROP(pl, 1),
+        AB, CHOOSECOLS(B-A, 1)^2+CHOOSECOLS(B-A, 2)^2,
+        AM, CHOOSECOLS(A-M, 1)^2+CHOOSECOLS(A-M, 2)^2,
+        ABAM, CHOOSECOLS(A-M, 1)*CHOOSECOLS(B-A, 1)+CHOOSECOLS(A-M, 2)*CHOOSECOLS(B-A, 2),
+        SQRT(AM-ABAM^2/AB)
+    ));
+
+/** Bilinear interpolation in a 2-D table. Inputs: x, Y query; XY table with x values in row 1 and y values in column 1 (ascending). */
+interpolate_table = LAMBDA(x, Y, XY,
+    LET(
+        Xa, DROP(CHOOSEROWS(XY, 1), , 1),
+        Ya, DROP(CHOOSECOLS(XY, 1), 1),
+        Za, DROP(XY, 1, 1),
+        cValue, XMATCH(x, Xa, -1),
+        rValue, XMATCH(Y, Ya, -1),
+        Xl, INDEX(Xa, cValue),
+        Xu, INDEX(Xa, cValue+1),
+        Yl, INDEX(Ya, rValue),
+        Yu, INDEX(Ya, rValue+1),
+        a, (Xu-Xl)*(Yu-Yl),
+        Nll, (Xu-x)*(Yu-Y),
+        Nul, (x-Xl)*(Yu-Y),
+        Nuu, (x-Xl)*(Y-Yl),
+        Nlu, (Xu-x)*(Y-Yl),
+        Zll, INDEX(Za, rValue, cValue),
+        Zlu, INDEX(Za, rValue+1, cValue),
+        Zuu, INDEX(Za, rValue+1, cValue+1),
+        Zul, INDEX(Za, rValue+1, cValue),
+        (Nll*Zll+Nlu*Zlu+Nuu*Zuu+Nul*Zul)/a
+    ));
+
+/** Intersection points {x, y} of a polyline with a circle. Inputs: pline vertices, center {x, y}, radius. */
+intersection_polyline_circle = LAMBDA(pline, center, radius,
+    LET(
+        pl, pline-center,
+        A, DROP(pl, -1),
+        B, DROP(pl, 1),
+        AB, B-A,
+        OAs, CHOOSECOLS(A, 1)^2+CHOOSECOLS(A, 2)^2,
+        ABs, CHOOSECOLS(AB, 1)^2+CHOOSECOLS(AB, 2)^2,
+        AAB, CHOOSECOLS(A, 1)*CHOOSECOLS(AB, 1)+CHOOSECOLS(A, 2)*CHOOSECOLS(AB, 2),
+        discri, AAB^2-ABs*(OAs-radius^2),
+        ap, IF(discri>=0, (-AAB-SQRT(discri))/ABs, -1),
+        bp, IF(discri>=0, (-AAB+SQRT(discri))/ABs, -1),
+        X, VSTACK(HSTACK(A, AB, ap), HSTACK(A, AB, bp)),
+        Y, FILTER(X, (0<=CHOOSECOLS(X, 5))*(CHOOSECOLS(X, 5)<=1)),
+        CHOOSECOLS(Y, {1, 2})+CHOOSECOLS(Y, 5)*CHOOSECOLS(Y, {3, 4})+center
+    ));
+
+/** Intersections of polyline pl with polyline ql: {parameter, x, y}. Optional m keeps the m points with the largest x. */
+intersection_polyline_polyline = LAMBDA(pl, ql, [m],
+    LET(
+        mm, IF(ISOMITTED(m), 0, m),
+        n, ROWS(pl)-1,
+        qls, IF(SEQUENCE(n), TOROW(ql)),
+        Xa, DROP(pl, -1),
+        Xb, DROP(pl, 1),
+        xpls, HSTACK(Xa, Xb, qls),
+        a, BYROW(xpls, LAMBDA(row_, INDEX(intersection_segment_polyline(row_), 1, 1))),
+        X, HSTACK(a, Xa+a*(Xb-Xa)),
+        Y, FILTER(X, CHOOSECOLS(X, 1)<>0),
+        IF(mm>0, TAKE(SORT(Y, 2, -1), mm), Y)
+    ));
+
+/** Helper for intersection_polyline_polyline: segment parameter of the intersection between one segment and a polyline. Input: flattened row (segment, then polyline). */
+intersection_segment_polyline = LAMBDA(row,
+    LET(
+        pl, WRAPROWS(row, 2),
+        pline, DROP(pl, 2),
+        ptA, DROP(pline, -1),
+        ptB, DROP(pline, 1),
+        AB, ptB-ptA,
+        ptC, CHOOSEROWS(pl, 1),
+        ptD, CHOOSEROWS(pl, 2),
+        CD, ptD-ptC,
+        AC, ptC-ptA,
+        det, INDEX(CD, 1)*CHOOSECOLS(AB, 2)-INDEX(CD, 2)*CHOOSECOLS(AB, 1),
+        a, IF(det<>0, (INDEX(CD, 1)*CHOOSECOLS(AC, 2)-INDEX(CD, 2)*CHOOSECOLS(AC, 1))/det, 0),
+        b, IF(det<>0, (a>=0)*(a<=1)*(CHOOSECOLS(AB, 1)*CHOOSECOLS(AC, 2)-CHOOSECOLS(AB, 2)*CHOOSECOLS(AC, 1))/det, 0),
+        a_b, HSTACK(a, b),
+        fab, IFERROR(FILTER(a_b, (CHOOSECOLS(a_b, 1)>=0)*(CHOOSECOLS(a_b, 1)<=1)*(CHOOSECOLS(a_b, 2)>=0)*(CHOOSECOLS(a_b, 2)<=1)), {0, 0}),
+        CHOOSECOLS(fab, 2)
+    ));
+
+/** Intersection {x, y} of a log spiral (centre pt, radius rValue, angle phi) with segment AB_ by Newton iteration. */
+intersection_spiral_segment = LAMBDA(AB_, pt, rValue, phi, [x_], [iter_],
+    LET(
+        niter, 10,
+        iter, IF(ISOMITTED(iter_), 1, iter_),
+        ab, AB_-pt,
+        X, IF(ISOMITTED(x_), INDEX(ab, 1, 1), x_),
+        d, TAN(RADIANS(phi)),
+        S, (INDEX(ab, 2, 2)-INDEX(ab, 1, 2))/(INDEX(ab, 2, 1)-INDEX(ab, 1, 1)),
+        Y, INDEX(ab, 1, 2)+S*(X-INDEX(ab, 1, 1)),
+        f, LN(X^2+Y^2)-2*LN(rValue)+2*d*ATAN(Y/X),
+        df, 2*(X*(1+d*S)+Y*(S-d))/(X^2+Y^2),
+        xn, X-f/df,
+        yn, INDEX(ab, 1, 2)+S*(xn-INDEX(ab, 1, 1)),
+        IF(iter>niter, pt+HSTACK(xn, yn), intersection_spiral_segment(AB_, pt, rValue, phi, xn, iter+1))
+    ));
+
+/** Broms lateral capacity of a short pile in cohesionless soil: {V; depth of max moment; Mmax}. Inputs: D embedment, phi, g, B diameter, e load eccentricity. */
+lateralpile_Broms_cohesionless = LAMBDA(D, phi, g, B, e,
+    LET(
+        f, RADIANS(phi),
+        Kp, (1+SIN(f))/(1-SIN(f)),
+        V, B*D^3*g*Kp/2/(D+e),
+        dm, SQRT(6*V/(B*g*Kp))/3,
+        m, (e+2/3*dm)*V,
+        VSTACK(V, dm, m)
+    ));
+
+/** Broms short pile in cohesive soil: {required D; rotation depth Dr; depth of max moment; Mmax}. Inputs: V load, e eccentricity, Su, B diameter. */
+lateralpile_Broms_cohesive = LAMBDA(V, e, Su, B,
+    LET(
+        SuB, 9*Su*B,
+        f, ABS(V)/SuB,
+        Bd, 1.5*B,
+        D, 2*SQRT(f*(e+Bd+f/2))+Bd+f,
+        Dr, (Bd+f+D)/2,
+        m, (e+Bd+f/2)*V,
+        dm, f+Bd,
+        VSTACK(D, Dr, dm, m)
+    ));
+
+/** Reaction, shear and moment along a Broms short pile in cohesionless soil, with exact integration of piecewise-linear reaction using shearMoment. Inputs: D, phi (degrees), g, B, e. Header plus 101 profile rows when e>0, 51 when e=0. */
+lateralpile_cohesionless_reaction_shear_moment = LAMBDA(D,phi,g,B,e,
+ LET(angle,RADIANS(phi),
+ Kp,(1+SIN(angle))/(1-SIN(angle)),
+ gradient,3*g*B*Kp,
+ load,g*B*D^3*Kp/(2*(D+e)),
+ depth,IF(e=0,VSTACK(0,-D),VSTACK(e,0,-D)),
+ reaction,IF(depth>0,0,-gradient*depth),
+ VSTACK({"Depth","Reaction","Shear","Moment"},
+ lateralpile_integrate(depth,reaction,load,50))));
+
+/** Reaction, shear and moment along a Broms short pile in cohesive soil. Exact pressure jumps at 1.5B and Dr; integrates with shearMoment, without epsilon ramps. Inputs: V,e,Su,B,[D_],[Dr_] (Broms depth defaults). Header plus 121 profile rows. */
+lateralpile_cohesive_reaction_shear_moment = LAMBDA(V,e,Su,B,[D_],[Dr_],
+ LET(ultimate,9*Su*B,
+ loadLength,ABS(V)/ultimate,
+ inactive,1.5*B,
+ embedment,IF(ISOMITTED(D_),2*SQRT(loadLength*(e+inactive+loadLength/2))+inactive+loadLength,D_),
+ rotation,IF(ISOMITTED(Dr_),(inactive+loadLength+embedment)/2,Dr_),
+ depth,VSTACK(e,0,-inactive,-inactive,-rotation,-rotation,-embedment),
+ reaction,VSTACK(0,0,0,ultimate,ultimate,-ultimate,-ultimate),
+ VSTACK({"Depth","Reaction","Shear","Moment"},
+ lateralpile_integrate(depth,reaction,V,20))));
+
+/** Plotting points of a log spiral r = rValue·exp(−θ·tanφ). Inputs: pt centre, rValue, phi (deg), optional ta_, tb_ angles (deg), n_ points (default 100). */
+logSpiral = LAMBDA(pt, rValue, phi, [ta_], [tb_], [n_],
+    LET(
+        d, TAN(RADIANS(phi)),
+        ta, IF(ISOMITTED(ta_), 0, RADIANS(ta_)),
+        tb, IF(ISOMITTED(tb_), -PI(), RADIANS(tb_)),
+        n, IF(ISOMITTED(n_), 100, n_),
+        t, ta+SEQUENCE(n+1, 1, 0, 1)*(tb-ta)/n,
+        pt+rValue*EXP(-d*t)*HSTACK(COS(t), SIN(t))
+    ));
+
+/** Schmertmann CPT pile capacity: ultimate, shaft, tip, average fs and qc. Inputs: table (z, qc, fs, optional soil), A tip area, p perimeter, L length, pile (steel, concrete, timber). */
+pile_capacity_CPT_Schmertman = LAMBDA(z_qc_fs_soil, A, p, L, pile,
+    LET(
+        z, CHOOSECOLS(z_qc_fs_soil, 1),
+        qc, CHOOSECOLS(z_qc_fs_soil, 2),
+        fs, CHOOSECOLS(z_qc_fs_soil, 3),
+        nz, COUNT(z),
+        piles, {"steel", "concrete", "timber"},
+        k, IFERROR(XMATCH(LOWER(pile), piles, 1), 0),
+        soil_, IFERROR(CHOOSECOLS(z_qc_fs_soil, 4), IF(SEQUENCE(nz, 1, 1, 0), "sand", "")),
+        soil, IFERROR(XMATCH(LOWER(soil_), {"clay", "silt", "sand", "gravel"}, 1), 3),
+        B, 4*A/p,
+        Ksa, {0.78, 3.385, 0.1775;0.83, 1.629, 0.1736;0.98, 4.23, 0.1775},
+        Ks, INDEX(Ksa, k, 1)+INDEX(Ksa, k, 2)/EXP(z/B)^INDEX(Ksa, k, 3),
+        fsg, Ks*fs,
+        fsc, IF(k<=2, IF(fs<0.04, fs, 0.04), IF(fs<=0.03, fs, 0.03+(fs-0.03)*0.294)),
+        fsx, IF(soil<=2, fsc, fsg),
+        fsa, (DROP(fsx, 1)+DROP(fsx, -1))/2,
+        zd, DROP(z, 1),
+        dz, zd-DROP(z, -1),
+        Qs, SUM(FILTER(zd*p*fsa*dz/8/B, zd<8*B))+SUM(FILTER(p*fsa*dz, (zd>=8*B)*(zd<=L))),
+        Lt, L-8*B,
+        qca, (DROP(qc, 1)+DROP(qc, -1))/2,
+        qta, SUM(FILTER(qca*dz, (zd>=Lt)*(zd<=L)))/8/B,
+        Lb, L+3.75*B,
+        qbdz, FILTER(qca*dz, (zd>=L)*(zd<=Lb)),
+        dzb, FILTER(dz, (zd>=L)*(zd<=Lb)),
+        qx, SCAN(0, qbdz, LAMBDA(a, v, a+v)),
+        zx, SCAN(0, dzb, LAMBDA(a, v, a+v)),
+        qtb, MIN(FILTER(qx/zx, (zx>=0.7*B)*(zx<=3.75*B))),
+        Qt, (qta+qtb)*A/2,
+        label, {"Ultimate capacity =";"Shaft capacity =";"Tip capacity =";"Average fs along shaft =";"Average qc around tip ="},
+        HSTACK(label, VSTACK(Qt+Qs, Qs, Qt, Qs/L/p, Qt/A))
+    ));
+
+/** Shaft resistance by the α method. Inputs: z, Su columns, pa atmospheric pressure, p perimeter, L length, author (terzaghi, reese). */
+pile_shaft_alpha = LAMBDA(z, Su, pa, p, L, author,
+    LET(
+        authors, {"terzaghi", "reese"},
+        a, IFERROR(XMATCH(LOWER(author), authors, 1), 0),
+        Sa, Su/pa,
+        at, -0.0744*Sa^3+0.477*Sa^2-1.0243*Sa+1.0924,
+        alpha, IFS(a=1, IF(at<1, at, 1), a=2, IF(Sa<=1.5, 0.55, IF(Sa<2.5, 0.55-0.1*(Sa-1.5), 0.45)), TRUE, 0),
+        fn, (DROP(alpha*Su, 1)+DROP(alpha*Su, -1))/2,
+        dz, DROP(z, 1)-DROP(z, -1),
+        qu, p*SUM(FILTER(fn*dz, DROP(z, 1)<=L)),
+        label, {"Ultimate shaft resistance ="},
+        HSTACK(label, qu)
+    ));
+
+/** Adhesion factor α. Inputs: Su = Su/pa (normalized), author (terzaghi, reese). */
+pile_sidefriction_alpha = LAMBDA(Su, author,
+    LET(
+        authors, {"terzaghi", "reese"},
+        a, IFERROR(XMATCH(LOWER(author), authors, 1), 0),
+        at, -0.0744*Su^3+0.477*Su^2-1.0243*Su+1.0924,
+        IFS(a=1, IF(at<1, at, 1), a=2, IF(Su<=1.5, 0.55, IF(Su<2.5, 0.55-0.1*(Su-1.5), 0.45)), TRUE, 0)
+    ));
+
+/** λ coefficient for pile shaft friction (Vijayvergiya–Focht chart fit). Input: D_ pile length in m (or ft if ft is supplied). */
+pile_sidefriction_lambda = LAMBDA(D_, [ft],
+    LET(
+        d, IF(ISOMITTED(ft), 1/0.3048, 1)*D_,
+        0.091+23.37*(d+27.05)^(-1.227)
+    ));
+
+/** Meyerhof ultimate tip pressure. Inputs: pa atmospheric pressure, cValue cohesion, phi (deg). */
+pile_tip_Meyerhof = LAMBDA(pa, cValue, phi,
+    LET(
+        f, RADIANS(phi),
+        Nq, (1+SIN(f))/(1-SIN(f))*EXP(5*PI()/3*TAN(f)),
+        ft, IF(phi=0, 0.1, f),
+        Nc, MAX(9, (Nq-1)/TAN(ft)),
+        label, {"Ultimate tip pressure ="},
+        qu, cValue*Nc+pa*Nq*TAN(f)/2,
+        HSTACK(label, qu)
+    ));
+
+/** Meyerhof pile tip factors {Nq; Nc} for phi (deg). */
+pile_tip_meyerhof_factor = LAMBDA(phi,
+    LET(
+        f, RADIANS(phi),
+        Nq, (1+SIN(f))/(1-SIN(f))*EXP(5*PI()/3*TAN(f)),
+        ft, IF(phi=0, 0.1, f),
+        Nc, MAX(9, (Nq-1)/TAN(ft)),
+        VSTACK(Nq, Nc)
+    ));
+
+/** Vesic ultimate tip pressure with reduced rigidity index: {qu; Nq; Nc; Irr; σm}. Inputs: sv vertical stress, pa, cValue cohesion, optional phi_ (deg), Dr_ relative density. */
+pile_tip_vesic = LAMBDA(sv, pa, cValue, [phi_], [Dr_],
+    LET(
+        phi, IF(ISOMITTED(phi_), 0, phi_),
+        Dr, IF(ISOMITTED(Dr_), 0.1, Dr_),
+        f, RADIANS(phi),
+        K0, 1-SIN(f),
+        sm, (1+2*K0)/3*sv,
+        Es, 1000*Dr*pa,
+        nu, 0.1+0.3*(phi-25)/20,
+        Gs, Es/(1+nu)/2,
+        Ir, Gs/(cValue+sm*TAN(f)),
+        ev, IF(phi=0, 0, 0.005*(1-(phi-25)/20)*sv/pa),
+        Irr, IF(phi=0, 305.06*cValue/pa-12.5, Ir/(1+ev*Ir)),
+        Nq, IF(phi=0, 1, 3/(3-SIN(f))*EXP((PI()/2-f)*TAN(f))*TAN(PI()/4+f/2)^2*Irr^(4/3*SIN(f)/(1+SIN(f)))),
+        Nc, IF(phi=0, 4/3*(LN(Irr)+1)+PI()/2+1, (Nq-1)/TAN(f)),
+        qu, cValue*Nc+sm*Nq,
+        label, {"Ultimate pressure =";"Nq =";"Nc =";"Reduced rigidity index Irr =";"Mean stress ="},
+        HSTACK(label, VSTACK(qu, Nq, Nc, Irr, sm))
+    ));
+
+/** Vesic pile tip factors {Nq; Nc}. Inputs: phi (deg), Ir rigidity index. */
+pile_tip_vesic_factor = LAMBDA(phi, Ir,
+    LET(
+        f, RADIANS(phi),
+        Nq, 3/(3-SIN(f))*EXP((PI()/2-f)*TAN(f))*TAN(PI()/4+f/2)^2*Ir^(4/3*SIN(f)/(1+SIN(f))),
+        Nc, IF(phi=0, 4/3*(LN(Ir)+1)+PI()/2+1, (Nq-1)/TAN(f)),
+        VSTACK(Nq, Nc)
+    ));
+
+/** Ménard rheological factor α. Inputs: soil (peat, clay, silt, sand, gravel, rock), Epl = E/pl ratio. */
+PMT_alpha = LAMBDA(soil, Epl,
+    LET(
+        soils, {"peat", "clay", "silt", "sand", "gravel", "rock"},
+        s, IFERROR(XMATCH(LOWER(soil), soils, 1), 0),
+        SWITCH(s, 1, 1, 2, XLOOKUP(Epl, {0, 7, 9, 16, 1000}, {0.5, 0.5, 0.667, 1, 1}, 0, -1), 3, XLOOKUP(Epl, {0, 5, 8, 14, 1000}, {0.5, 0.5, 0.5, 0.667, 0.667}, 0, -1), 4, XLOOKUP(Epl, {0, 5, 7, 12, 1000}, {0.333, 0.333, 0.5, 0.5, 0.5}, 0, -1), 5, XLOOKUP(Epl, {0, 6, 10, 1000}, {0.25, 0.25, 0.333, 0.333}, 0, -1), 0.5)
+    ));
+
+/** Equivalent limit pressure ple (geometric mean from D to D + 1.5B) and equivalent embedment De: {ple; De}. Inputs: z, pl columns, B, D. */
+PMT_bearing_limitPressure = LAMBDA(z, pl, B, D,
+    LET(
+        zmax, D+3*B/2,
+        pld, FILTER(pl, (z>=D)*(z<=zmax), GEOMEAN(pl)),
+        ple, GEOMEAN(pld),
+        plu, FILTER(pl, z<=D, ple),
+        De, D*IFERROR(AVERAGE(plu)/ple, 1),
+        VSTACK(ple, De)
+    ));
+
+/** Ménard ultimate bearing pressure from pressuremeter data. Inputs: z, pl columns, B, D, L, soil category (I, II, III, IIIA), g unit weight. */
+PMT_bearing_Menard = LAMBDA(z, pl, B, D, L, soil, g,
+    LET(
+        pleDe, PMT_bearing_limitPressure(z, pl, B, D),
+        ple, INDEX(pleDe, 1),
+        De, INDEX(pleDe, 2),
+        rValue, B/2,
+        H, De/rValue,
+        k, PMT_bearing_Menard_k(H, B/L, soil),
+        qu, k*ple+De*g,
+        label, {"Ultimate pressure =";"Pressure limit ple=";"Factor k ="},
+        HSTACK(label, VSTACK(qu, ple, k))
+    ));
+
+/** Ménard bearing factor k, interpolated between strip and square. Inputs: H = De/(B/2), BL = B/L, soil category (I, II, III, IIIA). */
+PMT_bearing_Menard_k = LAMBDA(H, BL, soil,
+    LET(
+        k0_, SWITCH(UPPER(soil), "I", 0.0026*H^3-0.0356*H^2+0.2241*H+0.8, "II", 0.006*H^3-0.0638*H^2+0.3269*H+0.8, "III", 0.0104*H^3-0.0922*H^2+0.4515*H+0.8, "IIIA", 0.0108*H^3-0.1105*H^2+0.5579*H+0.8, 0),
+        k1_, SWITCH(UPPER(soil), "I", 0.0295*H^3-0.216*H^2+0.706*H+0.8, "II", 0.0272*H^3-0.2275*H^2+0.8664*H+0.8, "III", 0.0453*H^3-0.352*H^2+1.3698*H+0.8, "IIIA", 0.0612*H^3-0.457*H^2+1.6548*H+0.8, 0),
+        k0_+(k1_-k0_)*BL
+    ));
+
+/** Plotting lines of the 16 Ménard sub-layers below a footing. Inputs: B, D. */
+PMT_layers = LAMBDA(B, D,
+    LET(
+        rValue, {-5;11;11;-5}*B,
+        xr, INDEX(rValue, MOD(SEQUENCE(32, , 0), 4)+1),
+        y, TRANSPOSE(D-B/2+B/2*SEQUENCE(1, 16)),
+        yr, TOCOL(CHOOSECOLS(y, 1, SEQUENCE(1, 1, 1, 0))),
+        HSTACK(xr, yr)
+    ));
+
+/** Step-profile plotting coordinates from depth/value columns. Inputs: x depths, y values. */
+stepProfile = LAMBDA(x, y,
+    LET(
+        xs, VSTACK(INDEX(x, 1), DROP(x, -1)),
+        xa, (x + xs)/2,
+        xd, TOCOL(HSTACK(xa, xa)),
+        xt, VSTACK(DROP(xd, 1), INDEX(x, ROWS(x))),
+        yd, TOCOL(HSTACK(y, y)),
+        HSTACK(xt, yd)
+    ));
+
+/** Alias of stepProfile for SPT profiles. */
+SPT_stepProfile = LAMBDA(x, y, stepProfile(x, y));
+
+/** Alias of stepProfile for CPT profiles. */
+CPT_stepProfile = LAMBDA(x, y, stepProfile(x, y));
+
+/** Alias of stepProfile for pressuremeter profiles. */
+PMT_staircase   = LAMBDA(x, y, stepProfile(x, y));
+
+/** Centroid and area of a polygon: {"Centroid =", xc, yc; "Area =", A, ""}. Input: vertices in two columns (first vertex may be repeated). */
+polygon_area_centroid = LAMBDA(polygon,
+    LET(
+        closed, AND(TAKE(polygon, 1, 1)=TAKE(polygon, -1, 1), TAKE(polygon, 1, -1)=TAKE(polygon, -1, -1)),
+        XY, IF(closed, polygon, VSTACK(polygon, TAKE(polygon, 1))),
+        X, CHOOSECOLS(XY, 1),
+        Y, CHOOSECOLS(XY, 2),
+        Xb, DROP(X, -1),
+        Xt, DROP(X, 1),
+        Yb, DROP(Y, -1),
+        Yt, DROP(Y, 1),
+        Z, Xt*Yb-Xb*Yt,
+        a, SUM(Z)/2,
+        Xc, SUMPRODUCT(Xt+Xb, Z)/6/a,
+        Yc, SUMPRODUCT(Yt+Yb, Z)/6/a,
+        VSTACK(HSTACK("Centroid = ", Xc, Yc), HSTACK("Area = ", ABS(a), ""))
+    ));
+
+/** TRUE if point (x, y) lies below exactly one edge of the polygon (xa, ya) — vertical ray test. */
+Polygon_inside = LAMBDA(x, y, xa, ya,
+    LET(
+        xd, DROP(xa, -1),
+        yd, DROP(ya, -1),
+        xas, DROP(xa, 1)-xd,
+        yas, DROP(ya, 1)-yd,
+        a, (x-xd)/xas,
+        b, yd+a*yas,
+        t, (a>=0)*(a<=1)*(b>=y)=1,
+        SUM(N(t))=1
+    ));
+
+/** Linear interpolation of y at X along a polyline (two columns), searching for the segment starting at or below X. Used for root finding. */
+polyline_subdivide = LAMBDA(X, polyline,
+    LET(
+        Xa, CHOOSECOLS(polyline, 1),
+        Ya, CHOOSECOLS(polyline, 2),
+        i, XMATCH(X, Xa, -1),
+        S, (INDEX(Ya, i+1)-INDEX(Ya, i))/(INDEX(Xa, i+1)-INDEX(Xa, i)),
+        INDEX(Ya, i)+S*(X-INDEX(Xa, i))
+    ));
+
+/** Schmertmann strain influence factor at depth z. Inputs: Imax, B, za footing depth, optional BL_ (0 = square, 1 = strip). */
+settlement_Schmertman_factor = LAMBDA(z, Imax, B, za, [BL_],
+    LET(
+        BL, IF(ISOMITTED(BL_), 0, BL_),
+        I, 0.2-0.1*BL,
+        zb, za+B-B/2*BL,
+        zc, za+4*B-2*B*BL,
+        IFS(AND(za<=z, z<zb), I+(Imax-I)*(z-za)/(zb-za), AND(za<=z, z<=zc), Imax-Imax*(z-zb)/(zc-zb), TRUE, 0)
+    ));
+
+/** Factor of safety of a circular slip in undrained clay (φ = 0) using sector geometry. Inputs: pline ground surface, center, radius, cu, unit weight, detail (any value for details). */
+slope_circle_cohesive = LAMBDA(pline, center, radius, cu, unitweight, [detail],
+    LET(
+        AB, intersection_polyline_circle(pline, center, radius),
+        A, TAKE(AB, 1),
+        B, TAKE(AB, -1),
+        Ar, A-center,
+        Br, B-center,
+        ta, ATAN2(INDEX(Ar, 1), INDEX(Ar, 2)),
+        tb, ATAN2(INDEX(Br, 1), INDEX(Br, 2)),
+        tav, (ta+tb)/2,
+        theta, ABS(ta-tb),
+        arclength, radius*theta,
+        resisting, cu*radius*arclength,
+        area_sector, radius^2/2*theta,
+        centroid_sector, 4*radius/(3*theta)*SIN(theta/2)*HSTACK(COS(tav), SIN(tav))+center,
+        pts, IFERROR(FILTER(pline, CHOOSECOLS((pline-A)*(pline-B), 1)<0), A),
+        exterior, VSTACK(center, SORT(UNIQUE(VSTACK(AB, pts)))),
+        pgac, polygon_area_centroid(exterior),
+        centroid_exterior, INDEX(pgac, 1, {2, 3}),
+        area_exterior, INDEX(pgac, 2, 2),
+        area, area_sector-area_exterior,
+        centroid, (centroid_sector*area_sector-centroid_exterior*area_exterior)/area,
+        driving, area*unitweight*INDEX(centroid-center, 1),
+        FS, resisting/driving,
+        details, VSTACK(HSTACK(FS, ""), HSTACK(area, arclength), centroid, A, B),
+        IF(ISOMITTED(detail), FS, details)
+    ));
+
+/** Geometry of the soil mass above a circular slip: centroid, entry/exit points and angles, area. Inputs: pl ground polyline, center, radius. */
+slope_circle_polyline = LAMBDA(pl, center, radius,
+    LET(
+        pts, DROP(circle(center, radius), 1),
+        AB, intersection_polyline_polyline(pts, pl, 2),
+        A, INDEX(AB, 1, {2, 3}),
+        B, INDEX(AB, 2, {2, 3}),
+        ta, ATAN2(INDEX(A-center, 1), INDEX(A-center, 2)),
+        tb, ATAN2(INDEX(B-center, 1), INDEX(B-center, 2)),
+        t, ATAN2(CHOOSECOLS(pts-center, 1), CHOOSECOLS(pts-center, 2)),
+        top, IFERROR(FILTER(pl, CHOOSECOLS(pl-A, 1)*CHOOSECOLS(pl-B, 1)<0), A),
+        tspg, HSTACK(t, pts),
+        spg, CHOOSECOLS(FILTER(tspg, CHOOSECOLS(tspg-ta, 1)*CHOOSECOLS(tspg-tb, 1)<0), {2, 3}),
+        plc, VSTACK(B, spg, A, top),
+        pac, polygon_area_centroid(plc),
+        centroid, INDEX(pac, 1, {2, 3}),
+        area, INDEX(pac, 2, 2),
+        VSTACK(HSTACK(centroid, ""), HSTACK(A, DEGREES(ta)), HSTACK(B, DEGREES(tb)), HSTACK(area, "", ""))
+    ));
+
+/** Factor of safety of a circular slip in undrained clay using polygon geometry. Inputs: pline, center, radius, cu, unit weight, detail (any value for details). */
+slope_circle_polyline_cohesive = LAMBDA(pline, center, radius, cu, unitweight, [detail],
+    LET(
+        X, slope_circle_polyline(pline, center, radius),
+        centroid, INDEX(X, 1, {1, 2}),
+        A, INDEX(X, 2, {1, 2}),
+        ta, RADIANS(INDEX(X, 2, 3)),
+        B, INDEX(X, 3, {1, 2}),
+        tb, RADIANS(INDEX(X, 3, 3)),
+        area, INDEX(X, 4, 1),
+        theta, ABS(ta-tb),
+        arclength, radius*theta,
+        resisting, cu*radius*arclength,
+        driving, area*unitweight*ABS(INDEX(centroid-center, 1)),
+        FS, resisting/driving,
+        details, VSTACK(HSTACK(FS, ""), HSTACK(area, arclength), centroid, A, B),
+        IF(ISOMITTED(detail), FS, details)
+    ));
+
+/** Friction circle method (c–φ soil): factor of safety and force polygon (labelled table). Inputs: pline, pt circle centre, rValue radius, coh, phi, g, opt_ (any value: alternative Taylor factor). */
+slope_friction_circle = LAMBDA(pline, pt, rValue, coh, phi, g, [opt_],
+    LET(
+        f, RADIANS(phi),
+        opt, IF(ISOMITTED(opt_), 0, 1),
+        res, slope_circle_polyline(pline, pt, rValue),
+        ptC, INDEX(res, 1, {1, 2}),
+        a, INDEX(res, 2, {1, 2}),
+        b, INDEX(res, 3, {1, 2}),
+        area, INDEX(res, 4, 1),
+        w, g*area,
+        ta, ATAN2(INDEX(a-pt, 1), INDEX(a-pt, 2)),
+        tb, ATAN2(INDEX(b-pt, 1), INDEX(b-pt, 2)),
+        theta, ABS(ta-tb),
+        alpha, ATAN2(INDEX(a-b, 1), INDEX(a-b, 2)),
+        La, rValue*theta,
+        Lc, SQRT(SUMSQ(b-a)),
+        d, rValue*La/Lc,
+        OD, INDEX(ptC-pt, 1),
+        DM, d/COS(alpha)-OD*TAN(alpha),
+        kr, slope_friction_circle_Taylor(theta, opt),
+        FSmin, TAN(f)/TAN(ASIN(OD/kr/rValue))+0.01,
+        FSf, SEQUENCE(100, 1, FSmin, 0.02),
+        df, FSf-slope_friction_circle_fct(FSf, f, coh, w, kr, rValue, OD, DM, alpha, Lc),
+        FS, polyline_subdivide(0, HSTACK(df, FSf)),
+        fd, ATAN2(FS, TAN(f)),
+        Rf, kr*rValue*ABS(SIN(fd)),
+        beta, 2*ATAN((-DM+SQRT(OD^2+DM^2-Rf^2))/(OD+Rf)),
+        p, w*COS(alpha)/COS(alpha-beta),
+        t, w*SIN(beta)/COS(alpha-beta),
+        VSTACK(HSTACK(FS, ""), HSTACK(w, OD), HSTACK(La, Lc), HSTACK(p, DEGREES(beta)), HSTACK(t, DEGREES(alpha)), HSTACK(Rf, DEGREES(theta)), ptC, a, b, HSTACK(OD, DM))
+    ));
+
+/** Helper for slope_friction_circle: cohesion factor of safety for a trial frictional FS (accepts a column of FS). */
+slope_friction_circle_fct = LAMBDA(FS, f, coh, w, kr, rValue, OD, DM, alpha, Lc,
+    LET(
+        fd, ATAN(TAN(f)/FS),
+        Rf, kr*rValue*SIN(fd),
+        beta, 2*ATAN((-DM+SQRT(OD^2+DM^2-Rf^2))/(OD+Rf)),
+        t, w*SIN(beta)/COS(alpha-beta),
+        coh*Lc/t
+    ));
+
+/** Taylor friction-circle radius factor k for central angle t (radians). opt = 1 selects the alternative formula. */
+slope_friction_circle_Taylor = LAMBDA(t, opt, IF(opt=1, SQRT(2)*(1-t^2/PI()^2)/SQRT(1+COS(t)), t/2/SIN(t/2)));
+
+/** Residual FS − FSc for the friction circle method (same inputs as slope_friction_circle_fct). */
+slope_friction_FS = LAMBDA(FS, f, coh, w, kr, rValue, a, DM, alpha, ab,
+    LET(
+        fd, ATAN(TAN(f)/FS),
+        Rf, kr*rValue*SIN(fd),
+        beta, 2*ATAN((-DM+SQRT(a^2+DM^2-Rf^2))/(a+Rf)),
+        t, w*SIN(beta)/COS(alpha-beta),
+        FS-ABS(coh*ab/t)
+    ));
+
+/** Log-spiral slip surface: factor of safety, centroid, weight, entry/exit points, resisting and driving moments. Inputs: pl ground polyline, pt spiral centre, rValue, phi, coh, g. */
+slope_logSpiral = LAMBDA(pl, pt, rValue, phi, coh, g,
+    LET(
+        d, TAN(RADIANS(phi)),
+        pts, logSpiral(pt, rValue, phi),
+        ab, intersection_polyline_polyline(pts, pl),
+        a, INDEX(ab, 1, {2, 3}),
+        b, INDEX(ab, 2, {2, 3}),
+        Ar, a-pt,
+        Br, b-pt,
+        ra, SUMSQ(Ar),
+        rb, SUMSQ(Br),
+        ta, ATAN2(INDEX(Ar, 1), INDEX(Ar, 2)),
+        tb, ATAN2(INDEX(Br, 1), INDEX(Br, 2)),
+        IAB, rValue^2/2/d*ABS(EXP(-2*ta*d)-EXP(-2*tb*d)),
+        top, FILTER(pl, (CHOOSECOLS(pl, 1)-INDEX(a, 1))*(CHOOSECOLS(pl, 1)-INDEX(b, 1))<0),
+        spg, FILTER(pts, (CHOOSECOLS(pts-pt, 1)^2+CHOOSECOLS(pts-pt, 2)^2-ra)*(CHOOSECOLS(pts-pt, 1)^2+CHOOSECOLS(pts-pt, 2)^2-rb)<0),
+        plc, VSTACK(a, spg, b, top),
+        pac, polygon_area_centroid(plc),
+        Xc, INDEX(pac, 1, {2, 3}),
+        dg, INDEX(Xc-pt, 1),
+        w, g*INDEX(pac, 2, 2),
+        FS, coh*IAB/(w*dg),
+        VSTACK(HSTACK(FS, "", ""), HSTACK(Xc, w), HSTACK(a, DEGREES(ta)), HSTACK(b, DEGREES(tb)), HSTACK(coh*IAB, w*dg, ""))
+    ));
+
+/** Method of slices, circular surface, uniform soil: Fellenius or simplified Bishop, optional phreatic line. Inputs: pline, center, radius, c, phi (deg), gamma, n slices, wline_, gammaw_, method_ (0/"Normal" or 1/"Bishop"), detail_. */
+slope_slices = LAMBDA(pline, center, radius, coh, phi, gamma, n, [wline_], [gammaw_], [method_], [detail_],
+    LET(
+        ctr, center+0,
+        xc, INDEX(ctr, 1),
+        yc, INDEX(ctr, 2),
+        gx, CHOOSECOLS(pline, 1),
+        gy, CHOOSECOLS(pline, 2),
+        P, intersection_polyline_circle(pline, ctr, radius),
+        xa, MIN(CHOOSECOLS(P, 1)),
+        xb, MAX(CHOOSECOLS(P, 1)),
+        brk, FILTER(gx, (gx>xa)*(gx<xb), xa),
+        xs, SORT(UNIQUE(VSTACK(xa+(xb-xa)*SEQUENCE(n+1, 1, 0)/n, brk))),
+        xl, DROP(xs, -1),
+        xr, DROP(xs, 1),
+        b, xr-xl,
+        xm, (xl+xr)/2,
+        ytop, Interpolate(xm, gx, gy),
+        ybase, yc-SQRT(radius^2-(xm-xc)^2),
+        h, IF(ytop>ybase, ytop-ybase, 0),
+        W, gamma*b*h,
+        sraw, (xm-xc)/radius,
+        sa, SIGN(SUM(W*sraw))*sraw,
+        ca, SQRT(1-sraw^2),
+        l, b/ca,
+        gw, IF(ISOMITTED(gammaw_), 0, gammaw_),
+        yw, IF(ISOMITTED(wline_), ybase, IFERROR(Interpolate(xm, CHOOSECOLS(wline_, 1), CHOOSECOLS(wline_, 2)), ybase)),
+        u, gw*IF(yw>ybase, yw-ybase, 0),
+        tf, TAN(RADIANS(phi)),
+        drive, SUM(W*sa),
+        resO, coh*l+(W*ca-u*l)*tf,
+        FSo, SUM(resO)/drive,
+        num, coh*b+(W-u*b)*tf,
+        FSb, REDUCE(FSo, SEQUENCE(30), LAMBDA(F, k, SUM(num/(ca+sa*tf/F))/drive)),
+        ma, ca+sa*tf/FSb,
+        bish, IF(ISOMITTED(method_), TRUE, IF(ISNUMBER(method_), method_<>0, ISNUMBER(SEARCH("bishop", method_)))),
+        FS, IF(bish, FSb, FSo),
+        tbl, HSTACK(xm, b, h, DEGREES(ASIN(sa)), W, u, l, ma, IF(bish, num/ma, resO), W*sa),
+        hdr, {"x mid", "width", "height", "alpha (deg)", "weight", "u base", "base length", "m alpha", "resisting", "driving"},
+        top, EXPAND(HSTACK("FS Fellenius", FSo, "FS Bishop", FSb, "x entry", xa, "x exit", xb, "slices", ROWS(xm)), 1, 10, ""),
+        IF(ROWS(P)<2, NA(), IF(ISOMITTED(detail_), FS, VSTACK(top, hdr, tbl)))
+    ));
+
+/** Plotting points {x, y} of the slices used by slope_slices: each slice boundary drawn base-top-base, joined along the slip circle. Inputs: pline, center, radius, n. */
+slope_slices_plot = LAMBDA(pline, center, radius, n,
+    LET(
+        ctr, center+0,
+        xc, INDEX(ctr, 1),
+        yc, INDEX(ctr, 2),
+        gx, CHOOSECOLS(pline, 1),
+        gy, CHOOSECOLS(pline, 2),
+        P, intersection_polyline_circle(pline, ctr, radius),
+        xa, MIN(CHOOSECOLS(P, 1)),
+        xb, MAX(CHOOSECOLS(P, 1)),
+        brk, FILTER(gx, (gx>xa)*(gx<xb), xa),
+        xs, SORT(UNIQUE(VSTACK(xa+(xb-xa)*SEQUENCE(n+1, 1, 0)/n, brk))),
+        yb, yc-SQRT(IF(radius^2-(xs-xc)^2>0, radius^2-(xs-xc)^2, 0)),
+        yt, Interpolate(xs, gx, gy),
+        HSTACK(TOCOL(HSTACK(xs, xs, xs)), TOCOL(HSTACK(yb, yt, yb)))
+    ));
+
+/** Alias of SPT_correction_depth: overburden correction CN, capped at 2. */
+SPT_depthCorrection = LAMBDA(s, SPT_correction_depth(s));
+
+/** Friction angle (deg) from SPT N. Optional spa_ = σ'v/pa (default 1), author_: peck (default), schmertman, hatanaka. */
+SPT_frictionAngle = LAMBDA(N, [spa_], [author_],
+    LET(
+        author, IF(ISOMITTED(author_), "peck", author_),
+        spa, IF(ISOMITTED(spa_), 1, spa_),
+        SWITCH(LOWER(author), "peck", 27.1+0.3*N-0.00054*N^2, "schmertman", DEGREES(ATAN((N/(12.2+20.3*spa))^0.34)), "hatanaka", SQRT(20*N)+20)
+    ));
+
+/** Staircase table: each x repeated twice with y shifted one row, for step plots. Inputs: x, y columns. */
+Step_table = LAMBDA(x, y,
+    LET(
+        n, ROWS(x),
+        x_extended, INDEX(x, INT((SEQUENCE(2*n, 1, 1, 1)+1)/2)),
+        y_extended, INDEX(y, INT((SEQUENCE(2*n, 1, 0, 1)+1)/2)),
+        HSTACK(x_extended, y_extended)
+    ));
+
+/** Intersections {x, y} of a closed polygon with the line through M at angle t (radians). Returns {0, 0} if none. */
+intersection_polygon_line_slope = LAMBDA(polyline, M, t,
+    LET(
+        pline, VSTACK(UNIQUE(polyline), TAKE(polyline, 1)),
+        ptA, DROP(pline, -1),
+        ptB, DROP(pline, 1),
+        AB, ptB-ptA,
+        AM, M-ptA,
+        N, HSTACK(COS(t), SIN(t)),
+        det, INDEX(N, 1)*CHOOSECOLS(AB, 2)-INDEX(N, 2)*CHOOSECOLS(AB, 1),
+        a, IF(det<>0, (INDEX(N, 1)*CHOOSECOLS(AM, 2)-INDEX(N, 2)*CHOOSECOLS(AM, 1))/det, 0),
+        b, IF(det<>0, (a>=0)*(a<=1)*(CHOOSECOLS(AB, 1)*CHOOSECOLS(AM, 2)-CHOOSECOLS(AB, 2)*CHOOSECOLS(AM, 1))/det, 0),
+        bu, UNIQUE(FILTER(b, b<>0)),
+        IFERROR(M+bu*N, HSTACK(0, 0))
+    ));
+
+// Sources: Axial_Piles_2024.xlsx, Bearing_CPT_2024.xlsx, Bearing_PMT_2024.xlsx, Bearing_SPT_2024.xlsx, CPT_settlement_2024.xlsx, PMT_settlement_2025.xlsx, Sieve_Examples_2024.xlsx
+/** Grain-size analysis: {D10; D30; D60; Cu; Cc; % clay; % silt; % sand; % gravel}. Inputs: d diameters (mm), p percent passing (any order). */
+grainsizeanalysis = LAMBDA(d, p,
+    LET(
+        Pmin, MIN(p),
+        Pmax, MAX(p),
+        D10_, IF(AND(Pmin<10, 10<Pmax), Interpolate(10, p, d, "logy"), 0),
+        D30_, IF(AND(Pmin<30, 30<Pmax), Interpolate(30, p, d, "logy"), 0),
+        D60_, IF(AND(Pmin<60, 60<Pmax), Interpolate(60, p, d, "logy"), 0),
+        Dmin, MIN(d),
+        Dmax, MAX(d),
+        clay, IF(Dmin<=0.005, Interpolate(0.005, d, p, "logx"), 0),
+        silt, IF(Dmin<=0.075, Interpolate(0.075, d, p, "logx"), 0),
+        sand, IF(Dmax>=4.75, Interpolate(4.75, d, p, "logx"), 100),
+        gravel, IF(Dmax>=75, Interpolate(75, d, p, "logx"), 100),
+        VSTACK(D10_, D30_, D60_, IF(D10_>0, D60_/D10_, 0), IF(AND(D10_>0, D60_>0), D30_^2/D10_/D60_, 0), clay, silt-clay, sand-silt, gravel-sand)
+    ));
+
+// Sources: Axial_Piles_2024.xlsx
+/** Pile capacity in clay by the α method with tip 9·Su·A: {ultimate; shaft; tip}. Inputs: zSu (depth, Su), pa, a tip area, p perimeter, L, author (terzaghi, reese), optional D_ top depth. */
+pile_capacity_alpha = LAMBDA(zSu, pa, a, p, L, author, [D_],
+    LET(
+        z_, CHOOSECOLS(zSu, 1),
+        Su_, CHOOSECOLS(zSu, 2),
+        d, IF(ISOMITTED(D_), 0, D_),
+        Dt, d+L,
+        z, SORT(UNIQUE(VSTACK(z_, d, Dt))),
+        Su, Interpolate(z, z_, Su_),
+        authors, {"terzaghi", "reese"},
+        au, IFERROR(XMATCH(LOWER(author), authors, 1), 0),
+        Sa, Su/pa,
+        at, -0.0744*Sa^3+0.477*Sa^2-1.0243*Sa+1.0924,
+        alpha, IFS(au=1, IF(at<1, at, 1), au=2, IF(Sa<=1.5, 0.55, IF(Sa<2.5, 0.55-0.1*(Sa-1.5), 0.45)), TRUE, 0),
+        fn, (DROP(alpha*Su, 1)+DROP(alpha*Su, -1))/2,
+        zd, DROP(z, 1),
+        dz, zd-DROP(z, -1),
+        Qs, p*SUM(FILTER(fn*dz, (zd>d)*(zd<=Dt))),
+        Sut, Interpolate(Dt, z, Su),
+        Qt, 9*Sut*a,
+        label, {"Ultimate pile capacity =";"Ultimate shaft capacity =";"Ultimate tip capacity ="},
+        HSTACK(label, VSTACK(Qt+Qs, Qs, Qt))
+    ));
+
+// Sources: Axial_Piles_2024.xlsx
+/** LCPC (Bustamante–Gianeselli) CPT pile capacity: ultimate, shaft, tip, average qc at tip, average qs, kc. Inputs: table (z, qc, soil), a tip area, p perimeter, L, pile type. */
+pile_capacity_CPT_LCPC = LAMBDA(z_qc_soil, a, p, L, pile,
+    LET(
+        z_, CHOOSECOLS(z_qc_soil, 1),
+        qc_, CHOOSECOLS(z_qc_soil, 2),
+        soil_, CHOOSECOLS(z_qc_soil, 3),
+        B, 4*a/p,
+        Dt, 3*B,
+        Lt, L-1.5*B,
+        Lb, Lt+Dt,
+        z, SORT(UNIQUE(VSTACK(z_, L, Lt, Lb))),
+        soil, XLOOKUP(z, z_, soil_, "", -1),
+        qc, Interpolate(z, z_, qc_),
+        cls, classify_CPT_LCPC(qc, soil, pile),
+        kc, XLOOKUP(L, z, CHOOSECOLS(cls, 2), "", 1),
+        zd, DROP(z, 1),
+        dz, zd-DROP(z, -1),
+        qca, (DROP(qc, 1)+DROP(qc, -1))/2,
+        qce, SUM(FILTER(qca*dz, (zd>Lt)*(zd<=Lb)))/Dt,
+        Qt, a*kc*qce,
+        beta, CHOOSECOLS(cls, 3),
+        qmax, CHOOSECOLS(cls, 4),
+        qcb, qc/beta,
+        qcs, DROP(IF(qcb>qmax, qmax, qcb), 1),
+        qct, SUM(FILTER(qcs*dz, zd<=L)),
+        Qs, qct*p,
+        label, {"Pile ultimate capacity =";"Shaft capacity =";"Tip capacity =";"Average qc around tip =";"Average qs along shaft =";"kc ="},
+        HSTACK(label, VSTACK(Qt+Qs, Qs, Qt, qce, qct/L, kc))
+    ));
+
+// Sources: Axial_Piles_2024.xlsx
+/** Fellenius β-method pile capacity: {ultimate; shaft; tip}. Inputs: table (z, phi, σ'v, soil), a tip area, p perimeter, L, optional D_ top depth. */
+pile_capacity_Fellenius = LAMBDA(z_phi_sv_soil, a, p, L, [D_],
+    LET(
+        z_, CHOOSECOLS(z_phi_sv_soil, 1),
+        phi_, CHOOSECOLS(z_phi_sv_soil, 2),
+        sv_, CHOOSECOLS(z_phi_sv_soil, 3),
+        soil_, CHOOSECOLS(z_phi_sv_soil, 4),
+        d, IF(ISOMITTED(D_), 0, D_),
+        Dt, d+L,
+        z, SORT(UNIQUE(VSTACK(z_, d, Dt))),
+        soil, XLOOKUP(z, z_, soil_, "", -1),
+        phi, Interpolate(z, z_, phi_),
+        sv, Interpolate(z, z_, sv_),
+        soils, {"clay", "silt", "sand", "gravel"},
+        s, IFERROR(XMATCH(LOWER(soil), soils, 1), 0),
+        beta, IFS(s=1, Interpolate(phi, {0, 25, 30, 50}, {0.15, 0.15, 0.35, 0.35}), s=2, Interpolate(phi, {0, 28, 34, 50}, {0.25, 0.25, 0.5, 0.5}), s=3, Interpolate(phi, {0, 32, 40, 50}, {0.3, 0.3, 0.9, 0.9}), s=4, Interpolate(phi, {0, 35, 45, 50}, {0.35, 0.35, 0.8, 0.8}), TRUE, 0),
+        Ns, IFS(s=1, Interpolate(phi, {0, 25, 30, 50}, {3, 3, 30, 30}), s=2, Interpolate(phi, {0, 28, 34, 50}, {20, 20, 40, 40}), s=3, Interpolate(phi, {0, 32, 40, 50}, {30, 30, 150, 150}), s=4, Interpolate(phi, {0, 35, 45, 50}, {60, 60, 300, 300}), TRUE, 0),
+        Nt, Interpolate(Dt, z, Ns),
+        svt, Interpolate(Dt, z, sv),
+        Qt, Nt*svt*a,
+        zd, DROP(z, 1),
+        dz, zd-DROP(z, -1),
+        fn, (DROP(beta*sv, 1)+DROP(beta*sv, -1))/2,
+        Qs, p*SUM(FILTER(fn*dz, (zd>d)*(zd<=Dt))),
+        label, {"Ultimate pile capacity =";"Shaft capacity =";"Tip capacity ="},
+        HSTACK(label, VSTACK(Qt+Qs, Qs, Qt))
+    ));
+
+// Sources: Axial_Piles_2024.xlsx
+/** LCPC pressuremeter pile capacity: {ultimate; shaft; tip}. Inputs: table (z, pl, σv, soil), a tip area, p perimeter, L, pile type. */
+pile_capacity_PMT_LCPC = LAMBDA(z_pl_sv_soil, a, p, L, pile,
+    LET(
+        z_, CHOOSECOLS(z_pl_sv_soil, 1),
+        pl_, CHOOSECOLS(z_pl_sv_soil, 2),
+        sv_, CHOOSECOLS(z_pl_sv_soil, 3),
+        soil_, CHOOSECOLS(z_pl_sv_soil, 4),
+        z, SORT(UNIQUE(VSTACK(z_, L))),
+        pl, Interpolate(z, z_, pl_),
+        sv, Interpolate(z, z_, sv_),
+        soil, XLOOKUP(z, z_, soil_, "", -1),
+        cls, classify_PMT_LCPC(pl, soil, pile),
+        kp, CHOOSECOLS(cls, 1),
+        kple, Interpolate(L, z, kp*pl),
+        p0, Interpolate(L, z, sv),
+        qu, kple+p0,
+        Qt, qu*a,
+        ic, CHOOSECOLS(cls, 2),
+        fs, PMT_shaftFriction(pl, ic),
+        fsa, (DROP(fs, 1)+DROP(fs, -1))/2,
+        zd, DROP(z, 1),
+        dz, zd-DROP(z, -1),
+        Qs, p*SUM(FILTER(fsa*dz, (zd>=0)*(zd<=L))),
+        label, {"Ultimate capacity =";"Shaft capacity =";"Tip capacity ="},
+        HSTACK(label, VSTACK(Qt+Qs, Qs, Qt))
+    ));
+
+// Sources: Axial_Piles_2024.xlsx
+/** Meyerhof SPT pile capacity: ultimate, shaft, tip, average N along shaft and at tip. Inputs: zN (depth, N), pa, a tip area, p perimeter, L, disp (any value = displacement pile). */
+pile_capacity_SPT_Meyerhof = LAMBDA(zN, pa, a, p, L, [disp],
+    LET(
+        z_, CHOOSECOLS(zN, 1),
+        N_, CHOOSECOLS(zN, 2),
+        B, 4*a/p,
+        Dt, 13*B,
+        Lt, L-10*B,
+        Lb, Lt+Dt,
+        z, SORT(UNIQUE(VSTACK(z_, L, Lt, Lb))),
+        N, Interpolate(z, z_, N_),
+        zd, DROP(z, 1),
+        dz, zd-DROP(z, -1),
+        Na, (DROP(N, 1)+DROP(N, -1))/2,
+        Ns, SUM(FILTER(Na*dz, zd<=L)),
+        Qs, IF(ISOMITTED(disp), 1, 2)/100*pa*Ns*p,
+        Nt, SUM(FILTER(Na*dz, (zd>=Lt)*(zd<=Lb))),
+        Qt, IF(L/B<10, 0.4*L/B, 4)*pa*Nt/Dt*a,
+        label, {"Pile ultimate capacity =";"Shaft capacity =";"Tip ultimate capacity =";"Average N along shaft =";"Average N around tip ="},
+        HSTACK(label, VSTACK(Qt+Qs, Qs, Qt, Ns/L, Nt/Dt))
+    ));
+
+// Sources: Axial_Piles_2024.xlsx
+/** Shaft capacity by the λ method: capacity, λ, average Su and σ'v. Inputs: table (z, Su, σ'v), p perimeter, L (m, or ft if ft is supplied). */
+pile_shaft_lambda = LAMBDA(z_Su_sv, p, L, [ft],
+    LET(
+        z_, CHOOSECOLS(z_Su_sv, 1),
+        Su_, CHOOSECOLS(z_Su_sv, 2),
+        sv_, CHOOSECOLS(z_Su_sv, 3),
+        z, SORT(UNIQUE(VSTACK(z_, L))),
+        Su, Interpolate(z, z_, Su_),
+        sv, Interpolate(z, z_, sv_),
+        d, IF(ISOMITTED(ft), 1/0.3048, 1)*L,
+        lmbda, 0.091+23.37*(d+27.05)^(-1.227),
+        dz, DROP(z, 1)-DROP(z, -1),
+        Sa, (DROP(Su, 1)+DROP(Su, -1))/2,
+        sva, (DROP(sv, 1)+DROP(sv, -1))/2,
+        Sav, SUM(FILTER(Sa*dz, DROP(z, 1)<=L)),
+        svav, SUM(FILTER(sva*dz, DROP(z, 1)<=L)),
+        qu, lmbda*(2*Sav+svav)*p,
+        label, {"Pile shaft capacity =";"Lambda =";"Average undrained shear strength =";"Average vertical effective stress ="},
+        HSTACK(label, VSTACK(qu, lmbda, Sav/L, svav/L))
+    ));
+
+// Sources: Axial_Piles_2024.xlsx
+/** LCPC unit shaft friction (MPa) from limit pressure pl (MPa) on curve i (1–7). Accepts columns. */
+PMT_shaftFriction = LAMBDA(pl, i, IFS(i=1, Interpolate(pl, {0.2, 0.4, 1, 1.4, 5}, {0, 0.018, 0.035, 0.037, 0.04}), i=2, Interpolate(pl, {0.2, 0.6, 1, 1.4, 1.7, 5}, {0, 0.04, 0.06, 0.07, 0.08, 0.08}), i=3, Interpolate(pl, {0.2, 0.8, 1.7, 2, 2.4, 5}, {0, 0.07, 0.11, 0.118, 0.12, 0.12}), i=4, Interpolate(pl, {0.2, 1, 1.4, 1.8, 2.2, 2.6, 3, 5}, {0, 0.09, 0.117, 0.135, 0.15, 0.158, 0.16, 0.16}), i=5, Interpolate(pl, {0.2, 1.6, 5}, {0, 0.16, 0.26}), i=6, Interpolate(pl, {0, 1.4, 5}, {0.04, 0.18, 0.3}), i=7, Interpolate(pl, {0, 2.6}, {0.04, 0.3}), TRUE, 0));
+
+// Sources: Bearing_CPT_2024.xlsx, Bearing_PMT_2024.xlsx, Bearing_SPT_2024.xlsx, CPT_settlement_2024.xlsx, PMT_settlement_2025.xlsx
+/** LCPC unit shaft friction (MPa) from limit pressure pl (MPa) on curve "q1" … "q7". */
+PMT_pile_shaftFriction = LAMBDA(pl, classi, SWITCH(LOWER(classi), "q1", Interpolate(pl, {0.2, 0.4, 1, 1.4, 5}, {0, 0.018, 0.035, 0.037, 0.04}), "q2", Interpolate(pl, {0.2, 0.6, 1, 1.4, 1.7, 5}, {0, 0.04, 0.06, 0.07, 0.08, 0.08}), "q3", Interpolate(pl, {0.2, 0.8, 1.7, 2, 2.4, 5}, {0, 0.07, 0.11, 0.118, 0.12, 0.12}), "q4", Interpolate(pl, {0.2, 1, 1.4, 1.8, 2.2, 2.6, 3, 5}, {0, 0.09, 0.117, 0.135, 0.15, 0.158, 0.16, 0.16}), "q5", Interpolate(pl, {0.2, 1.6, 5}, {0, 0.16, 0.26}), "q6", Interpolate(pl, {0, 1.4, 5}, {0.04, 0.18, 0.3}), "q7", Interpolate(pl, {0, 2.6, 5}, {0.04, 0.3, 0.3})));
+
+// Sources: Bearing_CPT_2024.xlsx, Bearing_PMT_2024.xlsx, Bearing_SPT_2024.xlsx, CPT_settlement_2024.xlsx, PMT_settlement_2025.xlsx
+/** Ménard shape coefficients λc, λd for L/B. opt_: "v" = λc, "d" = λd, omitted = {λc; λd}. Returns 0 if L/B < 1. */
+PMT_settlement_lambda = LAMBDA(LB, [opt_],
+    LET(
+        opt, IF(ISOMITTED(opt_), "a", LOWER(LEFT(opt_, 1))),
+        x, {1, 2, 3, 5, 20, 1000000},
+        check, AND(MIN(x)<=LB, LB<=MAX(x)),
+        yvol, IF(check, Interpolate(LB, x, {1.1, 1.2, 1.3, 1.4, 1.5, 1.5001}), 0),
+        ydev, IF(check, Interpolate(LB, x, {1.13, 1.53, 1.78, 2.14, 2.65, 2.6501}), 0),
+        SWITCH(opt, "v", yvol, "d", ydev, "a", VSTACK(yvol, ydev))
+    ));
+
+// Sources: PMT_settlement_2025.xlsx
+/** Alias of PMT_settlement_lambda: Ménard shape coefficients {λc; λd} for L/B. */
+PMT_lambda = LAMBDA(LB, PMT_settlement_lambda(LB, "a"));
+
+// Sources: PMT_settlement_2025.xlsx
+/** Ménard equivalent moduli Ec, Ed and limit pressure from 16 sub-layers below a footing (labelled table + layer values). Inputs: yEpl (depth, E, pl), B, D. */
+PMT_moduli = LAMBDA(yEpl, B, D,
+    LET(
+        y, CHOOSECOLS(yEpl, 1),
+        E, CHOOSECOLS(yEpl, 2),
+        pl, CHOOSECOLS(yEpl, 3),
+        yl, D-B/4+B/2*SEQUENCE(16, 1),
+        Es, Interpolate(yl, y, E),
+        pls, Interpolate(yl, y, pl),
+        plg, GEOMEAN(pls),
+        E1_, INDEX(Es, 1),
+        E2_, INDEX(Es, 2),
+        E3_5, HARMEAN(INDEX(Es, {3, 4, 5})),
+        E6_8, HARMEAN(INDEX(Es, {6, 7, 8})),
+        E9_16, HARMEAN(INDEX(Es, {9, 10, 11, 12, 13, 14, 15, 16})),
+        Ed, 1/(0.25/E1_+0.3/E2_+0.25/E3_5+0.1/E6_8+0.1/E9_16),
+        label, {"Volumetric modulus Ec =";"Deviatoric modulus Ed =";"Limit pressure =";"Modulus E1 =";"E2 =";"E3-5 =";"E6-8 =";"E9-16 ="},
+        labels, {"Depth", "Modulus", "Limit pressure"},
+        VSTACK(HSTACK(label, VSTACK(E1_, Ed, plg, E1_, E2_, E3_5, E6_8, E9_16), {" ";" ";" ";" ";" ";" ";" ";" "}), labels, HSTACK(yl, Es, pls))
+    ));
+
+// Sources: Bearing_CPT_2024.xlsx, Bearing_PMT_2024.xlsx, Bearing_SPT_2024.xlsx, CPT_settlement_2024.xlsx
+/** Eurocode 7 pressuremeter bearing pressure: {qu; ple; k}. Inputs: z, pl columns, B, D, L, soil ("clay silt", "sand gravel", "chalk"), g unit weight. */
+PMT_bearing_Eurocode = LAMBDA(z, pl, B, D, L, soil, g,
+    LET(
+        pleDe, PMT_bearing_limitPressure(z, pl, B, D),
+        ple, INDEX(pleDe, 1),
+        De, INDEX(pleDe, 2),
+        k, PMT_bearing_eurocode_k(B, L, De, ple, soil),
+        qu, k*ple+De*g,
+        label, {"Ultimate pressure =";"Pressure limit ple=";"Factor k ="},
+        HSTACK(label, VSTACK(qu, ple, k))
+    ));
+
+// Sources: Bearing_CPT_2024.xlsx, Bearing_PMT_2024.xlsx, Bearing_SPT_2024.xlsx, CPT_settlement_2024.xlsx
+/** Eurocode 7 pressuremeter bearing factor k. Inputs: B, L, D embedment, pl limit pressure (MPa), soil_ ("clay silt", "sand gravel", "chalk"). */
+PMT_bearing_eurocode_k = LAMBDA(B, L, D, pl, soil_,
+    LET(
+        soils, {"clay silt", "sand gravel", "chalk"},
+        soil, IFERROR(XMATCH(LOWER(soil_), soils, 1), 0),
+        xc, Interpolate(pl, {0, 0.7, 1.2, 2, 2.5, 100}, {0.249, 0.25, 0.35, 0.351, 0.5, 0.501}),
+        xg, Interpolate(pl, {0, 0.5, 1, 2, 2.5, 100}, {0.349, 0.35, 0.5, 0.501, 0.8, 0.801}),
+        y, (0.6+0.4*B/L)*D/B,
+        SWITCH(soil, 1, 0.8*(1+xc*y), 2, 1+xg*y, 3, 1.3*(1+0.27*y), 0, 1+0.27*y)
+    ));
+
+// Sources: Bearing_CPT_2024.xlsx, Bearing_PMT_2024.xlsx, Bearing_SPT_2024.xlsx, CPT_settlement_2024.xlsx
+/** Ménard settlement {sc; sd; total} from given moduli. Inputs: q net pressure, Ec, Ed, B, LB = L/B, ac, ad rheological factors, optional B0_ reference width (default 1). */
+PMT_settlement_basic = LAMBDA(q, Ec, Ed, B, LB, ac, ad, [B0_],
+    LET(
+        B0, IF(ISOMITTED(B0_), 1, B0_),
+        lc, PMT_settlement_lambda(LB, "v"),
+        ld, PMT_settlement_lambda(LB, "d"),
+        sc, q*lc*B*ac/9/Ec,
+        sd, 2*q*B0*(ld*B/B0)^ad/9/Ed,
+        VSTACK(sc, sd, sc+sd)
+    ));
+
+// Sources: PMT_settlement_2025.xlsx
+// Preserved source behavior: supplying ft_ (even FALSE) selects B0=2; omission selects B0=0.6.
+/** Ménard settlement from a pressuremeter profile (labelled table: total, volumetric, deviatoric, α, λ, moduli). Inputs: q, yEpl (depth, E, pl), B, D, L, soil, ft_ (units flag). */
+PMT_settlement = LAMBDA(q, yEpl, B, D, L, soil, [ft_],
+    LET(
+        B0, IF(ISOMITTED(ft_), 0.6, 2),
+        Es, PMT_moduli(yEpl, B, D),
+        Ec, INDEX(Es, 1, 2),
+        Ed, INDEX(Es, 2, 2),
+        plg, INDEX(Es, 3, 2),
+        Eplc, Ec/plg,
+        Epld, Ed/plg,
+        ls, PMT_lambda(L/B),
+        lc, INDEX(ls, 1),
+        ld, INDEX(ls, 2),
+        ac, PMT_alpha(soil, Eplc),
+        ad, PMT_alpha(soil, Epld),
+        sc, q*lc*B*ac/9/Ec,
+        sd, q*2*B0*(ld*B/B0)^ad/9/Ed,
+        label, {"Total settlement =";"Volumetric settlement =";"Deviatoric settlement =";"alphac =";"alphad =";"lambdac =";"lambdad =";"Volumetric modulus Ec =";"Deviatoric modulus Ed="},
+        HSTACK(label, VSTACK(sc+sd, sc, sd, ac, ad, lc, ld, Ec, Ed))
+    ));
+
+/** Shear and moment from a piecewise-linear pressure profile. Columns: depth, pressure, shear, moment. k = subdivisions per segment. */
+shearMoment = LAMBDA(d, p, k,
+    LET(
+        t, SEQUENCE(1, k, 0)/k,
+        da, DROP(d, -1),
+        pa, DROP(p, -1),
+        x, VSTACK(TOCOL(da + (DROP(d, 1) - da)*t), TAKE(d, -1)),
+        q, VSTACK(TOCOL(pa + (DROP(p, 1) - pa)*t), TAKE(p, -1)),
+        h, DROP(x, 1) - DROP(x, -1),
+        qa, DROP(q, -1),
+        qb, DROP(q, 1),
+        V, VSTACK(0, SCAN(0, h*(qa + qb)/2, LAMBDA(a, v, a + v))),
+        M, VSTACK(0, SCAN(0, DROP(V, -1)*h + h^2*(2*qa + qb)/6, LAMBDA(a, v, a + v))),
+        HSTACK(x, q, V, M)
+    ));
+
+/** Shear and moment diagram without header (depth, pressure, shear, moment). Inputs: d, p columns, optional n subdivisions (default 20). */
+beam = LAMBDA(d, p, [n],
+    shearMoment(d, p, IF(ISOMITTED(n), 20, n)));
+
+/** Shear and moment diagram with header (depth, pressure, shear, moment). Inputs: d, p columns, optional n subdivisions (default 20). */
+pressure_shear_moment = LAMBDA(d, p, [n],
+    VSTACK({"Depth", "Pressure", "Shear", "Moment"},
+           shearMoment(d, p, IF(ISOMITTED(n), 20, n))));
+
+/** Shear and moment diagram with an anchor force Ta at depth da (sheet-pile walls). Inputs: d, p columns, da, Ta, optional n subdivisions (default 20). */
+pressure_shear_moment_anchor = LAMBDA(d, p, da, Ta, [n],
+    LET(
+        j, MIN(SUM(--(d <= da)), ROWS(d) - 1),
+        dj, INDEX(d, j),
+        pj, INDEX(p, j),
+        pc, pj + (da - dj)*(INDEX(p, j + 1) - pj)/(INDEX(d, j + 1) - dj),
+        dd, VSTACK(TAKE(d, j), da, da, DROP(d, j)),
+        pp, VSTACK(TAKE(p, j), pc, pc, DROP(p, j)),
+        profileRows, shearMoment(dd, pp, IF(ISOMITTED(n), 20, n)),
+        x, CHOOSECOLS(profileRows, 1),
+        after, SEQUENCE(ROWS(x)) > XMATCH(da, x),
+        V, CHOOSECOLS(profileRows, 3) + Ta*after,
+        M, CHOOSECOLS(profileRows, 4) + Ta*IF(after, x - da, 0),
+        VSTACK({"Depth", "Pressure", "Shear", "Moment"},
+               HSTACK(x, CHOOSECOLS(profileRows, 2), V, M))
+    ));
+
+// Sources: SPT_2024.xlsx
+/** Allowable bearing pressure from a single SPT N value. Inputs: N, B, D (m), author: bowles, meyerhof, terzaghi. */
+SPT_bearing_direct = LAMBDA(N, B, D, author,
+    LET(
+        kd, IF(B=0, 1, MIN(1+0.33*D/B, 1.33)),
+        q6_, 10.417*N-20.605,
+        q0_, 13.032*N-16.488,
+        B0_, 1.24,
+        SWITCH(LOWER(author), "bowles", 18.7*N*kd*(1+0.305/MAX(B, 1.22))^2, "meyerhof", 12.5*N*kd*(1+0.305/MAX(B, 1.22))^2, "terzaghi", IFS(B<B0_, q0_, B>6, q6_, TRUE, q6_+(q0_-q6_)*((B-B0_)/(6-B0_)-1)^2))
+    ));
+
+/** ASTM D2487 group symbol and group name {symbol, name}. Inputs: % passing No. 4 and No. 200, optional Cu, Cc, LL, PL, LL oven-dried/LL not dried (blank = inorganic). */
+classify_ASTM2487 = LAMBDA(pf4, pf200, [cu_], [cc_], [ll_], [pl_], [ratio_],
+LET(
+cuV, IF(ISOMITTED(cu_), 0, N(cu_)),
+ccV, IF(ISOMITTED(cc_), 0, N(cc_)),
+llV, IF(ISOMITTED(ll_), 0, N(ll_)),
+plV, IF(ISOMITTED(pl_), 0, N(pl_)),
+rt, IF(ISOMITTED(ratio_), 1, IF(N(ratio_)=0, 1, N(ratio_))),
+gravel, 100-pf4,
+sand, pf4-pf200,
+plus, 100-pf200,
+piV, llV-plV,
+above, piV>=0.73*(llV-20),
+ftype, IF(OR(piV<4, NOT(above)), "M", IF(AND(llV<50, piV<=7), "CL-ML", "C")),
+isG, gravel>sand,
+gL, IF(isG, "G", "S"),
+main, IF(isG, "gravel", "sand"),
+other, IF(isG, "sand", "gravel"),
+oPct, IF(isG, sand, gravel),
+withO, IF(oPct>=15, " with "&other, ""),
+andO, IF(oPct>=15, " and "&other, ""),
+good, AND(cuV>=IF(isG, 4, 6), ccV>=1, ccV<=3),
+grd, IF(good, "W", "P"),
+grdTxt, IF(good, "Well-graded ", "Poorly graded "),
+fm, IF(ftype="M", "M", "C"),
+cSym, IFS(pf200<5, gL&grd, pf200<=12, gL&grd&"-"&gL&fm, ftype="M", gL&"M", ftype="C", gL&"C", TRUE, gL&"C-"&gL&"M"),
+cName, IFS(pf200<5, grdTxt&main&withO,
+           pf200<=12, grdTxt&main&IF(fm="M", " with silt"&andO, " with clay"&andO&" (or silty clay"&andO&")"),
+           ftype="M", "Silty "&main&withO,
+           ftype="C", "Clayey "&main&withO,
+           TRUE, "Silty, clayey "&main&withO),
+org, rt<0.75,
+fSym, IF(org, IF(llV<50, "OL", "OH"),
+         IF(llV<50, IF(NOT(above), "ML", IF(piV>7, "CL", IF(piV>=4, "CL-ML", "ML"))), IF(above, "CH", "MH"))),
+base, IF(org, IF(IF(llV<50, AND(piV>=4, above), above), "organic clay", "organic silt"),
+         SWITCH(fSym, "CL", "lean clay", "CL-ML", "silty clay", "ML", "silt", "CH", "fat clay", "elastic silt")),
+capBase, UPPER(LEFT(base))&MID(base, 2, 50),
+sg, sand>=gravel,
+fName, IF(plus<15, capBase,
+          IF(plus<30, capBase&IF(sg, " with sand", " with gravel"),
+             IF(sg, "Sandy "&base&IF(gravel>=15, " with gravel", ""),
+                    "Gravelly "&base&IF(sand>=15, " with sand", "")))),
+IF(pf200<50, HSTACK(cSym, cName), HSTACK(fSym, fName))
+));
+
+
+/** Shared lateral-pile integration helper. Descending coordinates and piecewise-linear line reaction, initial top shear, and subdivisions per segment. Returns depth, reaction, shear, moment without a header. Reuses shearMoment; applies the lateral-pile moment sign convention. */
+lateralpile_integrate = LAMBDA(x,pressure,topShear,subdivisions,
+ LET(profile,shearMoment(x,pressure,subdivisions),
+ position,CHOOSECOLS(profile,1),
+ shear,CHOOSECOLS(profile,3)+topShear,
+ moment,-CHOOSECOLS(profile,4)-topShear*(position-INDEX(x,1)),
+ HSTACK(position,CHOOSECOLS(profile,2),shear,moment)));
+
+/** Contour H=level traced cell by cell from the domain boundary; ~2 points per cell. seepage_eqline(xs,ys,H,level,[branch],[smooth],[nmax]) */
+seepage_eqline = LAMBDA(xs, ys, H, level, [branch], [smooth], [nmax],
+LET(xv,TOCOL(xs),yv,TOCOL(ys),n,ROWS(xv),m,ROWS(yv),lv,level,br,IF(ISOMITTED(branch),1,MAX(1,branch)),sm,IF(ISOMITTED(smooth),1,IF(smooth=0,0,1)),ncell,(n-1)*(m-1),nm,IF(ISOMITTED(nmax),ncell+1,IF(nmax>0,nmax,ncell+1)),tx,0.25*MEDIAN(ABS(DROP(xv,1)-DROP(xv,-1))),ty,0.25*MEDIAN(ABS(DROP(yv,1)-DROP(yv,-1))),OKG,MAKEARRAY(m-1,n-1,LAMBDA(rr,cc,seepage_cellok(xs,ys,H,rr,cc))),OK,LAMBDA(rr,cc,IF(OR(rr<1,cc<1,rr>m-1,cc>n-1),FALSE,INDEX(OKG,rr,cc))),EROWA,LAMBDA(rr,eg,IF(eg=3,rr+1,rr)),ECOLA,LAMBDA(cc,eg,IF(eg=2,cc+1,cc)),EROWB,LAMBDA(rr,eg,IF(eg=1,rr,rr+1)),ECOLB,LAMBDA(cc,eg,IF(eg=4,cc,cc+1)),CROSS,LAMBDA(rr,cc,eg,(INDEX(H,EROWA(rr,eg),ECOLA(cc,eg))>=lv)<>(INDEX(H,EROWB(rr,eg),ECOLB(cc,eg))>=lv)),EPT,LAMBDA(rr,cc,eg,LET(ia,EROWA(rr,eg),ja,ECOLA(cc,eg),ib,EROWB(rr,eg),jb,ECOLB(cc,eg),hza,INDEX(H,ia,ja),hzb,INDEX(H,ib,jb),tq,(lv-hza)/(hzb-hza),HSTACK(INDEX(xv,ja)+tq*(INDEX(xv,jb)-INDEX(xv,ja)),INDEX(yv,ia)+tq*(INDEX(yv,ib)-INDEX(yv,ia))))),NROW,LAMBDA(rr,eg,rr+IF(eg=1,-1,IF(eg=3,1,0))),NCOL,LAMBDA(cc,eg,cc+IF(eg=2,1,IF(eg=4,-1,0))),NENT,LAMBDA(eg,MOD(eg+1,4)+1),SEEDOK,LAMBDA(kq,LET(cq,INT((kq-1)/4),rr,INT(cq/(n-1))+1,cc,MOD(cq,n-1)+1,eg,MOD(kq-1,4)+1,IF(NOT(OK(rr,cc)),FALSE,IF(NOT(CROSS(rr,cc,eg)),FALSE,NOT(OK(NROW(rr,eg),NCOL(cc,eg))))))),allk,SEQUENCE(4*ncell),ks,FILTER(allk,MAP(allk,SEEDOK),0),IF(OR(INDEX(ks,1)=0,ROWS(ks)<br),NA(),LET(kq,INDEX(ks,br),cq,INT((kq-1)/4),rs,INT(cq/(n-1))+1,cs,MOD(cq,n-1)+1,es,MOD(kq-1,4)+1,INTERIOR,LAMBDA(rr,cc,px,py,qx,qy,LET(xa,INDEX(xv,cc),xb,INDEX(xv,cc+1),ya,INDEX(yv,rr),yb,INDEX(yv,rr+1),hA,INDEX(H,rr,cc),hB,INDEX(H,rr,cc+1),hC,INDEX(H,rr+1,cc),hD,INDEX(H,rr+1,cc+1),NW,LAMBDA(pt,LET(mx,INDEX(pt,1),my,INDEX(pt,2),tt,(mx-xa)/(xb-xa),uu,(my-ya)/(yb-ya),hh,(1-uu)*((1-tt)*hA+tt*hB)+uu*((1-tt)*hC+tt*hD),gx,((1-uu)*(hB-hA)+uu*(hD-hC))/(xb-xa),gy,((1-tt)*(hC-hA)+tt*(hD-hB))/(yb-ya),gg,gx^2+gy^2,IF(gg=0,pt,HSTACK(mx-(hh-lv)*gx/gg,my-(hh-lv)*gy/gg)))),pz,NW(NW(HSTACK((px+qx)/2,(py+qy)/2))),HSTACK(MIN(MAX(INDEX(pz,1),MIN(xa,xb)),MAX(xa,xb)),MIN(MAX(INDEX(pz,2),MIN(ya,yb)),MAX(ya,yb))))),STEP,LAMBDA(acc,it,LET(last,TAKE(acc,-1),rr,INDEX(last,1,3),cc,INDEX(last,1,4),eg,INDEX(last,1,5),IF(rr=0,acc,LET(ea,MOD(eg,4)+1,eb,MOD(eg+1,4)+1,ec,MOD(eg+2,4)+1,ex,IF(CROSS(rr,cc,ea),ea,IF(CROSS(rr,cc,eb),eb,IF(CROSS(rr,cc,ec),ec,0))),IF(ex=0,VSTACK(DROP(acc,-1),HSTACK(TAKE(last,,2),0,0,0)),LET(q,EPT(rr,cc,ex),qx,INDEX(q,1),qy,INDEX(q,2),px,INDEX(last,1,1),py,INDEX(last,1,2),rn,NROW(rr,ex),cn,NCOL(cc,ex),go,IF(OK(rn,cn),NOT(AND(rn=rs,cn=cs)),FALSE),newrow,IF(go,HSTACK(qx,qy,rn,cn,NENT(ex)),HSTACK(qx,qy,0,0,0)),thin,OR(ABS(INDEX(xv,cc+1)-INDEX(xv,cc))<tx,ABS(INDEX(yv,rr+1)-INDEX(yv,rr))<ty),IF(OR(sm=0,thin),VSTACK(acc,newrow),VSTACK(acc,HSTACK(INTERIOR(rr,cc,px,py,qx,qy),0,0,0),newrow)))))))),start,HSTACK(EPT(rs,cs,es),rs,cs,es),path,REDUCE(start,SEQUENCE(nm),STEP),TAKE(path,,2)))));
+
+/** Several contours stacked with #N/A separators for one chart series. seepage_eqlines(xs,ys,H,levels,[smooth],[nmax]) */
+seepage_eqlines = LAMBDA(xs, ys, H, levels, [smooth], [nmax],
+LET(smArg,IF(ISOMITTED(smooth),1,smooth),nArg,IF(ISOMITTED(nmax),0,nmax),big,1E+300,sep,HSTACK(big,big),st,REDUCE(sep,TOCOL(levels),LAMBDA(acc,lv,LET(pts,seepage_eqline(xs,ys,H,lv,1,smArg,nArg),VSTACK(acc,IF(ISERROR(INDEX(pts,1,1)),sep,pts),sep)))),res,DROP(st,1),IF(res=big,NA(),res)));
+
+/** Flow lines psi = levels traced from the head grid (#N/A separated). seepage_flowlines(xs,ys,H,levels,[k],[edge]) */
+seepage_flowlines = LAMBDA(xs, ys, H, levels, [k], [edge],
+LET(kv,IF(ISOMITTED(k),1,k),ev,IF(ISOMITTED(edge),0,edge),PS,seepage_psigrid(xs,ys,H,kv,0,ev),seepage_eqlines(xs,ys,PS,levels)));
+
+/** Internal: nodal dh/dx (axis=1) or dh/dy (axis=2), wall/blank aware; edge 4=FD mass balance (default),1,2,3. seepage_gradgrid(xs,ys,H,axis,[edge]) */
+seepage_gradgrid = LAMBDA(xs, ys, H, axis, [edge],
+LET(xv,TOCOL(xs),yv,TOCOL(ys),n,ROWS(xv),m,ROWS(yv),tx,0.25*MEDIAN(ABS(DROP(xv,1)-DROP(xv,-1))),ty,0.25*MEDIAN(ABS(DROP(yv,1)-DROP(yv,-1))),ev,TOCOL(IF(ISOMITTED(edge),0,edge)),EMODE,LAMBDA(ee,IF(ee=1,1,IF(ee=2,2,IF(ee=3,3,4)))),eF,EMODE(INDEX(ev,1)),eL,EMODE(INDEX(ev,ROWS(ev))),NX,LAMBDA(ax,IF(ax=1,n,m)),HX,LAMBDA(ax,i,j,IF(ax=1,INDEX(H,j,i),INDEX(H,i,j))),CX,LAMBDA(ax,i,IF(ax=1,INDEX(xv,i),INDEX(yv,i))),ACTV,LAMBDA(ax,i,j,IF(OR(i<1,j<1,i>NX(ax),j>NX(3-ax)),FALSE,ISNUMBER(HX(ax,i,j)))),THIN,LAMBDA(ax,ia,ib,ABS(CX(ax,ib)-CX(ax,ia))<IF(ax=1,tx,ty)),NBR,LAMBDA(ax,i,j,dn,LET(kk,i+dn,IF(NOT(ACTV(ax,kk,j)),0,IF(THIN(ax,i,kk),IF(HX(ax,kk,j)<>HX(ax,i,j),0,LET(kb,kk+dn,IF(ACTV(ax,kb,j),kb,0))),kk)))),PRIM,LAMBDA(ax,i,j,IF(i<=1,i,IF(NOT(ACTV(ax,i-1,j)),i,IF(AND(THIN(ax,i-1,i),HX(ax,i-1,j)=HX(ax,i,j)),i-1,i)))),DQ,LAMBDA(pa,pb,pd,fa,fb,fd,xx,fa*((xx-pb)+(xx-pd))/((pa-pb)*(pa-pd))+fb*((xx-pa)+(xx-pd))/((pb-pa)*(pb-pd))+fd*((xx-pa)+(xx-pb))/((pd-pa)*(pd-pb))),NDERX,LAMBDA(ax,i,j,IF(NOT(ACTV(ax,i,j)),0,LET(iL,NBR(ax,i,j,-1),iR,NBR(ax,i,j,1),IF((iL=0)=(iR=0),0,LET(iq,IF(iR>0,iR,iL),jm,NBR(3-ax,j,i,-1),jp,NBR(3-ax,j,i,1),IF(OR(jm=0,jp=0),0,LET(dd,ABS(CX(ax,iq)-CX(ax,i)),dtm,ABS(CX(3-ax,j)-CX(3-ax,jm)),dtp,ABS(CX(3-ax,jp)-CX(3-ax,j)),aa,dd/2,bb,(dtm+dtp)/2,tsum,(HX(ax,i,jm)-HX(ax,i,j))/dtm+(HX(ax,i,jp)-HX(ax,i,j))/dtp,-(HX(ax,iq,j)-HX(ax,i,j))/dd-(aa/bb)*tsum))))))),DER,LAMBDA(ax,iorig,j,IF(NOT(ACTV(ax,iorig,j)),NA(),LET(i,PRIM(ax,iorig,j),iL,NBR(ax,i,j,-1),iR,NBR(ax,i,j,1),IF(AND(iL>0,iR>0),DQ(CX(ax,iL),CX(ax,i),CX(ax,iR),HX(ax,iL,j),HX(ax,i,j),HX(ax,iR,j),CX(ax,i)),IF(AND(iL=0,iR=0),0,LET(iq,IF(iR>0,iR,iL),md,IF(iL=0,eF,eL),dd,CX(ax,iq)-CX(ax,i),sg,SIGN(dd),IF(md=1,0,IF(md=2,(HX(ax,iq,j)-HX(ax,i,j))/dd,IF(md=3,LET(iqb,NBR(ax,iq,j,SIGN(iq-i)),IF(iqb=0,(HX(ax,iq,j)-HX(ax,i,j))/dd,DQ(CX(ax,i),CX(ax,iq),CX(ax,iqb),HX(ax,i,j),HX(ax,iq,j),HX(ax,iqb,j),CX(ax,i)))),LET(jm,NBR(3-ax,j,i,-1),jp,NBR(3-ax,j,i,1),IF(AND(jm>0,jp>0),-sg*NDERX(ax,i,j),IF(AND(jm=0,jp=0),(HX(ax,iq,j)-HX(ax,i,j))/dd,LET(jn,IF(jm>0,jm,jp),dt,ABS(CX(3-ax,jn)-CX(3-ax,j)),aa,ABS(dd)/2,bb,dt/2,sres,-((HX(ax,iq,j)-HX(ax,i,j))/ABS(dd)*bb+(HX(ax,i,jn)-HX(ax,i,j))/dt*aa),wc,bb*ABS(NDERX(ax,i,jn)),wt,aa*ABS(NDERX(3-ax,j,iq)),-sg*IF(wc+wt=0,sres/(aa+bb),sres*wc/(wc+wt)/bb)))))))))))))),MAKEARRAY(m,n,LAMBDA(rr,qq,IF(axis=1,DER(1,qq,rr),DER(2,rr,qq))))));
+
+/** {h, dh/dx, dh/dy} at (x,y) by bilinear interpolation in the soil cell; #N/A outside the soil. seepage_hfield(xs,ys,H,x,y) */
+seepage_hfield = LAMBDA(xs, ys, H, x, y,
+LET(xv,TOCOL(xs),yv,TOCOL(ys),n,ROWS(xv),m,ROWS(yv),sx,SIGN(INDEX(xv,n)-INDEX(xv,1)),sy,SIGN(INDEX(yv,m)-INDEX(yv,1)),ci,MIN(MAX(SUM(--((xv-x)*sx<=0)),1),n-1),rj,MIN(MAX(SUM(--((yv-y)*sy<=0)),1),m-1),tx,0.25*MEDIAN(ABS(DROP(xv,1)-DROP(xv,-1))),ty,0.25*MEDIAN(ABS(DROP(yv,1)-DROP(yv,-1))),SCORE,LAMBDA(rr,cc,IF(OR(rr<1,cc<1,rr>m-1,cc>n-1),0,IF(OR(x<MIN(INDEX(xv,cc),INDEX(xv,cc+1))-0.000000000001,x>MAX(INDEX(xv,cc),INDEX(xv,cc+1))+0.000000000001,y<MIN(INDEX(yv,rr),INDEX(yv,rr+1))-0.000000000001,y>MAX(INDEX(yv,rr),INDEX(yv,rr+1))+0.000000000001),0,IF(NOT(seepage_cellok(xs,ys,H,rr,cc)),0,IF(OR(ABS(INDEX(xv,cc+1)-INDEX(xv,cc))<tx,ABS(INDEX(yv,rr+1)-INDEX(yv,rr))<ty),1,2))))),rlist,VSTACK(rj,rj,rj,rj-1,rj+1),clist,VSTACK(ci,ci-1,ci+1,ci,ci),sc,MAP(rlist,clist,LAMBDA(ra,ca,SCORE(ra,ca))),best,MAX(sc),IF(best=0,HSTACK(NA(),NA(),NA()),LET(kk,XMATCH(best,sc),rr,INDEX(rlist,kk),cc,INDEX(clist,kk),xa,INDEX(xv,cc),xb,INDEX(xv,cc+1),ya,INDEX(yv,rr),yb,INDEX(yv,rr+1),tt,(x-xa)/(xb-xa),uu,(y-ya)/(yb-ya),hA,INDEX(H,rr,cc),hB,INDEX(H,rr,cc+1),hC,INDEX(H,rr+1,cc),hD,INDEX(H,rr+1,cc+1),hh,(1-uu)*((1-tt)*hA+tt*hB)+uu*((1-tt)*hC+tt*hD),gx,((1-uu)*(hB-hA)+uu*(hD-hC))/(xb-xa),gy,((1-tt)*(hC-hA)+tt*(hD-hB))/(yb-ya),HSTACK(hh,gx,gy)))));
+
+/** h at (x,y); x,y may be arrays. seepage_hxy(xs,ys,H,x,y) */
+seepage_hxy = LAMBDA(xs, ys, H, x, y,
+IF(COUNT(x)=1,INDEX(seepage_hfield(xs,ys,H,x,y),1),MAP(x,y,LAMBDA(px,py,INDEX(seepage_hfield(xs,ys,H,px,py),1)))));
+
+/** Internal: stream function psi at every node from the heads (base = psiref, wall = flow line). seepage_psigrid(xs,ys,H,[k],[psiref],[edge]) */
+seepage_psigrid = LAMBDA(xs, ys, H, [k], [psiref], [edge],
+LET(kv,IF(ISOMITTED(k),1,IF(k>0,k,1)),pbase,IF(ISOMITTED(psiref),0,psiref),ev,IF(ISOMITTED(edge),0,edge),xv,TOCOL(xs),yv,TOCOL(ys),n,ROWS(xv),m,ROWS(yv),tx,0.25*MEDIAN(ABS(DROP(xv,1)-DROP(xv,-1))),VX,-kv*seepage_gradgrid(xs,ys,H,1,ev),VY,-kv*seepage_gradgrid(xs,ys,H,2,ev),bot,IF(INDEX(yv,1)<INDEX(yv,m),1,m),INC,MAKEARRAY(m-1,n,LAMBDA(jj,qq,LET(va,INDEX(VX,jj,qq),vb,INDEX(VX,jj+1,qq),IF(AND(ISNUMBER(va),ISNUMBER(vb)),ABS(INDEX(yv,jj+1)-INDEX(yv,jj))*(va+vb)/2,0)))),TRI,MAKEARRAY(m,m-1,LAMBDA(rr,jj,IF(bot=m,--(jj>=rr),--(jj<rr)))),PC,pbase+MMULT(TRI,INC),WSIDE,LAMBDA(rr,cc,cn,IF(OR(cn<1,cn>n),FALSE,IF(ABS(INDEX(xv,cn)-INDEX(xv,cc))>=tx,FALSE,IF(NOT(ISNUMBER(INDEX(H,rr,cn))),TRUE,INDEX(H,rr,cn)<>INDEX(H,rr,cc))))),MAKEARRAY(m,n,LAMBDA(rr,cc,IF(NOT(ISNUMBER(INDEX(H,rr,cc))),NA(),LET(wl,WSIDE(rr,cc,cc-1),wr,WSIDE(rr,cc,cc+1),IF(wl=wr,INDEX(PC,rr,cc),LET(cs,IF(wl,cc+1,cc-1),IF(OR(cs<1,cs>n),INDEX(PC,rr,cc),IF(NOT(ISNUMBER(INDEX(H,rr,cs))),INDEX(PC,rr,cc),INDEX(PC,rr,cs)-(INDEX(xv,cc)-INDEX(xv,cs))*(INDEX(VY,rr,cs)+INDEX(VY,rr,cc))/2))))))))));
+
+/** Table s,x,y,h,vx,vy,vn,psi along segment A->B; v=-k grad h. seepage_segprofile(xs,ys,H,xA,yA,xB,yB,[n],[k],[edge]) */
+seepage_segprofile = LAMBDA(xs, ys, H, xA, yA, xB, yB, [n], [k], [edge],
+LET(np,IF(ISOMITTED(n),50,IF(n>0,n,50)),kv,IF(ISOMITTED(k),1,IF(k>0,k,1)),ev,IF(ISOMITTED(edge),0,edge),GX,seepage_gradgrid(xs,ys,H,1,ev),GY,seepage_gradgrid(xs,ys,H,2,ev),PS,seepage_psigrid(xs,ys,H,kv,0,ev),L,SQRT((xB-xA)^2+(yB-yA)^2),tx,(xB-xA)/L,ty,(yB-yA)/L,s,SEQUENCE(np+1,1,0,L/np),px,xA+s*tx,py,yA+s*ty,hv,seepage_hxy(xs,ys,H,px,py),vx,-kv*seepage_hxy(xs,ys,GX,px,py),vy,-kv*seepage_hxy(xs,ys,GY,px,py),vn,vx*ty-vy*tx,pv,seepage_hxy(xs,ys,PS,px,py),HSTACK(s,px,py,hv,vx,vy,vn,pv)));
+
+/** {length, h avg, h min, h max, Q=psi(B)-psi(A), vn avg} for segment A->B. seepage_segstats(xs,ys,H,xA,yA,xB,yB,[k],[n],[edge]) */
+seepage_segstats = LAMBDA(xs, ys, H, xA, yA, xB, yB, [k], [n], [edge],
+LET(kv,IF(ISOMITTED(k),0,k),nv,IF(ISOMITTED(n),0,n),ev,IF(ISOMITTED(edge),0,edge),P,seepage_segprofile(xs,ys,H,xA,yA,xB,yB,nv,kv,ev),s,CHOOSECOLS(P,1),hv,CHOOSECOLS(P,4),pv,CHOOSECOLS(P,8),ds,DROP(s,1)-DROP(s,-1),L,MAX(s),Q,INDEX(pv,ROWS(pv))-INDEX(pv,1),HSTACK(L,SUM(ds*(DROP(hv,1)+DROP(hv,-1))/2)/L,MIN(hv),MAX(hv),Q,Q/L)));
+
+
+/** Internal: TRUE if mesh cell (rw,cl) is soil (4 active corners, not a wall slot). seepage_cellok(xs,ys,H,rw,cl) */
+seepage_cellok = LAMBDA(xs, ys, H, rw, cl,
+LET(xv,TOCOL(xs),yv,TOCOL(ys),n,ROWS(xv),m,ROWS(yv),IF(OR(rw<1,cl<1,rw>m-1,cl>n-1),FALSE,IF(NOT(AND(ISNUMBER(INDEX(H,rw,cl)),ISNUMBER(INDEX(H,rw,cl+1)),ISNUMBER(INDEX(H,rw+1,cl)),ISNUMBER(INDEX(H,rw+1,cl+1)))),FALSE,LET(tx,0.25*MEDIAN(ABS(DROP(xv,1)-DROP(xv,-1))),ty,0.25*MEDIAN(ABS(DROP(yv,1)-DROP(yv,-1))),hA,INDEX(H,rw,cl),hB,INDEX(H,rw,cl+1),hC,INDEX(H,rw+1,cl),hD,INDEX(H,rw+1,cl+1),wx,AND(ABS(INDEX(xv,cl+1)-INDEX(xv,cl))<tx,hA<>hB,hC<>hD),wy,AND(ABS(INDEX(yv,rw+1)-INDEX(yv,rw))<ty,hA<>hC,hB<>hD),NOT(OR(wx,wy)))))));
