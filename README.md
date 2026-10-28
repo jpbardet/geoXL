@@ -13,7 +13,7 @@ The textbook explains the teaching workbooks.
 
 The updater reads `docs/library/current.json` and verifies the version and
 SHA256 of its published library snapshot. It does not fetch the development
-Gist. Current published version: 0.17 (2026-10-23); earlier snapshots are kept under `docs/library/releases/`. Native Excel
+Gist. Current published version: 0.23 (2026-10-28); earlier snapshots are kept under `docs/library/releases/`, and a frozen copy of each release page under `docs/releases/`. Native Excel
 numerical and iterative-tool release validation remains pending.
 
 Development tools, candidate testing and future release approval are maintained
@@ -27,3 +27,7 @@ library snapshots. Independent analytical and browser checks passed; native
 Excel numerical and iterative-tool validation remains pending.
 
 Version 0.17 adds nine seepage_ functions for head interpolation, gradients, stream functions, contours/flow lines and segment profiles/statistics. Original formulas are preserved. The reference documents rectangular-grid, bottom-boundary and contour-plotting assumptions.
+
+Version 0.22 revises bearing capacity: `bearing_capacity` takes `author` first and handles vertical, centred or eccentric loads; `bearing_capacity_inclined` handles inclined loads (Meyerhof, Hansen, Vesic, EC7 2004/2025).
+
+Version 0.23 removes `bearing_inclinationFactors`; `bearing_capacity_inclined(..., out = 2)` returns the inclination factors. Workbooks that still call the old function keep their existing copy.
