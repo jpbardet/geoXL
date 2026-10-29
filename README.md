@@ -13,7 +13,7 @@ The textbook explains the teaching workbooks.
 
 The updater reads `docs/library/current.json` and verifies the version and
 SHA256 of its published library snapshot. It does not fetch the development
-Gist. Current published version: 0.23 (2026-10-28); earlier snapshots are kept under `docs/library/releases/`, and a frozen copy of each release page under `docs/releases/`. Native Excel
+Gist. Current published version: 0.24 (2026-10-28); earlier snapshots are kept under `docs/library/releases/`, and a frozen copy of each release page under `docs/releases/`. Native Excel
 numerical and iterative-tool release validation remains pending.
 
 Development tools, candidate testing and future release approval are maintained
@@ -31,3 +31,5 @@ Version 0.17 adds nine seepage_ functions for head interpolation, gradients, str
 Version 0.22 revises bearing capacity: `bearing_capacity` takes `author` first and handles vertical, centred or eccentric loads; `bearing_capacity_inclined` handles inclined loads (Meyerhof, Hansen, Vesic, EC7 2004/2025).
 
 Version 0.23 removes `bearing_inclinationFactors`; `bearing_capacity_inclined(..., out = 2)` returns the inclination factors. Workbooks that still call the old function keep their existing copy.
+
+Version 0.24 adds nine mse_ functions for mechanically stabilized earth walls: earth pressure coefficient Kr (Rankine, AASHTO/FHWA simplified, coherent gravity), active zone (Rankine or bilinear), pullout factor F*, internal and external stability tables for ASD or LRFD, chart data, and a result reader. No existing function changed.
