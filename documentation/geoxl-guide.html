@@ -1,0 +1,111 @@
+<!-- geoXL student guide (Student guide tab). Placeholders: {{VERSION}}, {{TOTAL}}, {{DATE}}. -->
+<section class=panel id=guide-intro>
+<h2>What geoXL is</h2>
+<p>geoXL is the library of geotechnical engineering functions used in this course: bearing capacity, settlement, consolidation, earth pressure and walls, MSE walls, piles, in-situ tests, elastic stresses, slope stability, soil classification, and the geometry and plotting helpers they rely on. Release {{VERSION}} contains {{TOTAL}} functions.</p>
+<p class=note><b>Laboratory course?</b> Use <a href="./lab/">geolabXL</a>, the laboratory library. It installs only the functions used in the soil mechanics laboratory, and its page explains them. Workbooks set up with geolabXL are refused here, so that a lab workbook does not receive the full library.</p>
+<p>The functions are ordinary Excel formulas (named LAMBDA functions) stored <em>inside</em> each workbook. Once a workbook has them:</p>
+<ul>
+<li>you call them by name in any cell, for example <code>=bearing_factors(30, "vesic")</code>;</li>
+<li>nothing has to be installed in Excel: no add-in and no macros;</li>
+<li>the workbook calculates offline, on your computer, like any other formula;</li>
+<li>Solver and Goal Seek work with them, because they recalculate instantly like built-in functions.</li>
+</ul>
+</section>
+
+<section class=panel id=guide-needs>
+<h2>What you need</h2>
+<ul>
+<li>A version of Excel that supports LAMBDA functions: Microsoft 365 (Windows or Mac) or Excel 2024. Older versions such as Excel 2019 or 2021 show <code>#NAME?</code>.</li>
+<li>A web browser (Chrome, Edge, Safari or Firefox) and an internet connection, only while you install or update a workbook.</li>
+<li>Solver, for the exercises that use it: enable it once in Excel under <em>Add-ins › Solver Add-in</em>.</li>
+<li>The course example workbooks, which are distributed through Canvas.</li>
+</ul>
+</section>
+
+<section class=panel id=guide-update>
+<h2>Install or update geoXL in a workbook</h2>
+<p>The <a href="#install">Install / update</a> tab installs geoXL in a new workbook and updates a workbook that already has an older version. It always gives you a <em>new copy</em>; your original file is never changed.</p>
+<ol>
+<li>Save the workbook and close it in Excel. Only <code>.xlsx</code> files are accepted; save <code>.xls</code> or <code>.xlsm</code> files as <code>.xlsx</code> first.</li>
+<li>Open the <a href="#install">Install / update</a> tab and wait until it shows the current version (geoXL {{VERSION}}, verified).</li>
+<li>Under <em>1. Choose your workbook</em>, select your file.</li>
+<li>Click <em>Install / update geoXL</em>, then the download link. The copy is named after your workbook with the version added, for example <code>Slopes (geoXL {{VERSION}}).xlsx</code>.</li>
+<li>Open the downloaded copy in Excel and let it calculate. Type <code>=version()</code> in an empty cell to check the installed release.</li>
+<li>Keep working in the new copy. Keep the original as a backup until you are satisfied.</li>
+</ol>
+<p class=note><b>Privacy.</b> Everything happens in your browser. Your workbook is read and rewritten on your own computer; it is not uploaded anywhere. The internet is only used to load this page and the published library, which the page checks against its published fingerprint before using it.</p>
+<p><b>What the update changes.</b> It adds or replaces the geoXL functions, converts older names in the formulas that use them (for example <code>bearing.capacity</code> → <code>bearing_capacity</code>, or <code>GeoEXCEL.bearing_capacity</code> → <code>bearing_capacity</code>), and records the installed release. Your sheets, data, formulas, charts and formatting are kept. If something cannot be updated safely (a digitally signed workbook, or a name you defined yourself that clashes with a geoXL name), the page tells you instead of guessing.</p>
+<p><b>What it cannot change.</b> Workbooks written for the old VBA add-ins (GeoKit, UtilKit) may call functions such as <code>SlicesFS</code> or <code>Friction_Circle</code>, whose arguments differ from the geoXL functions. These are not converted and show <code>#NAME?</code>; use the current course version of that workbook from Canvas, or ask your instructor.</p>
+<p><b>When to update.</b> When your instructor announces a new release, or when a workbook shows <code>#NAME?</code> for a geoXL function. Updating again with the same release changes nothing.</p>
+</section>
+
+<section class=panel id=guide-using>
+<h2>Using the functions</h2>
+<ul>
+<li><b>Function reference.</b> The <a href="#reference">Function reference</a> tab groups the functions by topic. Each entry gives the call, the meaning and units of every argument, what is returned, and notes. When you type a function in Excel, its description and argument hints also appear.</li>
+<li><b>Units.</b> Use one consistent system (for example m, kN, kPa). Angles are in degrees unless the help says otherwise.</li>
+<li><b>Optional arguments</b> are shown in brackets, e.g. <code>[detail_]</code>. Leave them out, or leave an empty place between commas: <code>=f(a, b, , d)</code>.</li>
+<li><b>Results that are tables.</b> Many functions return several values at once. Enter the formula in one cell; the results “spill” into the cells below and to the right. Keep those cells empty, otherwise Excel shows <code>#SPILL!</code>.</li>
+<li><b>Geometry inputs.</b> Ground lines and water lines are entered as two columns (x, y) with x increasing from left to right; a point such as a circle centre is a row of two cells {x, y}.</li>
+</ul>
+</section>
+
+<section class=panel id=guide-slopes>
+<h2>Slope stability</h2>
+<p>The slope functions cover the four classical methods used in the course:</p>
+<table class=args>
+<thead><tr><th>Method</th><th>Functions</th></tr></thead>
+<tbody>
+<tr><td>Undrained clay (φ = 0), circular slip</td><td><a href="#SLOPE_CIRCLE_COHESIVE"><code>slope_circle_cohesive</code></a>, <a href="#SLOPE_CIRCLE_POLYLINE_COHESIVE"><code>slope_circle_polyline_cohesive</code></a></td></tr>
+<tr><td>Friction circle (c–φ)</td><td><a href="#SLOPE_FRICTION_CIRCLE"><code>slope_friction_circle</code></a></td></tr>
+<tr><td>Logarithmic spiral</td><td><a href="#SLOPE_LOGSPIRAL"><code>slope_logSpiral</code></a></td></tr>
+<tr><td>Method of slices: Fellenius or simplified Bishop, optional water table</td><td><a href="#SLOPE_SLICES"><code>slope_slices</code></a>, <a href="#SLOPE_SLICES_PLOT"><code>slope_slices_plot</code></a></td></tr>
+</tbody></table>
+<p>A typical call of the method of slices, with the ground line in <code>B11:C13</code>, the circle centre in <code>B7:C7</code>, the radius in <code>D7</code>, c, φ, γ in <code>F11</code>, <code>E11</code>, <code>D11</code> and 20 slices:</p>
+<p><code>=slope_slices(B11:C13, B7:C7, D7, F11, E11, D11, 20, , , "Bishop")</code></p>
+<p>Add a phreatic line and the unit weight of water as the 8th and 9th arguments to include pore pressure, and any value as the last argument to get the slice-by-slice table. <code>slope_slices_plot</code> returns the points that draw the same slices in a chart.</p>
+</section>
+
+<section class=panel id=guide-solver>
+<h2>Finding the critical surface with Solver</h2>
+<p>The functions give the factor of safety of <em>one</em> trial surface. To find the critical (minimum) one, use Solver:</p>
+<ol>
+<li><em>Set Objective</em>: the cell with the factor of safety; select <em>Min</em>.</li>
+<li><em>By Changing Variable Cells</em>: the circle centre and radius (or only the centre when the radius is fixed by a constraint, e.g. a circle through the toe).</li>
+<li>Choose <em>GRG Nonlinear</em> and click <em>Solve</em>.</li>
+<li>Check that the solution makes sense: the circle must still cross the ground line twice. If Solver wanders into a circle that misses the slope, start again from a better guess.</li>
+</ol>
+<p>Goal Seek is used in the same way when one input must be adjusted until a result reaches a target (for example the manual friction-circle iteration, where F<sub>φ</sub> = F<sub>c</sub>). A stored Solver answer does not update itself: if you change the slope or the soil properties, run Solver again.</p>
+</section>
+
+<section class=panel id=guide-trouble>
+<h2>Troubleshooting</h2>
+<table class=args>
+<thead><tr><th>What you see</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td><code>#NAME?</code> on a geoXL function</td><td>The workbook does not have the function or still uses an old name: run it through <a href="#install">Install / update</a>. On Excel 2019/2021 LAMBDA is not supported.</td></tr>
+<tr><td><code>#NAME?</code> after updating an old workbook</td><td>The cell calls a function from the old VBA add-ins (e.g. <code>SlicesFS</code>), which cannot be converted automatically. Use the current course version of the workbook or ask your instructor.</td></tr>
+<tr><td><code>#SPILL!</code></td><td>Clear the cells where the result needs to spill.</td></tr>
+<tr><td><code>#N/A</code> from a slope function</td><td>The trial surface does not cross the ground line twice: move the centre or change the radius.</td></tr>
+<tr><td><code>#VALUE!</code></td><td>Check the argument order and that ranges have the expected shape (two columns for polylines, one row for a centre).</td></tr>
+<tr><td>Excel offers to “repair” the file</td><td>Accept; keep the original. If results look wrong, run the original through the updater again and report it.</td></tr>
+<tr><td>The page refuses the file</td><td>Save it as a plain <code>.xlsx</code> workbook (not signed, not password-protected) and try again.</td></tr>
+</tbody></table>
+</section>
+
+<section class=panel id=guide-releases>
+<h2>Release notes</h2>
+<p><b>0.25 (November 5, 2026).</b> Added 13 soil-laboratory functions: <code>water_content</code>, <code>specific_gravity</code>, <code>sieve_passing</code>, five <code>hydrometer_</code> functions, and the consolidation-test methods <code>consolidation_log_time</code>, <code>consolidation_sqrt_time</code>, <code>consolidation_fitting</code>, <code>consolidation_creep</code> and <code>consolidation_table</code>. They are also published, with a selection of geoXL functions, as the laboratory library <a href="./lab/">geolabXL</a>. No existing function changed.</p>
+<p><b>0.24 (October 28, 2026).</b> Added nine functions for mechanically stabilized earth (MSE) walls: <code>mse_levels</code>, <code>mse_Kr</code>, <code>mse_Fstar</code>, <code>mse_active_zone</code>, <code>mse_reinforcement</code>, <code>mse_internal_stability</code>, <code>mse_external_stability</code>, <code>mse_plot_data</code> and <code>mse_get</code>. They cover the AASHTO/FHWA simplified and coherent gravity earth-pressure methods, Rankine or bilinear active zones, strips, grids and geosynthetics, and ASD or LRFD checks. No existing function changed.</p>
+<p><b>0.23 (October 28, 2026).</b> Removed <code>bearing_inclinationFactors</code>, which <code>bearing_capacity_inclined</code> replaces: its <code>out</code> = 2 option returns the inclination factors {ic; iq; iγ} for the chosen author, evaluated consistently with the capacity. Workbooks that still call the old function keep their existing copy, and the updater lists it as retained; replace those calls when convenient. No other function changed.</p>
+<p><b>0.22 (October 28, 2026).</b> Added <code>bearing_capacity_inclined</code>, <code>bearing_effective</code> and <code>bearing_terms</code>; revised <code>bearing_capacity</code> and <code>bearing_shapeFactors</code>. <b>Review older bearing_capacity calls: author now comes first, and inclined loads use bearing_capacity_inclined.</b></p>
+<p><b>0.21 (October 24, 2026).</b> Added <code>CPT_classify</code>, <code>CPT_log</code>, their two soil-category lookup tables, <code>water_viscosity</code>, and <code>water_density</code>, using underscore names throughout.</p>
+<p><b>0.20 (October 24, 2026).</b> Added four finite-difference head stencils: <code>seepage_stencil</code> (interior), <code>seepage_stencil1</code> (no-flow edge), <code>seepage_stencil2</code> (outer corner), and <code>seepage_stencil3</code> (re-entrant corner). The 0.19 functions are unchanged. These local equations assume a uniform square grid and homogeneous isotropic soil. Native Excel validation remains pending.</p>
+<p><b>0.19 (October 24, 2026).</b> Corrected <code>seepage_gradgrid</code> third-point boundary selection for descending coordinates. Boundary mode <code>edge=3</code> now supports both coordinate directions, including its downstream stream-function and segment routines. All other function bodies and argument lists are unchanged. Native Excel validation remains pending.</p>
+<p><b>0.18 (October 24, 2026).</b> Ten <code>seepage_</code> definitions refreshed from SeepageForce_Examples_fixed2_1.xlsx, including the new <code>seepage_cellok</code> helper. Adds masked-cell and wall-slot awareness, cell-traced contours and outside-domain rejection. The contour argument <code>ds</code> is replaced by a <code>smooth</code> switch. For descending coordinates, avoid three-point boundary mode <code>edge=3</code>; use ascending coordinates or <code>edge=2</code>. These supplied formulas are preserved; native Excel validation remains pending.</p>
+<p><b>0.17 (October 23, 2026).</b> Nine <code>seepage_</code> functions added for head interpolation, nodal gradients, stream functions, contour/flow-line coordinates and segment profiles/statistics. See the Seepage &amp; flow nets reference for grid/boundary assumptions and chart-separator limitations. These are the workbook author's formulas; full native Excel release validation remains pending.</p>
+<p><b>0.16 (October 22, 2026).</b> The two lateral-pile reaction/shear/moment functions now use the tested V2 integration under their original names. Cohesive pressure jumps are exact, without epsilon ramps. The shared <a href="#LATERALPILE_INTEGRATE"><code>lateralpile_integrate</code></a> helper reuses <code>shearMoment</code>. Temporary <code>_v2</code> calls are migrated automatically. Output row counts change; use the full spill range for charts. Broms Example 2 now closes toe shear and moment to numerical precision. Native Excel release validation remains pending.</p>
+<p><b>0.15 (October 19, 2026).</b> New <a href="#SLOPE_SLICES"><code>slope_slices</code></a> (method of slices: Fellenius or simplified Bishop, uniform soil, optional water table) and <a href="#SLOPE_SLICES_PLOT"><code>slope_slices_plot</code></a>. <a href="#SLOPE_FRICTION_CIRCLE"><code>slope_friction_circle</code></a> fixed: it returned <code>#N/A</code> in 0.14. All other functions are unchanged, so workbooks updated with 0.14 keep working; update them to get the new slope functions.</p>
+<p><b>0.14 (October 18, 2026).</b> The ASTM classification table is built into the library; <code>classify_ASTM</code> and <code>classify_USC</code> were corrected.</p>
+<p class=small>Questions and problems: contact your instructor, and say which workbook, sheet and cell, and the value returned by <code>=version()</code>.</p>
+</section>

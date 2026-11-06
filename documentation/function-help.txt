@@ -1,0 +1,1540 @@
+# geoXL help text: one block per function.
+#   [function_name]           exactly as in library/geoXL.txt
+#   argument: description     shown by Excel when you type the argument (keep under ~200 characters)
+#   returns: ...              what the function gives back (help page only)
+#   notes: ...                cautions, conventions, known behaviour (help page only; several notes lines allowed)
+# The one-line function description stays in library/geoXL.txt (the /** */ comment).
+# Units: use one consistent system (e.g. m, kN, kPa) unless an argument says otherwise. Angles in degrees unless stated.
+# One help file serves both pages: geoXL (all functions) and geolabXL (the lab list).
+
+[version]
+returns: Text with the add-in version and release date.
+
+[bearing_capacity]
+author: Method name: terzaghi, prandtl, meyerhof, hansen, vesic or ec7
+phi: Soil friction angle in degrees
+coh: Soil cohesion in stress units
+q: Effective surcharge at foundation level, in stress units
+gam: Soil unit weight consistent with footing dimensions and stress units
+B: Original footing width
+L: Optional length; omitted or 0 selects a strip footing
+D: Optional embedment depth, default 0
+eB: Optional eccentricity across B, default 0
+eL: Optional eccentricity across L, default 0
+use: Optional factor selector: "sdi" (default) applies shape and depth factors; "s" applies shape only; omit a letter to disable that factor
+out: Optional output: 0 (default) returns total capacity; 1 returns a breakdown table; 2 returns the three capacity terms
+returns: Vertical ultimate bearing pressure, a calculation table, or a three-row vector of cohesion, surcharge and soil-weight contributions.
+notes: Version 0.22 changes the argument order: author comes first. Earlier calls beginning with cohesion must be revised. This function handles vertical loads; use bearing_capacity_inclined for inclined loads.
+notes: Uses effective footing width for the soil-weight load term and effective width/length ratio for shape factors. Depth factors use original D/B. All terms use consistent units; for kN and metres the result is kPa.
+notes: Supply positive effective footing dimensions. A strip footing uses unit out-of-plane length. This evaluates an ultimate capacity relation; apply the safety/design factors appropriate to your calculation separately.
+
+[bearing_depthFactors]
+DB: Depth ratio D/B
+phi: Friction angle φ (degrees)
+author: Method: "terzaghi", "prandtl", "meyerhof", "hansen", "vesic" or "ec7"
+returns: Column {dc; dq; dγ}.
+
+[bearing_factors]
+phi: Friction angle φ (degrees)
+author_: Method: "terzaghi", "prandtl", "meyerhof", "hansen", "vesic" or "ec7"
+returns: Column {Nc; Nq; Nγ}.
+
+[bearing_Nq]
+Phi: Friction angle φ (degrees)
+author_: Method: "terzaghi", "prandtl", "meyerhof", "hansen", "vesic" or "ec7"
+returns: Nq (dimensionless).
+
+[bearing_shapeFactors]
+BL: Effective width/length ratio; 0 represents a strip footing
+phi: Friction angle in degrees
+author: terzaghi, prandtl, meyerhof, hansen, vesic or ec7
+opt_: Optional argument; supplying it selects Terzaghi circular sγ=0.6, regardless of its value
+returns: Three-row vector {sc; sq; sγ} for the chosen bearing method.
+notes: Updated method-specific shape expressions include Meyerhof low-friction behavior, Hansen/Vesic undrained sc=1+0.2*BL, and EC7 shape factors. Supplying opt_ is significant even when its value is FALSE.
+
+[bearing_Skempton]
+DB: Depth ratio D/B (capped at 6)
+BL: Shape ratio B/L
+returns: Skempton Nc (dimensionless) for undrained bearing, qu = cu·Nc + q.
+
+[classify_AASHTO]
+pf10_: Percent passing No. 10 sieve (enter 40 for 40 %)
+pf40_: Percent passing No. 40 sieve (%)
+pf200_: Percent passing No. 200 sieve (%)
+LL_: Liquid limit LL (%), optional
+PL_: Plastic limit PL (%), optional
+returns: AASHTO group (e.g. A-2-4) with group index, as text.
+notes: Percentages are entered as numbers (40), not fractions (0.40).
+
+[ASTMtable]
+returns: Constant 100 × 2 table {group symbol, group name} of ASTM D2487 group names, in the original row order. Use it without parentheses: =ASTMtable.
+notes: Stored in the library like the LAMBDAs, so workbooks no longer need the ASTMnames sheet. The updater replaces an older ASTMtable name that pointed to that sheet.
+
+[classify_ASTM]
+list: Two-column table {symbol, group name}: normally ASTMtable; "" also uses ASTMtable
+pf4_: Percent passing No. 4 sieve (%)
+pf200_: Percent passing No. 200 sieve (%)
+Cu_: Coefficient of uniformity Cu = D60/D10, optional
+Cc_: Coefficient of curvature Cc = D30²/(D10·D60), optional
+LL_: Liquid limit LL (%), optional
+PL_: Plastic limit PL (%), optional
+organic_: Organic indicator: omit or 0 = inorganic, 1 = organic (organic fine soils are reported as OL or OH)
+returns: Text "symbol - group name", e.g. "CL - Lean clay with sand"; organic soils give "OL - Organic clay", "OH - Sandy organic silt" etc.
+notes: From 0.14 its group names agree with classify_ASTM2487, which follows the D2487 flow charts without a table.
+
+[classify_Plasticity]
+LL: Liquid limit LL (%)
+PL: Plastic limit PL (%)
+organic: Organic indicator: omit or 0 = inorganic, 1 = organic
+returns: Symbol from the plasticity chart: CL, CH, ML, MH, OL, OH or "CL & ML".
+
+[classify_USC]
+pf4_: Percent passing No. 4 sieve (%)
+pf200_: Percent passing No. 200 sieve (%)
+Cu_: Coefficient of uniformity Cu = D60/D10, optional
+Cc_: Coefficient of curvature Cc = D30²/(D10·D60), optional
+LL_: Liquid limit LL (%), optional
+PL_: Plastic limit PL (%), optional
+organic_: Organic indicator: omit or 0 = inorganic, 1 = organic
+returns: USCS group symbol (e.g. SW-SM, CL).
+notes: Coarse soils with CL-ML fines give SC-SM or GC-GM. Equal sand and gravel fractions classify as sand.
+
+[consolidation_test]
+Tarray: Column of elapsed times (min)
+Xarray: Column of dial readings (same rows as Tarray)
+ta: Start of the straight-line fitting window (same unit as Tarray)
+tb: End of the fitting window
+hi: Initial specimen height (same unit as the readings)
+returns: 10 × 2 labelled table: Cv, initial height, initial reading, d0, d100, final reading, drainage length, initial/primary/secondary compression ratios.
+notes: As in the LAMBDA, tc and xc both come from the y value of the first intersection, so Cv = 0.848/xc². Check against a hand construction.
+
+[consolidation_Tv]
+U: Average degree of consolidation (fraction, 0 ≤ U < 1)
+returns: Time factor Tv.
+
+[consolidation_U]
+tv: Time factor Tv (single value or column)
+case_: Initial excess pore pressure shape: "uniform" (default), "triangular_top", "triangular_bottom", "vshape", "saw", "sine", "parabolic", "circular"
+returns: Average degree of consolidation U (fraction), one per tv.
+notes: The number of Fourier terms adapts to the smallest tv.
+
+[consolidation_Ux]
+Xarray: Column of normalized depths z/H
+tv: Time factor Tv
+case_: Initial pore pressure shape (same choices as consolidation_U)
+returns: Column of u/u0 at each depth.
+
+[consolidation_U_approximate]
+tv: Time factor Tv
+returns: Average degree of consolidation U (fraction), closed-form approximation.
+
+[consolidation_U_variable]
+tv: Time factor Tv
+tc: Time factor at the end of construction (load ramps up linearly until tc)
+returns: Average degree of consolidation U (fraction).
+
+[cosd]
+X: Angle (degrees)
+returns: cos(X).
+
+[Coulomb_cohesiveforces]
+t: Trial wedge (slip) angle (radians)
+phi: Friction angle φ (degrees)
+alpha: Wall inclination α (degrees; 90 = vertical)
+beta: Backfill slope β (degrees)
+delta: Wall friction angle δ (degrees)
+g: Unit weight γ (kN/m³)
+h: Wall height H (m)
+coh_: Cohesion c (kPa), optional, default 0
+returns: Column {W; R; P; Cs; Cw; z0; K}: wedge weight, soil reaction, wall thrust, cohesion forces on slip plane and wall, tension-crack depth, coefficient. Forces per unit length.
+notes: t is in radians while the other angles are in degrees.
+
+[Coulomb_forces]
+t: Trial wedge (slip) angle (radians)
+phi: Friction angle φ (degrees)
+alpha: Wall inclination α (degrees; 90 = vertical)
+beta: Backfill slope β (degrees)
+delta: Wall friction angle δ (degrees)
+g: Unit weight γ (kN/m³)
+h: Wall height H (m)
+returns: Column {W; R; P; K}, forces per unit wall length.
+
+[coulomb_K]
+phi: Friction angle φ (degrees)
+alpha: Wall inclination α (degrees; 90 = vertical)
+beta: Backfill slope β (degrees)
+delta: Wall friction angle δ (degrees)
+passive: Omit for active Ka; any value gives passive Kp
+returns: Coulomb Ka or Kp.
+notes: Supplying passive (even FALSE) selects Kp; only its presence matters.
+
+[Coulomb_maximum]
+a_: Lower search bound (any value on the first call)
+b_: Upper search bound (any value on the first call)
+phi: Friction angle φ (degrees)
+alpha: Wall inclination α (degrees; 90 = vertical)
+beta: Backfill slope β (degrees)
+delta: Wall friction angle δ (degrees)
+g: Unit weight γ (kN/m³)
+h: Wall height H (m)
+iter_: Leave empty (internal iteration counter)
+returns: Column {critical slip angle (degrees); W; R; P; K}.
+
+[coulomb_theta]
+phi: Friction angle φ (degrees)
+alpha: Wall inclination α (degrees; 90 = vertical)
+beta: Backfill slope β (degrees)
+delta: Wall friction angle δ (degrees)
+returns: Critical slip angle (degrees).
+
+[cutline]
+Xarray: Column of x values of the curve
+Yarray: Column of y values of the curve
+slope: Slope of the line
+intercept: Intercept of the line
+returns: Two columns {x, y} of the crossings, #N/A if none.
+
+[elastic_circular_radius]
+s: Stress ratio Δσz/q under the centre (0 ≤ s < 1)
+returns: Ratio r/z of a circular load giving that stress ratio (for influence charts).
+
+[elastic_circular_stress]
+rValue: Radius of the loaded circle (m)
+z: Depth below the centre (m)
+nu_: Poisson's ratio, optional, default 0.3
+returns: Row {label, Δσz/q, Δσr/q}. Multiply by the applied pressure.
+
+[elastic_embankment]
+b1z: Ratio b1/z (half crest width over depth)
+b2z: Ratio b2/z (horizontal length of the side slope over depth, ≠ 0)
+returns: Osterberg influence factor I; Δσz = I·q.
+
+[elastic_Janbu_mu0]
+DB: Depth ratio D/B
+LB: Length ratio L/B: 1, 2, 5, 10, 20, 50, 100 or 200
+returns: Janbu μ0 (chart interpolation).
+
+[elastic_Janbu_mu1]
+LB: Chart abscissa (H/B)
+DB: Curve: "circle" or L/B = 1, 2, 5, 10, 20, 50, 100
+returns: Janbu μ1 (chart interpolation on a log axis).
+notes: Argument names follow the LAMBDA; check the axis meaning against the original Janbu chart.
+
+[elastic_lineload]
+x: Horizontal offset from the load (m)
+y: Depth (m)
+returns: Row {label, σx, σy, τxy} per unit line load; multiply by the load (kN/m).
+
+[elastic_lineload_horizontal]
+x: Horizontal offset from the load (m)
+y: Depth (m)
+returns: Row {label, σx, σy, τxy} per unit horizontal line load.
+
+[elastic_Newmark_factor]
+m: Ratio B/z (rectangle side over depth)
+n: Ratio L/z (other side over depth)
+returns: Influence factor under a corner; Δσz = I·q.
+
+[elastic_Newmark_stress]
+x_: x coordinate of the point
+y_: y coordinate of the point
+z_: Depth of the point
+pt: Rectangle corners (4 rows × 2 columns, opposite corners in rows 1 and 3)
+returns: Influence factor at (x, y, z); Δσz = I·q.
+notes: z = 0 is replaced by z = 1, as in the LAMBDA.
+
+[elastic_pointload]
+rValue: Horizontal distance from the load (m)
+z: Depth (m)
+nu_: Poisson's ratio, optional, default 0.3
+returns: Row {label, σz, σr, σθ, τrz} per unit point load; multiply by P (kN).
+
+[elastic_sector]
+x: x coordinate of the point
+y: y coordinate of the point
+z: Depth
+pts: Polygon vertices (two columns x, y)
+returns: Influence factor; Δσz = I·q.
+
+[elastic_sector_row]
+txy: Row: ray angle (radians) followed by the flattened polygon coordinates
+returns: Contribution of one ray (helper for elastic_sector).
+
+[elastic_sector_slice]
+ra: Inner radius
+rb: Outer radius
+z: Depth
+dt: Angular weight (sector angle / 2π)
+returns: Contribution of one annular sector.
+
+[elastic_stripload]
+B: Full width of the strip (m)
+x: Horizontal offset from the strip centre (m)
+y: Depth (m)
+returns: Row {label, σy/q, σx/q, τxy/q}.
+notes: See elastic_stripload_xy for the {σx, σy, τxy} order used in retaining-wall sheets.
+
+[elastic_triangle]
+B: Loaded width (m)
+x: Horizontal offset (m)
+y: Depth (m)
+returns: Row {label, σy/q, σx/q, τxy/q}; q is the maximum pressure.
+
+[Interpolate]
+X: Value(s) at which to interpolate
+Xa: Column of known x values (increasing or decreasing)
+Ya: Column of known y values
+mode: "linear" (default), "logx", "logy" or "logxy"
+outside: Omit for #N/A outside the table, "extrapolate" or "clamp"
+returns: Interpolated y, one per X.
+
+[intersection_polygon_line]
+polygon: Polygon vertices (two columns x, y)
+pt: Point {x, y} on the line
+t: Line angle (radians)
+returns: Two columns {x, y}; {0, 0} if there is no intersection.
+
+[intersection_polygon_ray]
+polygon: Polygon vertices (two columns x, y)
+pt: Ray origin {x, y}
+t: Ray angle (radians)
+returns: Sorted distances to the boundary.
+
+[minimum]
+A: Lower bound of the search interval
+B: Upper bound
+iter_: Leave empty (internal counter)
+returns: x of the minimum of x³ + 5x² − 10x (teaching example of golden-section search).
+
+[polygon_centroidArea]
+polygon: Vertices (two columns x, y); the first vertex may be repeated at the end
+returns: 2 × 3 table {"Centroid =", xc, yc; "Area =", A, ""}.
+
+[polygon_weightMoment]
+XY: Block vertices (two columns x, y)
+g: Unit weight (kN/m³)
+Pt: Point {x, y} about which the moment is taken
+returns: Row {W, M} per unit thickness.
+
+[pressure_forceMoment]
+d: Column of depths (m)
+p: Column of pressures (kPa)
+d0: Depth of the moment centre (m)
+returns: Row {F (kN/m), M (kN·m/m)}.
+
+[Rankine_K]
+phi: Friction angle φ (degrees)
+beta: Backfill slope β (degrees)
+returns: Rankine active coefficient Ka.
+
+[Rankine_stress]
+phi: Friction angle φ (degrees)
+coh: Cohesion c (kPa)
+alpha: Wall angle α (degrees)
+beta: Backfill slope β (degrees)
+gz: Vertical stress γ·z (kPa)
+passive: Omit for active; any value for passive
+returns: 4 × 3 labelled table: coefficient and stress inclination, stresses on the slope, pole and wall.
+
+[sind]
+X: Angle (degrees)
+returns: sin(X).
+
+[SPT_bearing]
+z: Column of depths (m)
+N: Column of SPT N values (or a single N)
+B: Footing width (m)
+D: Footing depth (m)
+author: "bowles", "meyerhof" or "terzaghi"
+returns: Allowable bearing pressure (kPa) with N averaged from D to D + B.
+
+[SPT_BurlandBurbidge_settlement]
+z: Column of depths (m)
+N: Column of SPT N values
+q: Applied pressure (kPa)
+B: Footing width (m)
+LB: Ratio L/B, optional (shape correction)
+D_: Footing depth (m), optional, default 0
+H: Thickness of the compressible layer (m), optional (thin-layer correction)
+sc: Preconsolidation pressure σ'p (kPa), optional
+returns: Settlement (mm) = fs·fl·B^0.7·Ic·q'.
+
+[SPT_correction_depth]
+s: Effective vertical stress σ'v (kPa)
+returns: Overburden correction CN = 10/√σ'v, at most 2.
+
+[SPT_Correlation_friction]
+N: SPT blow count N
+author: "peck", "schmertman" or "hatanaka"
+s: Effective vertical stress σ'v (needed by schmertman and hatanaka; kPa for hatanaka)
+pa: Atmospheric pressure in the same unit as s (needed by schmertman)
+returns: Friction angle φ (degrees).
+
+[stress_ForceMoment]
+A: Segment start {x, y}
+B: Segment end {x, y}
+sa: Stresses at A {normal, shear}
+sb: Stresses at B {normal, shear}
+returns: 3 × 3 table: force components, moment and point of application.
+notes: A zero mean normal stress makes the point of application undefined.
+
+[Stress_Mohr]
+sa: Normal stress at the pole (kPa)
+ta: Shear stress at the pole (kPa)
+alpha: Plane angle (degrees)
+sm: Centre of the Mohr circle (kPa)
+returns: Row {σ, τ} on the plane.
+
+[stress_Mohr_failure]
+sa: Known normal stress (kPa)
+ta: Known shear stress (kPa)
+A: Angle of the plane carrying (sa, ta) (degrees)
+phi: Friction angle φ (degrees)
+coh: Cohesion c (kPa)
+passive: Omit for active; any value for passive
+returns: 9 × 4 labelled table: centre, radius, pole, principal and failure-plane stresses.
+
+[stress_Mohr_pole]
+sa: Normal stress on plane A (kPa)
+ta: Shear stress on plane A (kPa)
+A: Angle of plane A (degrees)
+sb: Normal stress on the perpendicular plane (kPa)
+returns: 7 × 4 labelled table: centre, radius, pole and principal stresses.
+
+[stress_Mohrcircle]
+sm: Centre of the circle (kPa)
+rValue: Radius of the circle (kPa)
+returns: 22 × 2 table: header + 21 points {σ, τ} for an XY scatter chart.
+
+[tand]
+X: Angle (degrees)
+returns: tan(X).
+
+[vector_line]
+ptA: Segment start {x, y}
+ptB: Segment end {x, y}
+sigA: Stresses at A {normal, shear}
+sigB: Stresses at B {normal, shear}
+M: Number of vectors drawn along the segment
+s: Display scale (length per unit stress)
+returns: Two columns {x, y} for a scatter chart, vectors separated by #N/A rows.
+
+[water_pressure]
+depth: Depth below the ground surface (m)
+waterTableDepth: Depth of the water table below the ground surface (m)
+unitWeight: Unit weight of water, optional, default 9.81 kN/m³
+returns: Pore water pressure u (kPa); 0 above the water table.
+
+[elastic_stripload_xy]
+B: Full width of the strip (m)
+X: Horizontal offset from the strip centre (m)
+Y: Depth (m)
+returns: Row {label, σx/q, σy/q, τxy/q} (retaining-wall order).
+
+[circle]
+pt: Centre {x, y}
+rValue: Radius
+ta_: Start angle (degrees), optional, default 0
+tb_: End angle (degrees), optional, default 360
+n_: Number of segments, optional, default 100
+returns: Header + n+1 points {x, y} for a scatter chart.
+
+[classify_CPT_LCPC]
+qc: Cone resistance qc (MPa)
+soil: "clay", "silt", "sand", "gravel" or "chalk"
+pile: Pile type: "drilled", "cast", "steel" or "concrete"
+returns: Row {category, kc, β, qs max (MPa)} for the LCPC method.
+
+[classify_PMT_LCPC]
+pl: Limit pressure pl (MPa)
+soil: Soil type ("clay" … "rock")
+pile: Pile installation type
+returns: Row {kp, shaft-friction curve number}.
+
+[CPT_average_qc]
+z: Column of depths (m)
+qc: Column of cone resistances qc
+D: Footing depth (m)
+B: Footing width (m)
+author: "meyerhof" (D to D + 1.5B) or "robertson" (D to D + B)
+returns: Average qc over the influence zone.
+
+[CPT_bearing_Meyerhof_k]
+B: Footing width (m)
+D: Footing depth (m)
+dw: Depth of the water table (m)
+m: Optional: any value selects the 12.19 divisor instead of 40
+returns: Factor k including the water-table corrections Cw1, Cw2; multiply by the average qc.
+
+[CPT_bearing_Robertson_k]
+B: Footing width (m)
+D: Footing depth (m)
+shape: "square" or "circular"
+density: "dense" or "loose"
+returns: Bearing factor k (chart fit); qu = k·qc.
+
+[CPT_friction_angle]
+z: Depth (m)
+qc: Cone resistance qc (same unit as γ·z, so qc/σv is dimensionless)
+g: Unit weight γ (consistent with qc and z)
+author_: "robertson", "kulhawy", "ricceri" or "lee"
+returns: Friction angle φ (degrees).
+
+[CPT_Olsen_layers]
+cpt: Output table of CPT_Olsen_SCN with depth in column 1 and SCN in column 6
+returns: Header + layer thicknesses with SCN + 3.
+
+[CPT_Olsen_SCN]
+dqs: Three-column table {depth, qc, fs}
+pa: Atmospheric pressure (same unit as qc)
+n: Stress exponent for normalization
+g: Total unit weight of the soil
+gw: Unit weight of water
+dw: Depth of the water table
+returns: Table {Qn, Fr (%), SCN, soil name}, one row per depth.
+
+[CPT_Olsen_SCN_row]
+Qt: Normalized tip resistance
+Fr: Friction ratio (%)
+returns: Zone index 1–7 (helper for CPT_Olsen_SCN).
+
+[CPT_Robertson_classification_chart]
+x_: Friction ratio Fr (%)
+sel: Boundary curve letter "A" … "H"
+returns: Qt on that boundary (to draw the chart).
+
+[CPT_Robertson_layers]
+cpt: Output table of CPT_Robertson_SBT (depth in column 1, SBT in column 6, SBT(Ic) in column 9)
+returns: Layer thicknesses for SBT and SBT(Ic).
+
+[CPT_Robertson_SBT]
+dqs: Three-column table {depth, qc, fs}
+pa: Atmospheric pressure (same unit as qc)
+n: Stress exponent for normalization
+g: Total unit weight of the soil
+gw: Unit weight of water
+dw: Depth of the water table
+returns: Table {Qn, Fr, SBT, name, Ic, SBT(Ic), name}, one row per depth.
+
+[CPT_Robertson_SBT_row]
+Qt_: Normalized tip resistance
+Fr_: Friction ratio (%)
+returns: SBT zone 1–9, 0 if outside the chart (helper for CPT_Robertson_SBT).
+
+[CPT_settlement]
+zqc: Two-column table {depth (m), qc}
+k: Modulus factor E/qc (e.g. 2.5 square, 3.5 strip)
+B: Footing width (m)
+D: Footing depth (m)
+L: Footing length (m)
+qn: Net applied pressure (same unit as qc)
+g: Unit weight above footing level
+returns: "Settlement =" row, then a table {depth, qc, E, Iz, ε} for the influence zone.
+
+[CPT_settlement_Iz]
+z: Depth(s) (m)
+B: Footing width (m)
+D: Footing depth (m)
+L: Footing length (m)
+qn: Net applied pressure
+g: Unit weight above footing level
+returns: Schmertmann strain influence factor Iz at each depth.
+
+[distance_point_polyline]
+M: Point {x, y}
+pl: Polyline vertices (two columns x, y)
+returns: Distance from M to the line through each segment.
+
+[interpolate_table]
+x: Value along the first row of the table
+Y: Value along the first column of the table
+XY: Table: x values in row 1, y values in column 1 (ascending), data inside
+returns: Bilinear interpolation at (x, Y).
+notes: As in the LAMBDA, the fourth corner uses INDEX(Za, r+1, c) like another corner; it was probably meant to be INDEX(Za, r, c+1). Check results near table cells.
+
+[intersection_polyline_circle]
+pline: Polyline vertices (two columns x, y)
+center: Circle centre {x, y}
+radius: Circle radius
+returns: Intersection points {x, y}.
+
+[intersection_polyline_polyline]
+pl: First polyline (two columns x, y)
+ql: Second polyline (two columns x, y)
+m: Optional: keep only the m intersections with the largest x
+returns: Rows {segment parameter, x, y}.
+
+[intersection_segment_polyline]
+row: Flattened row: segment end points, then the polyline coordinates
+returns: Segment parameter of the intersection (helper).
+
+[intersection_spiral_segment]
+AB_: Segment end points (2 rows × 2 columns)
+pt: Spiral centre {x, y}
+rValue: Spiral initial radius
+phi: Friction angle φ of the spiral (degrees)
+x_: Optional starting guess
+iter_: Leave empty (internal counter)
+returns: Intersection point {x, y} (Newton iteration).
+
+[lateralpile_Broms_cohesionless]
+D: Embedded length of the pile (m)
+phi: Friction angle φ (degrees)
+g: Unit weight γ (kN/m³)
+B: Pile diameter (m)
+e: Height of the load above the ground (m)
+returns: Column {ultimate lateral load V; depth of maximum moment; Mmax}.
+
+[lateralpile_Broms_cohesive]
+V: Lateral load (kN)
+e: Height of the load above the ground (m)
+Su: Undrained shear strength (kPa)
+B: Pile diameter (m)
+returns: Column {required embedment D; rotation depth Dr; depth of max moment; Mmax}.
+
+[lateralpile_cohesionless_reaction_shear_moment]
+D: Embedded length (m)
+phi: Friction angle φ (degrees)
+g: Unit weight γ (kN/m³)
+B: Pile diameter (m)
+e: Height of the load above the ground (m)
+returns: Header + depth, line reaction, shear and moment: 101 profile rows for e>0; 51 for e=0.
+notes: Version 0.16 replaces the former integration under the same function name and arguments; former _v2 calls migrate to this name.
+notes: Reaction is force per unit pile length (kN/m in SI), including the pile width. Depth is positive above ground and negative below.
+notes: Output row counts differ from earlier releases. Use the complete spill range for tables and charts.
+
+[lateralpile_cohesive_reaction_shear_moment]
+V: Lateral load (kN)
+e: Height of the load above the ground (m)
+Su: Undrained shear strength (kPa)
+B: Pile diameter (m)
+D_: Embedded length (m), optional (default from Broms)
+Dr_: Rotation depth (m), optional (default from Broms)
+returns: Header + 121 profile rows of depth, line reaction, shear and moment. Repeated depths represent exact pressure jumps.
+notes: Version 0.16 replaces the former integration under the same function name and arguments; former _v2 calls migrate to this name.
+notes: Reaction is force per unit pile length (kN/m in SI), including the pile width. Depth is positive above ground and negative below.
+notes: Positive-load Broms convention; use V>=0, e>=0, Su>0, B>0 and D>=Dr>=1.5B. Repeated-depth rows may show intermediate reaction values at a zero-thickness jump.
+notes: Output row counts differ from earlier releases. Use the complete spill range for tables and charts.
+
+[logSpiral]
+pt: Centre {x, y}
+rValue: Initial radius r0
+phi: Friction angle φ (degrees)
+ta_: Start angle (degrees), optional, default 0
+tb_: End angle (degrees), optional, default −180
+n_: Number of segments, optional, default 100
+returns: n+1 points {x, y} of r = r0·exp(−θ·tanφ) for a scatter chart.
+
+[pile_capacity_CPT_Schmertman]
+z_qc_fs_soil: Table {depth (m), qc, fs, optional soil ("clay", "silt", "sand", "gravel"; default sand)}
+A: Pile tip area (m²)
+p: Pile perimeter (m)
+L: Pile length (m)
+pile: "steel", "concrete" or "timber"
+returns: Labelled table: ultimate, shaft and tip capacity, average fs and qc.
+
+[pile_shaft_alpha]
+z: Column of depths (m)
+Su: Column of undrained shear strengths (kPa)
+pa: Atmospheric pressure (kPa, about 101)
+p: Pile perimeter (m)
+L: Pile length (m)
+author: "terzaghi" or "reese"
+returns: Ultimate shaft resistance (kN).
+
+[pile_sidefriction_alpha]
+Su: Normalized strength Su/pa
+author: "terzaghi" or "reese"
+returns: Adhesion factor α.
+
+[pile_sidefriction_lambda]
+D_: Pile length (m, or ft if ft is supplied)
+ft: Optional: any value means D_ is in feet
+returns: λ coefficient (Vijayvergiya–Focht).
+
+[pile_tip_Meyerhof]
+pa: Atmospheric pressure (kPa)
+cValue: Cohesion c (kPa)
+phi: Friction angle φ (degrees)
+returns: Labelled ultimate tip pressure c·Nc + pa·Nq·tanφ/2.
+
+[pile_tip_meyerhof_factor]
+phi: Friction angle φ (degrees)
+returns: Column {Nq; Nc}.
+
+[pile_tip_vesic]
+sv: Vertical effective stress at the tip (kPa)
+pa: Atmospheric pressure (kPa)
+cValue: Cohesion c (kPa)
+phi_: Friction angle φ (degrees), optional, default 0
+Dr_: Relative density (fraction), optional, default 0.1
+returns: Labelled column {qu; Nq; Nc; reduced rigidity index Irr; mean stress σm}.
+
+[pile_tip_vesic_factor]
+phi: Friction angle φ (degrees)
+Ir: Rigidity index Ir
+returns: Column {Nq; Nc}.
+
+[PMT_alpha]
+soil: "peat", "clay", "silt", "sand", "gravel" or "rock"
+Epl: Ratio E/pl
+returns: Ménard rheological factor α.
+
+[PMT_bearing_limitPressure]
+z: Column of test depths (m)
+pl: Column of limit pressures pl
+B: Footing width (m)
+D: Footing depth (m)
+returns: Column {ple; De}: equivalent limit pressure (geometric mean from D to D + 1.5B) and equivalent embedment.
+
+[PMT_bearing_Menard]
+z: Column of test depths (m)
+pl: Column of limit pressures pl
+B: Footing width (m)
+D: Footing depth (m)
+L: Footing length (m)
+soil: Ménard category "I", "II", "III" or "IIIA"
+g: Unit weight above footing level
+returns: Labelled column {qu; ple; k}, qu = k·ple + γ·De.
+
+[PMT_bearing_Menard_k]
+H: Ratio De/(B/2)
+BL: Shape ratio B/L
+soil: Ménard category "I", "II", "III" or "IIIA"
+returns: Bearing factor k, interpolated between strip and square.
+
+[PMT_layers]
+B: Footing width (m)
+D: Footing depth (m)
+returns: Plotting lines of the 16 Ménard sub-layers of thickness B/2.
+
+[stepProfile]
+x: Column of depths
+y: Column of values
+returns: Two columns for a step plot.
+
+[SPT_stepProfile]
+x: Column of depths
+y: Column of N values
+returns: Two columns for a step plot (plotting tool, not an SPT correction).
+
+[CPT_stepProfile]
+x: Column of depths
+y: Column of CPT values
+returns: Two columns for a step plot.
+
+[PMT_staircase]
+x: Column of depths
+y: Column of pressuremeter values
+returns: Two columns for a step plot.
+
+[polygon_area_centroid]
+polygon: Vertices (two columns x, y); the first vertex may be repeated at the end
+returns: 2 × 3 table {"Centroid =", xc, yc; "Area =", A, ""}.
+
+[Polygon_inside]
+x: x of the point
+y: y of the point
+xa: Column of polygon x coordinates
+ya: Column of polygon y coordinates
+returns: TRUE if the point lies below exactly one polygon edge (vertical-ray test).
+
+[polyline_subdivide]
+X: x value
+polyline: Polyline vertices (two columns x, y)
+returns: y at X by linear interpolation along the polyline.
+
+[settlement_Schmertman_factor]
+z: Depth (m)
+Imax: Peak strain influence factor Izp
+B: Footing width (m)
+za: Depth of the footing base (m)
+BL_: Optional shape: 0 = square/axisymmetric (default), 1 = strip
+returns: Strain influence factor Iz at z.
+
+[slope_circle_cohesive]
+pline: Ground surface polyline (two columns x, y)
+center: Circle centre {x, y}
+radius: Circle radius (m)
+cu: Undrained shear strength (kPa)
+unitweight: Unit weight (kN/m³)
+detail: Optional: any value returns the details table instead of FS only
+returns: Factor of safety; with detail: FS, area, arc length, centroid, entry and exit points.
+
+[slope_circle_polyline]
+pl: Ground surface polyline (two columns x, y)
+center: Circle centre {x, y}
+radius: Circle radius
+returns: Centroid, entry/exit points and angles and area of the sliding mass.
+
+[slope_circle_polyline_cohesive]
+pline: Ground surface polyline (two columns x, y)
+center: Circle centre {x, y}
+radius: Circle radius (m)
+cu: Undrained shear strength (kPa)
+unitweight: Unit weight (kN/m³)
+detail: Optional: any value returns the details table
+returns: Factor of safety (or details) using polygon geometry.
+
+[slope_friction_circle]
+pline: Ground surface polyline (two columns x, y)
+pt: Circle centre {x, y}
+rValue: Circle radius (m)
+coh: Cohesion c (kPa)
+phi: Friction angle φ (degrees)
+g: Unit weight γ (kN/m³)
+opt_: Optional: any value uses the alternative Taylor factor
+returns: Labelled table: factor of safety and force polygon.
+notes: Not yet checked against a worked example; compare with a hand solution before teaching use.
+
+[slope_friction_circle_fct]
+FS: Trial frictional factor of safety (accepts a column)
+f: Friction angle (radians)
+coh: Cohesion c
+w: Weight of the sliding mass
+kr: Taylor factor k
+rValue: Circle radius
+OD: Distance used for the line of action of the weight
+DM: Lever arm of the cohesion resultant
+alpha: Direction of the cohesion resultant (radians)
+Lc: Chord length
+returns: Cohesion factor of safety for each trial FS (helper).
+
+[slope_friction_circle_Taylor]
+t: Central angle of the arc (radians)
+opt: 1 selects the alternative formula
+returns: Taylor friction-circle radius factor k.
+
+[slope_friction_FS]
+FS: Trial factor of safety
+f: Friction angle (radians)
+coh: Cohesion c
+w: Weight of the sliding mass
+kr: Taylor factor k
+rValue: Circle radius
+a: Distance used for the line of action of the weight
+DM: Lever arm of the cohesion resultant
+alpha: Direction of the cohesion resultant (radians)
+ab: Chord length
+returns: Residual FS − FSc (helper for root finding).
+
+[slope_logSpiral]
+pl: Ground surface polyline (two columns x, y)
+pt: Spiral centre {x, y}
+rValue: Initial radius
+phi: Friction angle φ (degrees)
+coh: Cohesion c (kPa)
+g: Unit weight γ (kN/m³)
+returns: Factor of safety, centroid, weight, entry/exit points, resisting and driving moments.
+
+[slope_slices]
+pline: Ground surface polyline (two columns x, y, x increasing)
+center: Circle centre {x, y}
+radius: Circle radius (m)
+coh: Cohesion c (kPa); effective c' when a phreatic line is given
+phi: Friction angle φ (degrees); effective φ' when a phreatic line is given
+gamma: Unit weight γ of the soil (kN/m³), one value for the whole mass
+n: Number of equal-width slices; extra boundaries are added at ground break points
+wline_: Optional phreatic line (two columns x, y, x increasing); omit for no water
+gammaw_: Optional unit weight of water γw (9.81 kN/m³ or 62.4 pcf); needed with wline_
+method_: Optional: 0, "Normal" or "Fellenius" for the ordinary method; 1 or any text containing "Bishop" for simplified Bishop (default)
+detail_: Optional: any value returns the summary row and the slice table instead of FS
+returns: FS by the selected method; with detail_, a summary row (FS Fellenius, FS Bishop, entry and exit x, number of slices), a header row and one row per slice: x mid, width, height, α (deg), weight, u, base length, m_α, resisting and driving terms.
+notes: Fellenius FS = Σ[c·l + (W cos α − u·l) tan φ] / Σ W sin α. Bishop FS = Σ[(c·b + (W − u·b) tan φ)/m_α] / Σ W sin α with m_α = cos α + sin α tan φ / FS, by 30 fixed-point passes from the Fellenius value.
+notes: Slice height is taken at mid-width on the true circle (as in Huang); pore pressure u = γw × height of the phreatic line above the slice base, 0 where the line is absent.
+notes: Checked against Huang (Example, p. 235): same slice heights and angles; Fellenius 1.6172 vs 1.6175 from the hand table. With φ = 0 both methods equal slope_circle_cohesive.
+notes: Returns #N/A when the circle does not cross the ground line twice. Watch m_α in the table: values near 0 at the toe make Bishop unreliable.
+notes: Uniform soil only: no layers, no separate saturated unit weight, no ponded water. Use Solver on the FS cell to find the critical circle.
+
+[slope_slices_plot]
+pline: Ground surface polyline (two columns x, y, x increasing)
+center: Circle centre {x, y}
+radius: Circle radius (m)
+n: Number of slices (same as in slope_slices)
+returns: Two columns {x, y} tracing every slice boundary base-top-base, joined along the slip circle; plot as a scatter with lines.
+notes: Uses the same slice boundaries as slope_slices, so the chart shows exactly the slices analysed.
+
+[SPT_depthCorrection]
+s: Effective vertical stress σ'v (kPa)
+returns: Overburden correction CN, at most 2.
+
+[SPT_frictionAngle]
+N: SPT blow count N
+spa_: Ratio σ'v/pa, optional, default 1
+author_: "peck" (default), "schmertman" or "hatanaka"
+returns: Friction angle φ (degrees).
+
+[Step_table]
+x: Column of x values
+y: Column of y values
+returns: Staircase table for a step plot.
+notes: The first row uses the first y value (the LAMBDA uses INDEX(y, 0)).
+
+[intersection_polygon_line_slope]
+polyline: Closed polygon (two columns x, y)
+M: Point {x, y} on the line
+t: Line angle (radians)
+returns: Intersections {x, y}; {0, 0} if none.
+
+[grainsizeanalysis]
+d: Column of particle diameters (mm)
+p: Column of percent passing (%), any order
+returns: Column {D10; D30; D60; Cu; Cc; % clay; % silt; % sand; % gravel}.
+
+[pile_capacity_alpha]
+zSu: Two-column table {depth (m), Su (kPa)}
+pa: Atmospheric pressure (kPa)
+a: Pile tip area (m²)
+p: Pile perimeter (m)
+L: Pile length (m)
+author: "terzaghi" or "reese"
+D_: Depth of the pile top (m), optional, default 0
+returns: Labelled column {ultimate; shaft; tip} (kN), tip = 9·Su·A.
+
+[pile_capacity_CPT_LCPC]
+z_qc_soil: Table {depth (m), qc (MPa), soil}
+a: Pile tip area (m²)
+p: Pile perimeter (m)
+L: Pile length (m)
+pile: Pile type ("drilled", "cast", "steel", "concrete")
+returns: Labelled table: ultimate, shaft, tip, average qc at the tip, average qs, kc.
+
+[pile_capacity_Fellenius]
+z_phi_sv_soil: Table {depth (m), φ (degrees), σ'v (kPa), soil ("clay", "silt", "sand", "gravel")}
+a: Pile tip area (m²)
+p: Pile perimeter (m)
+L: Pile length (m)
+D_: Depth of the pile top (m), optional, default 0
+returns: Labelled column {ultimate; shaft; tip} (kN).
+notes: Depths outside the table give #N/A.
+
+[pile_capacity_PMT_LCPC]
+z_pl_sv_soil: Table {depth (m), pl (MPa), σv, soil}
+a: Pile tip area (m²)
+p: Pile perimeter (m)
+L: Pile length (m)
+pile: Pile installation type
+returns: Labelled column {ultimate; shaft; tip}.
+
+[pile_capacity_SPT_Meyerhof]
+zN: Two-column table {depth (m), N}
+pa: Atmospheric pressure (kPa)
+a: Pile tip area (m²)
+p: Pile perimeter (m)
+L: Pile length (m)
+disp: Optional: any value = displacement (driven) pile
+returns: Labelled table: ultimate, shaft, tip, average N along the shaft and at the tip.
+
+[pile_shaft_lambda]
+z_Su_sv: Table {depth, Su, σ'v}
+p: Pile perimeter
+L: Pile length (m, or ft if ft is supplied)
+ft: Optional: any value means lengths are in feet
+returns: Labelled table: shaft capacity, λ, average Su and σ'v.
+
+[PMT_shaftFriction]
+pl: Limit pressure pl (MPa); accepts a column
+i: LCPC curve number 1–7
+returns: Unit shaft friction qs (MPa).
+
+[PMT_pile_shaftFriction]
+pl: Limit pressure pl (MPa)
+classi: Curve "q1" … "q7"
+returns: Unit shaft friction qs (MPa).
+
+[PMT_settlement_lambda]
+LB: Ratio L/B
+opt_: Optional: "v" = λc only, "d" = λd only; omit for both
+returns: Column {λc; λd} (0 if L/B < 1).
+
+[PMT_lambda]
+LB: Ratio L/B
+returns: Column {λc; λd}.
+
+[PMT_moduli]
+yEpl: Table {depth (m), E, pl}
+B: Footing width (m)
+D: Footing depth (m)
+returns: Labelled table: Ec, Ed and equivalent pl, then the 16 sub-layer values.
+
+[PMT_bearing_Eurocode]
+z: Column of test depths (m)
+pl: Column of limit pressures pl (MPa)
+B: Footing width (m)
+D: Footing depth (m)
+L: Footing length (m)
+soil: "clay silt", "sand gravel" or "chalk"
+g: Unit weight above footing level
+returns: Labelled column {qu; ple; k}.
+
+[PMT_bearing_eurocode_k]
+B: Footing width (m)
+L: Footing length (m)
+D: Embedment (m)
+pl: Limit pressure pl (MPa)
+soil_: "clay silt", "sand gravel" or "chalk"
+returns: Bearing factor k.
+
+[PMT_settlement_basic]
+q: Net applied pressure
+Ec: Volumetric (spherical) modulus Ec, same unit as q
+Ed: Deviatoric modulus Ed
+B: Footing width (m)
+LB: Ratio L/B
+ac: Rheological factor α for the volumetric term
+ad: Rheological factor α for the deviatoric term
+B0_: Reference width (m), optional, default 1
+returns: Column {sc; sd; total} (m).
+
+[PMT_settlement]
+q: Net applied pressure
+yEpl: Table {depth (m), E, pl}
+B: Footing width (m)
+D: Footing depth (m)
+L: Footing length (m)
+soil: "peat", "clay", "silt", "sand", "gravel" or "rock"
+ft_: Optional units flag: omit for B0 = 0.6 m; any value for B0 = 2 ft
+returns: Labelled table: total, volumetric and deviatoric settlement, α, λ, Ec, Ed.
+notes: Supplying ft_ (even FALSE) selects B0 = 2; omitting it selects B0 = 0.6.
+
+[shearMoment]
+d: Column of depths (m)
+p: Column of pressures (kPa)
+k: Subdivisions per segment
+returns: Columns {depth, pressure, shear, moment}.
+
+[beam]
+d: Column of depths (m)
+p: Column of pressures (kPa)
+n: Subdivisions per segment, optional, default 20
+returns: Columns {depth, pressure, shear, moment}, no header.
+
+[pressure_shear_moment]
+d: Column of depths (m)
+p: Column of pressures (kPa)
+n: Subdivisions per segment, optional, default 20
+returns: Header + columns {depth, pressure, shear, moment}.
+
+[pressure_shear_moment_anchor]
+d: Column of depths (m)
+p: Column of pressures (kPa)
+da: Depth of the anchor (m)
+Ta: Anchor force (kN/m)
+n: Subdivisions per segment, optional, default 20
+returns: Header + columns {depth, pressure, shear, moment} including the anchor force.
+
+[SPT_bearing_direct]
+N: SPT blow count N (average below the footing)
+B: Footing width (m)
+D: Footing depth (m)
+author: "bowles", "meyerhof" or "terzaghi"
+returns: Allowable bearing pressure (kPa).
+
+[classify_ASTM2487]
+pf4: Percent passing No. 4 sieve (%)
+pf200: Percent passing No. 200 sieve (%)
+cu_: Coefficient of uniformity Cu = D60/D10, optional
+cc_: Coefficient of curvature Cc = D30²/(D10·D60), optional
+ll_: Liquid limit LL (%), optional
+pl_: Plastic limit PL (%), optional
+ratio_: LL oven-dried / LL not dried, optional (below 0.75 = organic; blank = inorganic)
+returns: Row {group symbol, group name}, e.g. {"SC", "Clayey sand with gravel"}.
+notes: Peat (Pt) is identified visually and is not returned.
+
+[lateralpile_integrate]
+x: Column of coordinates in descending order, including repeated coordinates at pressure jumps
+pressure: Matching column of line reaction (kN/m in SI)
+topShear: Applied shear at the first coordinate (kN in SI)
+subdivisions: Positive integer number of subdivisions per segment
+returns: Four columns without header: depth, reaction, shear, moment.
+notes: Shared helper for the lateral-pile diagram functions. Uses shearMoment and preserves their moment sign convention.
+
+[seepage_eqline]
+xs: Strictly monotonic x coordinates, one per H column; row or column vector
+ys: Strictly monotonic y coordinates, one per H row; row or column vector
+H: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
+level: Scalar contour level
+branch: Optional 1-based index of an active-domain boundary crossing, default 1; selects a start crossing, not all connected components
+smooth: Optional smoothing switch, default 1: 0 returns cell-edge crossings only; any nonzero value adds a projected interior point except in thin cells
+nmax: Optional positive maximum number of cell-tracing iterations; nonpositive or omitted uses 2 times the number of mesh cells
+returns: Two XY columns for a contour traced through connected soil cells. Missing boundary crossing/branch returns #N/A. Smoothing can add one interior point per traversed non-thin cell.
+notes: Traces cell-edge crossings from an active-domain boundary. With smooth enabled, the midpoint is projected twice toward the bilinear contour and clamped to the cell. This is not a user-selected step-size integrator.
+notes: The former sixth argument ds is now smooth; existing positional calls with a nonzero sixth value enable smoothing rather than setting a step length.
+notes: Closed interior contours without a boundary seed and ambiguous saddle cells are not handled generally. Reaching nmax truncates without a separate status flag.
+notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definitions are preserved, not a new solution of the head field.
+
+[seepage_eqlines]
+xs: Strictly monotonic x coordinates, one per H column; row or column vector
+ys: Strictly monotonic y coordinates, one per H row; row or column vector
+H: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
+levels: Vector of contour levels
+smooth: Optional smoothing switch, default 1: 0 returns cell-edge crossings only; any nonzero value adds a projected interior point except in thin cells
+nmax: Optional positive maximum number of cell-tracing iterations; nonpositive or omitted uses 2 times the number of mesh cells
+returns: XY contour coordinates stacked with intentional #N/A separator rows; uses the first boundary crossing for each level.
+notes: The former fifth argument ds is now smooth. Uses seepage_eqline for each level and inherits its branch and truncation limits.
+notes: Intentional #N/A rows separate contours. Some Excel chart settings connect across gaps; use separate chart series for disconnected paths when needed.
+notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definitions are preserved, not a new solution of the head field.
+
+[seepage_flowlines]
+xs: Strictly monotonic x coordinates, one per H column; row or column vector
+ys: Strictly monotonic y coordinates, one per H row; row or column vector
+H: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
+levels: Vector of stream-function levels psi (not head levels)
+k: Optional positive uniform isotropic conductivity, default 1
+edge: Optional boundary derivative mode: 0 or 4 = finite-difference mass balance (default), 1 = zero normal derivative, 2 = two-point, 3 = three-point; {first,last} selects the two sides of the differentiation axis
+returns: XY coordinates for contours of seepage_psigrid, stacked with #N/A separators.
+notes: Uses the corrected geoXL 0.19 seepage_gradgrid; edge=3 supports ascending and descending coordinates. Other boundary-condition and stream-function assumptions still apply.
+notes: Computes seepage_psigrid with bottom reference 0, then contours psi using seepage_eqlines. This is not particle tracking. Inherits the stream-function boundary assumptions and contour limitations.
+notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definitions are preserved, not a new solution of the head field.
+
+[seepage_gradgrid]
+xs: Strictly monotonic x coordinates, one per H column; row or column vector
+ys: Strictly monotonic y coordinates, one per H row; row or column vector
+H: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
+axis: 1 = dh/dx; 2 = dh/dy
+edge: Optional boundary derivative mode: 0 or 4 = finite-difference mass balance (default), 1 = zero normal derivative, 2 = two-point, 3 = three-point; {first,last} selects the two sides of the differentiation axis
+returns: Nodal dh/dx (axis 1) or dh/dy (axis 2), with the shape of H; inactive nodes return #N/A.
+notes: Corrected in geoXL 0.19: three-point boundary mode edge=3 selects its next neighbor by index direction, supporting both ascending and descending coordinates. The earlier descending-axis stencil restriction in 0.18 is removed.
+notes: Internal derivative helper. Recognizes inactive nodes and thin wall slots; equal-head duplicates can share the primary coordinate. Interior derivatives use nonuniform quadratic differences.
+notes: Boundary edge mode: 0 or 4 = finite-difference mass balance (default), 1 = zero normal derivative, 2 = two-point, 3 = three-point. A {first,last} vector sets the two sides of the differentiation axis. Boundary conditions must match the physical problem; mass-balance corner allocation is approximate.
+notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definitions are preserved, not a new solution of the head field.
+
+[seepage_hfield]
+xs: Strictly monotonic x coordinates, one per H column; row or column vector
+ys: Strictly monotonic y coordinates, one per H row; row or column vector
+H: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
+x: Scalar x query coordinate, or paired array for seepage_hxy
+y: Scalar y query coordinate, or paired array for seepage_hxy
+returns: One row {head, dh/dx, dh/dy} from a selected valid containing cell; {#N/A,#N/A,#N/A} if no suitable cell is found.
+notes: Uses bilinear interpolation and its analytic derivatives inside an eligible cell. It tests nearby cells to handle boundaries and prefers full cells over thin cells.
+notes: Outside the active soil domain returns #N/A; the old nearest-edge-cell extrapolation behavior has been removed.
+notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definitions are preserved, not a new solution of the head field.
+
+[seepage_hxy]
+xs: Strictly monotonic x coordinates, one per H column; row or column vector
+ys: Strictly monotonic y coordinates, one per H row; row or column vector
+H: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
+x: Scalar x query coordinate, or paired array for seepage_hxy
+y: Scalar y query coordinate, or paired array for seepage_hxy
+returns: Interpolated head at a scalar pair, or heads at paired x/y arrays; #N/A where no valid containing soil cell is selected.
+notes: Uses seepage_hfield. Supply a scalar pair or arrays of matching shape; a scalar x is not broadcast over an array of y values.
+notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definitions are preserved, not a new solution of the head field.
+
+[seepage_psigrid]
+xs: Strictly monotonic x coordinates, one per H column; row or column vector
+ys: Strictly monotonic y coordinates, one per H row; row or column vector
+H: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
+k: Optional positive uniform isotropic hydraulic conductivity; omitted or nonpositive values use 1
+psiref: Optional constant stream-function value on the bottom row (minimum y), default 0
+edge: Optional boundary derivative mode: 0 or 4 = finite-difference mass balance (default), 1 = zero normal derivative, 2 = two-point, 3 = three-point; {first,last} selects the two sides of the differentiation axis
+returns: Nodal stream-function matrix psi, with the shape of H; inactive nodes return #N/A.
+notes: Uses the corrected geoXL 0.19 seepage_gradgrid; edge=3 supports ascending and descending coordinates. Other boundary-condition and stream-function assumptions still apply.
+notes: Uses Darcy velocity v=-k grad(H), integrates qx vertically by trapezoids from the minimum-y row, and applies a lateral correction next to thin wall slots. Assumes uniform isotropic positive conductivity; omitted or nonpositive k uses 1.
+notes: The bottom stream-function reference assumes a constant psi along that boundary. This is not a general stream-function solver for arbitrary base flux or disconnected soil domains.
+notes: For x, y and H in m and k in m/s, psi is discharge per unit out-of-plane width in m^2/s; k=1 gives normalized flow.
+notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definitions are preserved, not a new solution of the head field.
+
+[seepage_segprofile]
+xs: Strictly monotonic x coordinates, one per H column; row or column vector
+ys: Strictly monotonic y coordinates, one per H row; row or column vector
+H: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
+xA: Segment start x coordinate
+yA: Segment start y coordinate
+xB: Segment end x coordinate
+yB: Segment end y coordinate
+n: Optional positive integer subdivision count, default 50; returns n+1 sample points
+k: Optional positive uniform isotropic conductivity, default 1
+edge: Optional boundary derivative mode: 0 or 4 = finite-difference mass balance (default), 1 = zero normal derivative, 2 = two-point, 3 = three-point; {first,last} selects the two sides of the differentiation axis
+returns: Eight columns {distance s, x, y, head, vx, vy, vn, psi}, without a header.
+notes: Uses the corrected geoXL 0.19 seepage_gradgrid; edge=3 supports ascending and descending coordinates. Other boundary-condition and stream-function assumptions still apply.
+notes: Darcy velocity v=-k grad(H); vn uses the right-hand normal (ty,-tx) from A to B. These are Darcy velocities, not pore-water velocities. Endpoints must be distinct.
+notes: Gradient and stream-function grids are interpolated separately. Samples outside eligible soil cells can return #N/A. Inherits boundary-mode and bottom-reference assumptions.
+notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definitions are preserved, not a new solution of the head field.
+
+[seepage_segstats]
+xs: Strictly monotonic x coordinates, one per H column; row or column vector
+ys: Strictly monotonic y coordinates, one per H row; row or column vector
+H: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
+xA: Segment start x coordinate
+yA: Segment start y coordinate
+xB: Segment end x coordinate
+yB: Segment end y coordinate
+k: Optional positive uniform isotropic conductivity, default 1
+n: Optional positive integer subdivision count, default 50
+edge: Optional boundary derivative mode: 0 or 4 = finite-difference mass balance (default), 1 = zero normal derivative, 2 = two-point, 3 = three-point; {first,last} selects the two sides of the differentiation axis
+returns: One row {length, mean head, minimum head, maximum head, Q=psi(B)-psi(A), mean normal velocity=Q/length}.
+notes: Uses the corrected geoXL 0.19 seepage_gradgrid; edge=3 supports ascending and descending coordinates. Other boundary-condition and stream-function assumptions still apply.
+notes: Mean head uses trapezoidal samples; minimum and maximum are sampled extrema. Q=psi(B)-psi(A), not an independent quadrature of vn. Endpoints must be distinct.
+notes: Optional arguments are [k],[n],[edge], whereas seepage_segprofile uses [n],[k],[edge]. Invalid/outside samples can propagate #N/A.
+notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definitions are preserved, not a new solution of the head field.
+
+[seepage_cellok]
+xs: Strictly monotonic x coordinates, one per H column; row or column vector
+ys: Strictly monotonic y coordinates, one per H row; row or column vector
+H: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
+rw: 1-based cell row; spans H rows rw and rw+1
+cl: 1-based cell column; spans H columns cl and cl+1
+returns: TRUE for a cell with four numeric corner heads and no detected thin wall slot; otherwise FALSE.
+notes: Internal helper shared by interpolation and contour tracing. Thin x/y intervals are detected relative to one quarter of the median absolute spacing. A thin interval across unequal paired heads is treated as a wall slot.
+notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definitions are preserved, not a new solution of the head field.
+
+[seepage_stencil]
+a: Head at one of the four directly adjacent nodes
+b: Head at a second directly adjacent node
+cValue: Head at a third directly adjacent node
+d: Head at the fourth directly adjacent node
+returns: Interior-node head estimate (a+b+cValue+d)/4, in the same units as the inputs.
+notes: For steady two-dimensional seepage in homogeneous isotropic soil on a uniform square grid, the discrete Laplace equation gives the arithmetic mean of four nearest-neighbor heads. Neighbor order is immaterial.
+notes: Intended for worksheet finite-difference equations and iterative calculation. A single call evaluates a local relation; it does not solve the entire grid. Unequal spacing or anisotropic conductivity requires different weights.
+notes: Example: =seepage_stencil(10,6,8,4) returns 7. Added in geoXL 0.20.
+
+[seepage_stencil1]
+n: Head at the neighbor directed into the soil, normal to the no-flow edge
+ta: Head at one neighbor along the no-flow edge
+tb: Head at the other neighbor along the no-flow edge
+returns: No-flow edge-node head estimate (2*n+ta+tb)/4.
+notes: Reflecting the interior neighbor across a zero-normal-flux edge gives a mirror-node half-cell stencil on a uniform square grid in homogeneous isotropic soil. The interior neighbor has double weight.
+notes: Apply only to a straight impermeable boundary aligned with the grid. This is not a prescribed-head boundary formula. Unequal spacing or anisotropic conductivity requires different weights.
+notes: Example: =seepage_stencil1(8,4,12) returns 8. Added in geoXL 0.20.
+
+[seepage_stencil2]
+a: Head at one adjacent node into the soil along a no-flow edge
+b: Head at the other adjacent node into the soil along the second no-flow edge
+returns: Outer-corner head estimate (a+b)/2.
+notes: At a convex 90-degree corner where two grid-aligned impermeable boundaries meet, a quarter-cell mass balance on a uniform square grid in homogeneous isotropic soil gives equal weights to the two soil neighbors.
+notes: Both boundaries must have zero normal flux. Do not use this formula at a re-entrant corner or a prescribed-head boundary. Unequal spacing or anisotropic conductivity requires different weights.
+notes: Example: =seepage_stencil2(6,10) returns 8. Added in geoXL 0.20.
+
+[seepage_stencil3]
+fa: Head at a neighbor across a full control-volume face
+fb: Head at the other neighbor across a full control-volume face
+ha: Head at a neighbor across a half control-volume face
+hb: Head at the other neighbor across a half control-volume face
+returns: Re-entrant-corner head estimate (2*fa+2*fb+ha+hb)/6.
+notes: At a concave 270-degree soil corner with grid-aligned no-flow boundary segments, a three-quarter-cell mass balance gives full-face neighbors twice the weight of half-face neighbors, for a uniform square grid in homogeneous isotropic soil.
+notes: Identify full and half faces from the soil control volume, not from an arbitrary neighbor order. Unequal spacing or anisotropic conductivity requires different weights.
+notes: Example: =seepage_stencil3(12,6,3,9) returns 8. Added in geoXL 0.20.
+
+[CPT_classify]
+dqs: Three-column sounding array: depth, cone resistance qc, sleeve friction fs; positive depth measured downward
+pa: Reference atmospheric pressure, in the same stress units as qc and fs
+g: Total soil unit weight, consistent with stress and depth units
+gw: Water unit weight, in the same units as g
+dw: Water-table depth below the ground surface
+n: Stress-normalization exponent for the Robertson normalized resistance
+nscn: Optional stress-normalization exponent for Olsen; omitted uses n
+returns: Ten columns: Qn, Fr (%), Robertson SBT code, SBT label, Ic, SBTIc code, SBTIc label, Olsen normalized resistance, SCN code, SCN label.
+notes: Total vertical stress is g*depth. Effective stress subtracts gw*(depth-dw) below the water table. Qn=(qc-total stress)/pa*(pa/effective stress)^n; Fr=100*fs/(qc-total stress). Use consistent stress units throughout.
+notes: Uses CPT_Robertson_SBT_row and CPT_Olsen_SCN_row. Ic uses the supplied logarithmic expression and SBTIc=ROUND(9.2-1.877*Ic,0). Classification labels come from CPT_SBT_names and CPT_Olsen_names.
+notes: Requires positive effective stress and qc greater than total stress for meaningful normalized resistance. Out-of-table codes are returned with label "NA". The supplied formulation assumes uniform unit weights and a hydrostatic water table.
+
+[CPT_log]
+depth: Numeric depth column increasing downward; nonnumeric depth rows are ignored
+zone: Soil-category code column aligned with depth
+names: Two-column code/label table, normally CPT_SBT_names or CPT_Olsen_names
+output: Optional output selector: "strip" (default), "legend", or "totals"; other values also return strip data
+xpos: Optional strip x position, default 1
+returns: Strip mode: x coordinate and one depth column per category, with intentional #N/A chart separators. Legend mode: table-row index, category code, label, thickness, fraction. Totals mode: thickness column in the order of names.
+notes: Starts a layer whenever its zone differs from the preceding row. A layer ends at the next layer start; the last ends at the final numeric depth. Totals sum these intervals by category, using the depth units supplied.
+notes: Supply at least two depth samples, increasing depths and codes present in names. A terminal one-sample layer has zero thickness. Legend includes only categories with total thickness greater than 0.01 depth units; fractions use the sum of all table totals.
+
+[CPT_Olsen_names]
+returns: Two-column array of Olsen category codes -2 through 3 and their labels.
+notes: Supporting lookup table for CPT_classify and CPT_log; use the name without parentheses. Other codes are not listed.
+
+[CPT_SBT_names]
+returns: Two-column array of Robertson category codes 1 through 9 and their labels.
+notes: Supporting lookup table for CPT_classify and CPT_log; use the name without parentheses.
+
+[water_density]
+temperature: Water temperature in degrees Celsius
+returns: Water density in g/cm^3, from the cubic fit supplied in the Hydrometer example workbook.
+notes: Evaluates 3.6052e-8*T^3 - 7.5123e-6*T^2 + 5.2019e-5*T + 0.99991. Multiply by 1000 for kg/m^3. The source table contains 4 degrees Celsius and 16 through 30 degrees Celsius; do not assume accuracy beyond the calibration data.
+
+[water_viscosity]
+temperature: Water temperature in degrees Celsius
+returns: Water dynamic viscosity in g/(cm*s), equivalently poise, from the cubic fit supplied in the Hydrometer example workbook.
+notes: Evaluates -1.0169e-7*T^3 + 1.1148e-5*T^2 - 5.6844e-4*T + 0.017772. Multiply by 0.1 for Pa*s. This is dynamic viscosity, not kinematic viscosity. The source table contains 4 degrees Celsius and 16 through 30 degrees Celsius; do not assume accuracy beyond the calibration data.
+
+[bearing_terms]
+author: Bearing method name
+phi: Soil friction angle in degrees
+coh: Cohesion in stress units
+q: Effective surcharge at foundation level
+gam: Soil unit weight consistent with the dimensions
+B: Original footing width
+L: Optional footing length; omitted or 0 means strip
+D: Optional embedment depth, default 0
+eB: Optional eccentricity across B, default 0
+eL: Optional eccentricity across L, default 0
+use: Optional shape/depth factor selector, default "sdi"
+returns: Three-row vector {c*Nc*sc*dc; q*Nq*sq*dq; 0.5*gam*B′*Nγ*sγ*dγ}. The sum is the vertical ultimate bearing pressure.
+notes: Calls bearing_capacity with out=2. Use the same units and effective-dimension assumptions as bearing_capacity.
+
+[bearing_effective]
+B: Original footing width
+L: Optional footing length; omitted or 0 represents a strip footing
+eB: Optional load eccentricity across B, default 0
+eL: Optional load eccentricity across L, default 0
+returns: Four-row vector {B′; L′; A′; B′/L′}. For a strip footing L′=0, A′=B′ per unit length, and the ratio is 0.
+notes: Computes B-2*eB and L-2*eL, then orders non-strip effective dimensions so B′ is the smaller. Supply eccentricities that leave positive effective dimensions. Used by the bearing-capacity functions.
+
+[bearing_capacity_inclined]
+author: Inclination method: meyerhof, hansen, vesic or ec7
+phi: Soil friction angle in degrees
+coh: Cohesion in stress units
+q: Effective surcharge at foundation level
+gam: Soil unit weight consistent with the dimensions
+B: Original footing width
+H: Horizontal load when V is supplied; when V is omitted or 0, H is tan(delta), the inclination ratio at failure
+V: Optional positive vertical load; omitted or 0 selects fixed-inclination failure iteration
+L: Optional footing length; omitted or 0 means strip
+D: Optional embedment depth, default 0
+eB: Optional eccentricity across B, default 0
+eL: Optional eccentricity across L, default 0
+use: Optional factor selector, default "sdi"
+out: Optional output: 0 returns capacity; 1 returns a breakdown table; 2 returns {ic; iq; iγ}
+omega: Optional horizontal-load azimuth in degrees for Vesic/EC7, default 0; unsupported for Meyerhof/Hansen
+ca: Optional adhesion for Hansen/Vesic, default cohesion; not used by Meyerhof/EC7
+edition: Optional EC7 edition, 2004 (default) or 2025
+expq: Optional Hansen surcharge inclination exponent, default 3
+expg: Optional Hansen soil-weight inclination exponent, default 3
+returns: Inclination-reduced ultimate bearing pressure, a calculation table, or the three inclination factors. Unsupported method/option combinations return an explanatory message.
+notes: Applies method-specific inclination factors to the vertical capacity contributions. With V omitted or 0, performs 30 fixed-point iterations at the specified H/V ratio; no convergence flag is returned.
+notes: EC7 edition 2025 modifies the soil-weight contribution and adhesion treatment. The method and edition must match the design calculation. Supply nonnegative load magnitudes and valid positive effective dimensions. This is separate from bearing_capacity, which handles vertical loads.
+
+[mse_levels]
+H: Wall height (m)
+Sv: Vertical spacing of the reinforcement (m)
+layout: Optional. 0 (default): levels at mid-height of each spacing, z = (i − 0.5)·Sv, i = 1…ROUND(H/Sv). 1: levels at z = i·Sv, plus one at z = H if the last level is above the base
+returns: A column of depths z (m), top level first.
+notes: Layout 0 is the usual textbook arrangement where each level carries its tributary spacing; layout 1 is the arrangement of Das (levels at i·Sv). For unequal spacings, type the depths in a column and pass that column to mse_internal_stability instead.
+
+[mse_Kr]
+z: Depth below the top of the wall (m); a number or a column
+phi: Friction angle of the reinforced fill (degrees)
+rtype: Optional reinforcement type: "strip" (default), "grid" or "geosynthetic". Used only by the simplified method
+method: Optional: "rankine" (default) Kr = Ka; "simplified" AASHTO/FHWA Kr/Ka; "coherent" coherent gravity, K0 to Ka
+returns: Kr at each depth (same shape as z), or a message if the type or method is not recognized.
+notes: Ka = (1 − sin φ)/(1 + sin φ) and K0 = 1 − sin φ. Simplified method: Kr/Ka varies linearly from 1.7 (strips) or 2.5 (steel grids) at the top to 1.2 at 6 m and stays constant below; geosynthetics use Kr/Ka = 1. Coherent gravity: Kr varies linearly from K0 at the top to Ka at 6 m. Only the top 6 m vary; below 6 m every method is constant.
+notes: With the defaults, mse_Kr(z, phi) is Ka: the strip multipliers apply only with method "simplified".
+
+[mse_Fstar]
+z: Depth (m); a number or a column
+phi: Friction angle of the reinforced fill (degrees)
+rtype: "strip", "grid" or "geosynthetic"
+Fstar: Optional. A value above 0 is used as a constant F* at every depth; omitted or 0 uses the AASHTO default
+Cu: Optional uniformity coefficient of the fill for strips, default 4
+tSt: Optional ratio t/St (transverse bar thickness over spacing) for steel grids
+returns: F* at each depth (same shape as z).
+notes: AASHTO/FHWA defaults: ribbed strips F* = min(2, 1.2 + log Cu) at the top decreasing linearly to tan φ at 6 m; steel grids 20·t/St to 10·t/St; geosynthetics 0.67·tan φ, constant. Use Fstar for product-specific test values.
+
+[mse_active_zone]
+z: Depth (m); a number or a column
+H: Wall height (m)
+phi: Friction angle of the reinforced fill (degrees)
+shape: Optional: "rankine" (default) or "bilinear"
+returns: la (m) at each depth.
+notes: Rankine: la = (H − z)·tan(45° − φ/2), a straight line through the toe. Bilinear (inextensible reinforcement, AASHTO/FHWA): la = 0.3H from the top down to H/2 and 0.6(H − z) below.
+
+[mse_reinforcement]
+rtype: "strip", "grid" or "geosynthetic"
+width: Optional width of one element (m), default 1 (use 1 for continuous sheets, per m of wall)
+SH: Optional horizontal spacing (m), default 1
+Fstar: Optional constant F*; omitted or 0 uses the AASHTO default of mse_Fstar
+alpha: Optional scale-effect correction factor α, default 1
+Cg: Optional surface-area geometry factor C, default 2 (both faces)
+lemin: Optional minimum anchorage length (m), default 0
+Cu: Optional uniformity coefficient for strips, default 4
+tSt: Optional t/St for steel grids
+returns: A one-row array {type, width, SH, F*, α, C, le,min, Cu, t/St}, or a message if the type is not recognized.
+notes: Keeps the reinforcement properties together so that mse_internal_stability has a short argument list.
+
+[mse_internal_stability]
+z: Depths of the levels (m), a column, e.g. mse_levels(H, Sv)
+H: Wall height (m)
+gam: Unit weight of the reinforced fill (kN/m³)
+phi: Friction angle of the reinforced fill (degrees)
+q: Uniform surcharge (kPa)
+L: Adopted reinforcement length (m)
+strength: Allowable or nominal strength per element or per m (kN), a number or a column (one per level)
+reinf: Reinforcement record from mse_reinforcement
+Sv: Optional tributary spacing (m), a number or a column; omitted or 0 uses the gaps between depths
+method: Optional earth-pressure method for mse_Kr: "rankine" (default), "simplified" or "coherent"
+shape: Optional active zone "rankine" or "bilinear"; omitted or 0: Rankine for "rankine" and for geosynthetics with "simplified", bilinear otherwise
+factors: Optional {γEV, γq, φT, φPO, FS_P}, default {1, 1, 1, 1, 1}. ASD: {1, 1, 1, 1, FS_P}; LRFD: load and resistance factors with FS_P = 1
+qpo: Optional 1 (default) to include the surcharge in the pullout resistance, 0 to exclude it
+out: Optional: 1 (default) table with headings; 2 table without headings; 0 summary
+returns: A table with columns z, Sv, σv, Kr, σH, T, Tension ratio, la, F*, Le req, L req, Pullout ratio, Strength φR; or a summary of the minimum tension ratio, minimum pullout ratio and maximum required length with their depths.
+notes: σv = γEV·γ·z + γq·q, σH = Kr·σv, T = σH·Sv·SH. Tension ratio = φT·strength/T (FS against rupture in ASD, CDR in LRFD). Pullout resistance per m of anchorage = φPO·F*·α·σ′v·C·width with σ′v = γz + qpo·q; Le req = max(le,min, FS_P·T/resistance); L req = la + Le req; Pullout ratio = resistance·(L − la)/T.
+notes: Compare the ratios with the required factor of safety (ASD) or with 1 (LRFD). Read columns with mse_get, e.g. MIN(mse_get(table, "Tension ratio")).
+
+[mse_external_stability]
+H: Wall height (m)
+L: Reinforcement length = base width of the block (m)
+gam: Unit weight of the reinforced fill (kN/m³)
+q: Uniform surcharge (kPa)
+gamb: Unit weight of the retained soil (kN/m³)
+phib: Friction angle of the retained soil (degrees)
+phif: Friction angle of the foundation soil (degrees)
+cf: Cohesion of the foundation soil (kPa)
+gamf: Unit weight of the foundation soil (kN/m³)
+Df: Optional embedment depth (m), default 0
+dbase: Optional friction angle used for sliding at the base (degrees), default phif (e.g. k·phif or MIN(phi, phif))
+qblock: Optional 1 to count the surcharge on the block in the resisting forces, 0 (default) to ignore it
+factors: Optional {γEVmax, γEVmin, γEH, γqH, γqV, φS, φB}, default all 1 (ASD)
+out: Optional: 0 (default) label/value table; 2 values only
+returns: A two-column table of labelled results: W, Q, F1, F2, sliding resistance and force, sliding ratio, MO, MR, overturning ratio, eccentricities, V, B′, qult (Vesic), bearing pressure V/B′, bearing ratio and the Das-type bearing ratio with demand γH + q.
+notes: Rankine active thrust of the retained soil F1 = ½·Kab·γb·H² at H/3 and of the surcharge F2 = Kab·q·H at H/2. Bearing uses the effective width B′ = L − 2e (Meyerhof) and bearing_capacity("vesic", …) of the strip of width L with eccentricity e. Read values with mse_get, e.g. mse_get(table, "Sliding ratio =").
+
+[mse_plot_data]
+H: Wall height (m)
+L: Reinforcement length (m)
+z: Depths of the levels, or an internal-stability table with a "z (m)" heading
+phi: Friction angle of the reinforced fill (degrees)
+W: Weight of the reinforced block (kN/m)
+Fa: Active force of the retained soil (kN/m)
+Q: Optional vertical surcharge on the block (kN/m)
+Fq: Optional lateral surcharge force (kN/m)
+Rslide: Optional sliding resistance (kN/m)
+Beff: Optional effective base width B′ (m)
+qbase: Optional base pressure V/B′ (kPa)
+shape: Optional active zone "rankine" (default) or "bilinear"
+scale: Optional force-to-length scale; default H/(8·Fa)
+returns: A three-column array: x, y and a label for each block (Wall, Facing, Active zone, Reinforcement i, forces, base pressures), with #N/A rows separating the blocks so that each block plots as a separate line.
+notes: Base pressure is drawn twice: uniform over B′ (Meyerhof) and trapezoidal, q = V/L·(1 ± 6e/L), or triangular when e > L/6. Select rows by their label to build chart series.
+
+[mse_get]
+tbl: A label/value range (e.g. mse_external_stability) or a table with headings (e.g. mse_internal_stability)
+key: A label ending in "=" (e.g. "F1 =") returns the value of the first row whose label contains it; any other key returns the column whose heading matches it exactly, else contains it (e.g. "Tension ratio")
+returns: A single value, a column without its heading, or "not found: key".
+notes: Lets worksheet formulas pick results by name instead of by row or column number, so they keep working if the table layout changes.
+
+[water_content]
+tare: Mass of the empty container (g); a single value or a column
+wet: Mass of container + moist soil (g), same size as tare
+dry: Mass of container + oven-dried soil (g), same size as tare
+returns: Water content w as a fraction, (wet - dry)/(dry - tare), one value per row; format the cell as % to show percent.
+notes: Returns "" where a mass is missing or dry = tare, so partly filled data sheets stay clean.
+notes: Argument order is tare, wet, dry. Check the order of the columns you select.
+
+[specific_gravity]
+Ws: Mass of oven-dried soil (g)
+Wfw: Mass of pycnometer filled with water at the test temperature (g)
+Wfws: Mass of pycnometer filled with water and soil at the test temperature (g)
+returns: Specific gravity of solids Gs = Ws/(Ws + Wfw - Wfws), at the test temperature.
+notes: Returns "" when the inputs are missing or inconsistent. To refer Gs to 20 °C, multiply by water_density(T)/water_density(20).
+
+[sieve_passing]
+retained: Column of masses retained on each sieve (g), from the coarsest sieve down to the pan
+returns: Two columns per sieve: mass passing (g) and percent finer (%).
+notes: Percent finer is relative to the total of the retained masses (pan included). Returns "" when the total is zero.
+
+[hydrometer_correction]
+T: Water temperature during the reading (°C); a single value or a column
+returns: Temperature correction (g/L) to add to the hydrometer reading: 1000·(0.99823 - water_density(T) - 0.000025·(T - 20)).
+notes: Zero at 20 °C. Uses water_density, so it follows the same calibration range.
+
+[hydrometer_hfall]
+Rt: Hydrometer reading corrected for meniscus (and zero), one value or a column
+A: Slope of the hydrometer calibration, fall depth vs reading (cm per reading unit)
+B: Intercept of the hydrometer calibration (cm)
+Vb: Volume of the hydrometer bulb (cm³)
+D: Inside diameter of the sedimentation cylinder (cm)
+returns: Effective fall depth Hr (cm) = A·Rt + B - Vb/(2·Ac), with Ac the cylinder cross-section.
+notes: The bulb-volume term corrects for the rise of the water surface when the hydrometer is inserted.
+
+[hydrometer_grainSize]
+T: Water temperature (°C), one value or a column
+Hr: Effective fall depth (cm), usually from hydrometer_hfall
+Gs: Specific gravity of the soil solids
+time: Elapsed time since the start of sedimentation (min)
+returns: Equivalent particle diameter (mm) from Stokes' law: SQRT(30·η·Hr/((Gs - 1)·981·ρw·time)).
+notes: Viscosity η and water density ρw come from water_viscosity(T) and water_density(T). Stokes' law assumes spherical particles settling independently.
+
+[hydrometer_percentFiner]
+W: Oven-dry mass of the soil in suspension (g)
+Rt: Hydrometer reading corrected for meniscus and zero (152H hydrometer, g/L)
+Gs: Specific gravity of the soil solids
+T: Water temperature (°C), one value or a column
+returns: Percent finer (%) = 100/W·(Rt + hydrometer_correction(T))·0.6226·Gs/(Gs - 1).
+notes: Valid for the ASTM 152H hydrometer, whose scale is calibrated for Gs = 2.65.
+
+[hydrometer_analysis]
+time: Elapsed times (min), a column
+Rt: Corrected hydrometer readings, same size as time
+temperature: Water temperatures (°C), same size as time
+W: Oven-dry mass of soil in suspension (g)
+Gs: Specific gravity of the soil solids
+D: Inside diameter of the sedimentation cylinder (cm)
+Vb: Volume of the hydrometer bulb (cm³)
+a: Slope of the fall-depth calibration (cm per reading unit)
+b: Intercept of the fall-depth calibration (cm)
+returns: Three columns per reading: fall depth (cm), equivalent diameter (mm) and percent finer (%).
+notes: Combines hydrometer_hfall, hydrometer_grainSize and hydrometer_percentFiner in one call.
+
+[consolidation_log_time]
+t: Elapsed times since the start of the increment (min), a column; t = 0 rows are ignored
+d: Dial changes since the start of the increment (cm), same size as t; settlement may be negative or positive
+H_dr: Drainage path length (cm); use 1 to get cv/H_dr² (1/min)
+n_sec: Optional number of readings in the secondary line, default 4
+frac: Optional fraction of the peak slope that marks the start of the plateau (fallback rule), default 0.25
+details: Optional; TRUE returns the construction values
+returns: cv (H_dr² per min). With details: {cv; d0; d100; d50; t50; t100; t_inflection; m_primary; m_secondary}.
+notes: Casagrande construction: d0 from the parabola rule d0 = 2·d(t1) - d(4·t1) with t1 the first reading; tangent at the steepest central slope before the secondary line; secondary line through the last n_sec readings.
+notes: If the tail is steeper than 0.6 × the primary slope, the plateau rule is used instead; if neither applies the function returns #N/A.
+notes: t100 is a construction point (theory U ≈ 95 %), not the time of 100 % consolidation. cv = 0.197·H_dr²/t50.
+
+[consolidation_sqrt_time]
+t: Elapsed times since the start of the increment (min), a column including t = 0
+d: Dial changes since the start of the increment (cm), same size as t
+H_dr: Drainage path length (cm); use 1 to get cv/H_dr² (1/min)
+skip: Optional number of first readings excluded from the initial line, default 1
+n_min: Optional minimum number of readings in the initial line, default 5
+k_sig: Optional stop threshold in standard errors for extending the initial line, default 2
+details: Optional; TRUE returns the construction values
+returns: cv (H_dr² per min). With details: {cv; d0; d100; t90; slope of the initial line (per √min); number of readings in the line}.
+notes: Taylor construction: the initial straight line in d vs √t is grown reading by reading until the next reading departs by more than k_sig standard errors on the flattening side; the line with slope ÷ 1.15 then crosses the data at √t90.
+notes: d0 is the intercept of the initial line (corrected zero); d100 = d0 + (d90 - d0)/0.9. cv = 0.848·H_dr²/t90.
+
+[consolidation_fitting]
+t: Elapsed times since the start of the increment (min), a column including t = 0
+d: Dial changes since the start of the increment (cm), same size as t
+H_dr: Drainage path length (cm); use 1 to get cv/H_dr² (1/min)
+skip: Optional number of first readings excluded from the fit, default 1
+n_min: Optional minimum number of readings before t_start; with fewer, all readings are fitted, default 6
+details: Optional; TRUE returns the fit values
+returns: cv (H_dr² per min). With details: {cv; d0; d100; t50; t90; t_start; rms of the fit}.
+notes: Secondary compression is located first with consolidation_creep (its t_start); Terzaghi's d0 + (d100 - d0)·U(Tv) is then fitted by least squares to the readings before t_start.
+notes: If t_start is detected late, creep readings enter the fit and cv is underestimated; compare with the log-time and square-root-time results.
+
+[consolidation_creep]
+t: Elapsed times since the start of the increment (min), a column; t = 0 rows are ignored
+d: Dial changes since the start of the increment (cm), same size as t
+H_0: Optional specimen height for the strain (cm); omitted returns the slope instead of C_alpha_epsilon
+n_min: Optional number of last readings that start the secondary line, default 3
+k_sig: Optional stop threshold in standard errors, default 3
+details: Optional; TRUE returns the secondary-line values
+frac: Optional stop threshold as a fraction of the increment's total settlement, default 0.05
+returns: C_alpha_epsilon = |slope|/H_0 (strain per log cycle), or the slope (cm per log cycle). With details: {value; slope; n readings; t_start; d_start}.
+notes: The secondary line d = d_start + slope·log10(t/t_start) is grown back from the last reading; it stops at the first earlier reading off the line by more than k_sig standard errors or frac of the total settlement.
+notes: For unloading increments, or tails that are still curving, the slope describes the end of swelling rather than true creep.
+
+[consolidation_table]
+loads: Column of load numbers to report
+load_no: Load-number column of the test data table
+t_all: Total-time column of the test data table (min)
+d_all: Dial-reading column of the test data table (cm)
+D_ini: Initial dial reading of each load, same size as loads
+D_fin: Final dial reading of each load, same size as loads
+h_0: Initial specimen height (cm)
+dial_0: Dial reading at the start of the test (cm)
+n_drain: Optional number of drainage faces, default 2
+returns: 19 columns per load: cv, d0, d100, r1, rp, rs for log time, then square-root time, then fitting, then C_alpha_epsilon.
+notes: Each increment is zeroed at its first reading. H_dr is half (n_drain = 2) of the specimen height at mid-primary; C_alpha_epsilon uses the height at the start of the increment.
+notes: A method that fails on a load shows its own Excel error (#N/A, #DIV/0!, #NUM!) in that load's cells only; loads with fewer than 8 readings are left blank.
+notes: Time and dial values stored as text are converted to numbers.
+
+[geolab_version]
+returns: Text with the GeoLabXL version and release date, for example "GeoLabXL 0.1 (2026-11-05)".
+notes: Separate from geoXL's version(), so a workbook can carry both libraries.
