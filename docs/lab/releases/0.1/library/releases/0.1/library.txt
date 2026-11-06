@@ -85,6 +85,32 @@ consolidation_U = LAMBDA(tv, [case_],
         1-BYROW(cm*en, LAMBDA(x, SUM(x)))
     ));
 
+/** Excess pore pressure ratio u/u0 along normalized depth at time factor tv. Inputs: Xarray (z/H column), tv, case_ (same cases as consolidation_U). */
+consolidation_Ux = LAMBDA(Xarray, tv, [case_],
+    LET(
+        cases, {"uniform", "triangular_top", "triangular_bottom", "vshape", "saw", "sine", "parabolic", "circular"},
+        caseIndex, IF(ISOMITTED(case_), 1, XMATCH(LOWER(case_), cases, 0)),
+        n, SEQUENCE(1, MIN(1000, 2+INT(SQRT(160/MAX(MIN(tv), 1E-6))/PI()))),
+        np, n*PI(),
+        sn, IF(MOD(n, 2), (-1)^((n-1)/2), 0),
+        en, IF(np^2*tv/4>700, 0, 1/EXP(np^2*tv/4)),
+        cm, SWITCH(caseIndex, 1, 4*sn^2/np, 2, -2*(-1)^n/np, 3, 2/np, 4, 4*sn*(np*sn-2)/np^2, 5, 8*sn/np^2, 6, IF(n=1, 1, 0), 7, IF(MOD(n, 2), -8*(-1)^n/np^3, 0), 8, 2*sn/n*BESSELJ(np/2, 1), 0, 0),
+        BYROW(Xarray, LAMBDA(x, SUM(cm*en*SIN(np*x))))
+    ));
+
+/** Average degree of consolidation U (fraction) from tv, closed-form approximation. */
+consolidation_U_approximate = LAMBDA(tv,
+    LET(
+        U, 2*SQRT(tv/PI()),
+        IF(U<0.6, U, 1-8/PI()^2/EXP(PI()^2/4*tv))
+    ));
+
+/** Average consolidation U for a load applied linearly over construction time factor tc. Inputs: tv, tc. */
+consolidation_U_variable = LAMBDA(tv, tc, IF(tv<tc, consolidation_U(tv/2)*tv/tc, consolidation_U(tv-tc/2)));
+
+/** Cosine of an angle in degrees. */
+cosd = LAMBDA(X, COS(RADIANS(X)));
+
 /** Interpolate y at X from (Xa, Ya); X may be a column. Xa may be increasing or decreasing. mode: "linear" (default), "logx", "logy", "logxy". outside: omitted = #N/A, "extrapolate", "clamp". */
 Interpolate = LAMBDA(X, Xa, Ya, [mode], [outside],
     LET(
@@ -108,6 +134,110 @@ Interpolate = LAMBDA(X, Xa, Ya, [mode], [outside],
         y, IF(ly, yA*(yB/yA)^t, yA + t*(yB - yA)),
         outRange, (q < xlo) + (q > xhi),
         IF(outRange*(od = "ERROR"), NA(), IF(xB = xA, yA, y))
+    ));
+
+/** Sine of an angle in degrees. */
+sind = LAMBDA(X, SIN(RADIANS(X)));
+
+/** Normal and shear stress {s, t} on a plane at angle alpha (deg) using the Mohr circle pole. Inputs: sa, ta pole stresses, alpha, sm circle centre. */
+Stress_Mohr = LAMBDA(sa, ta, alpha, sm,
+    LET(
+        ar, RADIANS(alpha),
+        am, 2*(sm-sa)*COS(ar)-2*ta*SIN(ar),
+        s, sa+am*COS(ar),
+        t, ta+am*SIN(ar),
+        HSTACK(s, t)
+    ));
+
+/** Mohr–Coulomb failure circle through a known stress (sa, ta) on plane A (deg): centre, radius, pole, principal and failure stresses. passive: omit = active. */
+stress_Mohr_failure = LAMBDA(sa, ta, A, phi, coh, [passive],
+    LET(
+        f, RADIANS(phi),
+        sgn, IF(ISOMITTED(passive), -1, 1),
+        sm, sa/COS(f)^2+coh*TAN(f)+sgn*SQRT((coh+sa*TAN(f))^2-ta^2)/COS(f),
+        rValue, SQRT((sa-sm)^2+ta^2),
+        ar, IF(A=0, 0.000001, RADIANS(A)),
+        am, 2*(sm-sa)*COS(ar)-2*ta*SIN(ar),
+        sp, sa+am*COS(ar),
+        tp, ta+am*SIN(ar),
+        s1_, sm+rValue,
+        s3_, sm-rValue,
+        a1_, DEGREES(ATAN2(s1_-sp, -tp)),
+        a3_, DEGREES(ATAN2(s3_-sp, -tp)),
+        ap, DEGREES(ATAN2(sm-sp, -tp))+90,
+        sf, sm*COS(f)^2-coh*SIN(2*f)/2,
+        tfp, coh*COS(f)^2+sm*SIN(f)*COS(f),
+        afp, DEGREES(ATAN2(sf-sp, tfp-tp)),
+        tfn, -tfp,
+        afn, DEGREES(ATAN2(sf-sp, tfn-tp)),
+        header, {"", "Normal stress", "Shear stress", "Surface orientation (deg)"},
+        ra, HSTACK("Center =", sm, "", ""),
+        rb, HSTACK("Radius =", rValue, "", ""),
+        rj, HSTACK(header),
+        rd, HSTACK("Pole", sp, tp, ap),
+        re, HSTACK("Major principal stress", s1_, 0, a1_),
+        rf, HSTACK("Minor principal stress", s3_, 0, a3_),
+        rg, HSTACK("Minor principal stress", s3_, 0, a3_),
+        rh, HSTACK("Failure stress", sf, tfp, afp),
+        ri, HSTACK("Failure stress", sf, tfn, afn),
+        VSTACK(ra, rb, rj, rd, re, rf, rg, rh, ri)
+    ));
+
+/** Mohr circle and pole from stresses on two perpendicular planes: centre, radius, pole, principal stresses. Inputs: sa, ta on plane A (deg), sb normal stress on the perpendicular plane. */
+stress_Mohr_pole = LAMBDA(sa, ta, A, sb,
+    LET(
+        tb, -ta,
+        B, A+90,
+        sm, (sa+sb)/2,
+        rValue, SQRT((sa-sb)^2/4+ta^2),
+        ar, IF(A=0, 0.000001, RADIANS(A)),
+        am, 2*(sm-sa)*COS(ar)-2*ta*SIN(ar),
+        sp, sa+am*COS(ar),
+        tp, ta+am*SIN(ar),
+        s1_, sm+rValue,
+        s3_, sm-rValue,
+        a1_, DEGREES(ATAN2(s1_-sp, -tp)),
+        a3_, DEGREES(ATAN2(s3_-sp, -tp)),
+        ap, DEGREES(ATAN2(sm-sp, -tp))+90,
+        header, {"", "Normal stress", "Shear stress", "Surface orientation (deg)"},
+        VSTACK(HSTACK("Center =", sm, "", ""), HSTACK("Radius =", rValue, "", ""), HSTACK(header), HSTACK("Stress b", sb, tb, B), HSTACK("Pole", sp, tp, ap), HSTACK("Major principal stress", s1_, 0, a1_), HSTACK("Minor principal stress", s3_, 0, a3_))
+    ));
+
+/** Plotting points {σ, τ} of a Mohr circle with centre sm and radius rValue (header + 21 points). */
+stress_Mohrcircle = LAMBDA(sm, rValue,
+    LET(
+        a, SEQUENCE(21)*PI()/10,
+        s, sm+rValue*COS(a),
+        t, rValue*SIN(a),
+        header, {"sig", "tau"},
+        VSTACK(header, HSTACK(s, t))
+    ));
+
+/** Tangent of an angle in degrees. */
+tand = LAMBDA(X, TAN(RADIANS(X)));
+
+/** Bilinear interpolation in a 2-D table. Inputs: x, Y query; XY table with x values in row 1 and y values in column 1 (ascending). */
+interpolate_table = LAMBDA(x, Y, XY,
+    LET(
+        Xa, DROP(CHOOSEROWS(XY, 1), , 1),
+        Ya, DROP(CHOOSECOLS(XY, 1), 1),
+        Za, DROP(XY, 1, 1),
+        cValue, XMATCH(x, Xa, -1),
+        rValue, XMATCH(Y, Ya, -1),
+        Xl, INDEX(Xa, cValue),
+        Xu, INDEX(Xa, cValue+1),
+        Yl, INDEX(Ya, rValue),
+        Yu, INDEX(Ya, rValue+1),
+        a, (Xu-Xl)*(Yu-Yl),
+        Nll, (Xu-x)*(Yu-Y),
+        Nul, (x-Xl)*(Yu-Y),
+        Nuu, (x-Xl)*(Y-Yl),
+        Nlu, (Xu-x)*(Y-Yl),
+        Zll, INDEX(Za, rValue, cValue),
+        Zlu, INDEX(Za, rValue+1, cValue),
+        Zuu, INDEX(Za, rValue+1, cValue+1),
+        Zul, INDEX(Za, rValue+1, cValue),
+        (Nll*Zll+Nlu*Zlu+Nuu*Zuu+Nul*Zul)/a
     ));
 
 /** Staircase table: each x repeated twice with y shifted one row, for step plots. Inputs: x, y columns. */
@@ -180,6 +310,58 @@ fName, IF(plus<15, capBase,
                     "Gravelly "&base&IF(sand>=15, " with sand", "")))),
 IF(pf200<50, HSTACK(cSym, cName), HSTACK(fSym, fName))
 ));
+
+/** Contour H=level traced cell by cell from the domain boundary; ~2 points per cell. seepage_eqline(xs,ys,H,level,[branch],[smooth],[nmax]) */
+seepage_eqline = LAMBDA(xs, ys, H, level, [branch], [smooth], [nmax],
+LET(xv,TOCOL(xs),yv,TOCOL(ys),n,ROWS(xv),m,ROWS(yv),lv,level,br,IF(ISOMITTED(branch),1,MAX(1,branch)),sm,IF(ISOMITTED(smooth),1,IF(smooth=0,0,1)),ncell,(n-1)*(m-1),nm,IF(ISOMITTED(nmax),ncell+1,IF(nmax>0,nmax,ncell+1)),tx,0.25*MEDIAN(ABS(DROP(xv,1)-DROP(xv,-1))),ty,0.25*MEDIAN(ABS(DROP(yv,1)-DROP(yv,-1))),OKG,MAKEARRAY(m-1,n-1,LAMBDA(rr,cc,seepage_cellok(xs,ys,H,rr,cc))),OK,LAMBDA(rr,cc,IF(OR(rr<1,cc<1,rr>m-1,cc>n-1),FALSE,INDEX(OKG,rr,cc))),EROWA,LAMBDA(rr,eg,IF(eg=3,rr+1,rr)),ECOLA,LAMBDA(cc,eg,IF(eg=2,cc+1,cc)),EROWB,LAMBDA(rr,eg,IF(eg=1,rr,rr+1)),ECOLB,LAMBDA(cc,eg,IF(eg=4,cc,cc+1)),CROSS,LAMBDA(rr,cc,eg,(INDEX(H,EROWA(rr,eg),ECOLA(cc,eg))>=lv)<>(INDEX(H,EROWB(rr,eg),ECOLB(cc,eg))>=lv)),EPT,LAMBDA(rr,cc,eg,LET(ia,EROWA(rr,eg),ja,ECOLA(cc,eg),ib,EROWB(rr,eg),jb,ECOLB(cc,eg),hza,INDEX(H,ia,ja),hzb,INDEX(H,ib,jb),tq,(lv-hza)/(hzb-hza),HSTACK(INDEX(xv,ja)+tq*(INDEX(xv,jb)-INDEX(xv,ja)),INDEX(yv,ia)+tq*(INDEX(yv,ib)-INDEX(yv,ia))))),NROW,LAMBDA(rr,eg,rr+IF(eg=1,-1,IF(eg=3,1,0))),NCOL,LAMBDA(cc,eg,cc+IF(eg=2,1,IF(eg=4,-1,0))),NENT,LAMBDA(eg,MOD(eg+1,4)+1),SEEDOK,LAMBDA(kq,LET(cq,INT((kq-1)/4),rr,INT(cq/(n-1))+1,cc,MOD(cq,n-1)+1,eg,MOD(kq-1,4)+1,IF(NOT(OK(rr,cc)),FALSE,IF(NOT(CROSS(rr,cc,eg)),FALSE,NOT(OK(NROW(rr,eg),NCOL(cc,eg))))))),allk,SEQUENCE(4*ncell),ks,FILTER(allk,MAP(allk,SEEDOK),0),IF(OR(INDEX(ks,1)=0,ROWS(ks)<br),NA(),LET(kq,INDEX(ks,br),cq,INT((kq-1)/4),rs,INT(cq/(n-1))+1,cs,MOD(cq,n-1)+1,es,MOD(kq-1,4)+1,INTERIOR,LAMBDA(rr,cc,px,py,qx,qy,LET(xa,INDEX(xv,cc),xb,INDEX(xv,cc+1),ya,INDEX(yv,rr),yb,INDEX(yv,rr+1),hA,INDEX(H,rr,cc),hB,INDEX(H,rr,cc+1),hC,INDEX(H,rr+1,cc),hD,INDEX(H,rr+1,cc+1),NW,LAMBDA(pt,LET(mx,INDEX(pt,1),my,INDEX(pt,2),tt,(mx-xa)/(xb-xa),uu,(my-ya)/(yb-ya),hh,(1-uu)*((1-tt)*hA+tt*hB)+uu*((1-tt)*hC+tt*hD),gx,((1-uu)*(hB-hA)+uu*(hD-hC))/(xb-xa),gy,((1-tt)*(hC-hA)+tt*(hD-hB))/(yb-ya),gg,gx^2+gy^2,IF(gg=0,pt,HSTACK(mx-(hh-lv)*gx/gg,my-(hh-lv)*gy/gg)))),pz,NW(NW(HSTACK((px+qx)/2,(py+qy)/2))),HSTACK(MIN(MAX(INDEX(pz,1),MIN(xa,xb)),MAX(xa,xb)),MIN(MAX(INDEX(pz,2),MIN(ya,yb)),MAX(ya,yb))))),STEP,LAMBDA(acc,it,LET(last,TAKE(acc,-1),rr,INDEX(last,1,3),cc,INDEX(last,1,4),eg,INDEX(last,1,5),IF(rr=0,acc,LET(ea,MOD(eg,4)+1,eb,MOD(eg+1,4)+1,ec,MOD(eg+2,4)+1,ex,IF(CROSS(rr,cc,ea),ea,IF(CROSS(rr,cc,eb),eb,IF(CROSS(rr,cc,ec),ec,0))),IF(ex=0,VSTACK(DROP(acc,-1),HSTACK(TAKE(last,,2),0,0,0)),LET(q,EPT(rr,cc,ex),qx,INDEX(q,1),qy,INDEX(q,2),px,INDEX(last,1,1),py,INDEX(last,1,2),rn,NROW(rr,ex),cn,NCOL(cc,ex),go,IF(OK(rn,cn),NOT(AND(rn=rs,cn=cs)),FALSE),newrow,IF(go,HSTACK(qx,qy,rn,cn,NENT(ex)),HSTACK(qx,qy,0,0,0)),thin,OR(ABS(INDEX(xv,cc+1)-INDEX(xv,cc))<tx,ABS(INDEX(yv,rr+1)-INDEX(yv,rr))<ty),IF(OR(sm=0,thin),VSTACK(acc,newrow),VSTACK(acc,HSTACK(INTERIOR(rr,cc,px,py,qx,qy),0,0,0),newrow)))))))),start,HSTACK(EPT(rs,cs,es),rs,cs,es),path,REDUCE(start,SEQUENCE(nm),STEP),TAKE(path,,2)))));
+
+/** Several contours stacked with #N/A separators for one chart series. seepage_eqlines(xs,ys,H,levels,[smooth],[nmax]) */
+seepage_eqlines = LAMBDA(xs, ys, H, levels, [smooth], [nmax],
+LET(smArg,IF(ISOMITTED(smooth),1,smooth),nArg,IF(ISOMITTED(nmax),0,nmax),big,1E+300,sep,HSTACK(big,big),st,REDUCE(sep,TOCOL(levels),LAMBDA(acc,lv,LET(pts,seepage_eqline(xs,ys,H,lv,1,smArg,nArg),VSTACK(acc,IF(ISERROR(INDEX(pts,1,1)),sep,pts),sep)))),res,DROP(st,1),IF(res=big,NA(),res)));
+
+/** Flow lines psi = levels traced from the head grid (#N/A separated). seepage_flowlines(xs,ys,H,levels,[k],[edge]) */
+seepage_flowlines = LAMBDA(xs, ys, H, levels, [k], [edge],
+LET(kv,IF(ISOMITTED(k),1,k),ev,IF(ISOMITTED(edge),0,edge),PS,seepage_psigrid(xs,ys,H,kv,0,ev),seepage_eqlines(xs,ys,PS,levels)));
+
+/** Internal: nodal dh/dx (axis=1) or dh/dy (axis=2), wall/blank aware; edge 4=FD mass balance (default),1,2,3. seepage_gradgrid(xs,ys,H,axis,[edge]) */
+seepage_gradgrid = LAMBDA(xs, ys, H, axis, [edge],
+LET(xv,TOCOL(xs),yv,TOCOL(ys),n,ROWS(xv),m,ROWS(yv),tx,0.25*MEDIAN(ABS(DROP(xv,1)-DROP(xv,-1))),ty,0.25*MEDIAN(ABS(DROP(yv,1)-DROP(yv,-1))),ev,TOCOL(IF(ISOMITTED(edge),0,edge)),EMODE,LAMBDA(ee,IF(ee=1,1,IF(ee=2,2,IF(ee=3,3,4)))),eF,EMODE(INDEX(ev,1)),eL,EMODE(INDEX(ev,ROWS(ev))),NX,LAMBDA(ax,IF(ax=1,n,m)),HX,LAMBDA(ax,i,j,IF(ax=1,INDEX(H,j,i),INDEX(H,i,j))),CX,LAMBDA(ax,i,IF(ax=1,INDEX(xv,i),INDEX(yv,i))),ACTV,LAMBDA(ax,i,j,IF(OR(i<1,j<1,i>NX(ax),j>NX(3-ax)),FALSE,ISNUMBER(HX(ax,i,j)))),THIN,LAMBDA(ax,ia,ib,ABS(CX(ax,ib)-CX(ax,ia))<IF(ax=1,tx,ty)),NBR,LAMBDA(ax,i,j,dn,LET(kk,i+dn,IF(NOT(ACTV(ax,kk,j)),0,IF(THIN(ax,i,kk),IF(HX(ax,kk,j)<>HX(ax,i,j),0,LET(kb,kk+dn,IF(ACTV(ax,kb,j),kb,0))),kk)))),PRIM,LAMBDA(ax,i,j,IF(i<=1,i,IF(NOT(ACTV(ax,i-1,j)),i,IF(AND(THIN(ax,i-1,i),HX(ax,i-1,j)=HX(ax,i,j)),i-1,i)))),DQ,LAMBDA(pa,pb,pd,fa,fb,fd,xx,fa*((xx-pb)+(xx-pd))/((pa-pb)*(pa-pd))+fb*((xx-pa)+(xx-pd))/((pb-pa)*(pb-pd))+fd*((xx-pa)+(xx-pb))/((pd-pa)*(pd-pb))),NDERX,LAMBDA(ax,i,j,IF(NOT(ACTV(ax,i,j)),0,LET(iL,NBR(ax,i,j,-1),iR,NBR(ax,i,j,1),IF((iL=0)=(iR=0),0,LET(iq,IF(iR>0,iR,iL),jm,NBR(3-ax,j,i,-1),jp,NBR(3-ax,j,i,1),IF(OR(jm=0,jp=0),0,LET(dd,ABS(CX(ax,iq)-CX(ax,i)),dtm,ABS(CX(3-ax,j)-CX(3-ax,jm)),dtp,ABS(CX(3-ax,jp)-CX(3-ax,j)),aa,dd/2,bb,(dtm+dtp)/2,tsum,(HX(ax,i,jm)-HX(ax,i,j))/dtm+(HX(ax,i,jp)-HX(ax,i,j))/dtp,-(HX(ax,iq,j)-HX(ax,i,j))/dd-(aa/bb)*tsum))))))),DER,LAMBDA(ax,iorig,j,IF(NOT(ACTV(ax,iorig,j)),NA(),LET(i,PRIM(ax,iorig,j),iL,NBR(ax,i,j,-1),iR,NBR(ax,i,j,1),IF(AND(iL>0,iR>0),DQ(CX(ax,iL),CX(ax,i),CX(ax,iR),HX(ax,iL,j),HX(ax,i,j),HX(ax,iR,j),CX(ax,i)),IF(AND(iL=0,iR=0),0,LET(iq,IF(iR>0,iR,iL),md,IF(iL=0,eF,eL),dd,CX(ax,iq)-CX(ax,i),sg,SIGN(dd),IF(md=1,0,IF(md=2,(HX(ax,iq,j)-HX(ax,i,j))/dd,IF(md=3,LET(iqb,NBR(ax,iq,j,SIGN(iq-i)),IF(iqb=0,(HX(ax,iq,j)-HX(ax,i,j))/dd,DQ(CX(ax,i),CX(ax,iq),CX(ax,iqb),HX(ax,i,j),HX(ax,iq,j),HX(ax,iqb,j),CX(ax,i)))),LET(jm,NBR(3-ax,j,i,-1),jp,NBR(3-ax,j,i,1),IF(AND(jm>0,jp>0),-sg*NDERX(ax,i,j),IF(AND(jm=0,jp=0),(HX(ax,iq,j)-HX(ax,i,j))/dd,LET(jn,IF(jm>0,jm,jp),dt,ABS(CX(3-ax,jn)-CX(3-ax,j)),aa,ABS(dd)/2,bb,dt/2,sres,-((HX(ax,iq,j)-HX(ax,i,j))/ABS(dd)*bb+(HX(ax,i,jn)-HX(ax,i,j))/dt*aa),wc,bb*ABS(NDERX(ax,i,jn)),wt,aa*ABS(NDERX(3-ax,j,iq)),-sg*IF(wc+wt=0,sres/(aa+bb),sres*wc/(wc+wt)/bb)))))))))))))),MAKEARRAY(m,n,LAMBDA(rr,qq,IF(axis=1,DER(1,qq,rr),DER(2,rr,qq))))));
+
+/** {h, dh/dx, dh/dy} at (x,y) by bilinear interpolation in the soil cell; #N/A outside the soil. seepage_hfield(xs,ys,H,x,y) */
+seepage_hfield = LAMBDA(xs, ys, H, x, y,
+LET(xv,TOCOL(xs),yv,TOCOL(ys),n,ROWS(xv),m,ROWS(yv),sx,SIGN(INDEX(xv,n)-INDEX(xv,1)),sy,SIGN(INDEX(yv,m)-INDEX(yv,1)),ci,MIN(MAX(SUM(--((xv-x)*sx<=0)),1),n-1),rj,MIN(MAX(SUM(--((yv-y)*sy<=0)),1),m-1),tx,0.25*MEDIAN(ABS(DROP(xv,1)-DROP(xv,-1))),ty,0.25*MEDIAN(ABS(DROP(yv,1)-DROP(yv,-1))),SCORE,LAMBDA(rr,cc,IF(OR(rr<1,cc<1,rr>m-1,cc>n-1),0,IF(OR(x<MIN(INDEX(xv,cc),INDEX(xv,cc+1))-0.000000000001,x>MAX(INDEX(xv,cc),INDEX(xv,cc+1))+0.000000000001,y<MIN(INDEX(yv,rr),INDEX(yv,rr+1))-0.000000000001,y>MAX(INDEX(yv,rr),INDEX(yv,rr+1))+0.000000000001),0,IF(NOT(seepage_cellok(xs,ys,H,rr,cc)),0,IF(OR(ABS(INDEX(xv,cc+1)-INDEX(xv,cc))<tx,ABS(INDEX(yv,rr+1)-INDEX(yv,rr))<ty),1,2))))),rlist,VSTACK(rj,rj,rj,rj-1,rj+1),clist,VSTACK(ci,ci-1,ci+1,ci,ci),sc,MAP(rlist,clist,LAMBDA(ra,ca,SCORE(ra,ca))),best,MAX(sc),IF(best=0,HSTACK(NA(),NA(),NA()),LET(kk,XMATCH(best,sc),rr,INDEX(rlist,kk),cc,INDEX(clist,kk),xa,INDEX(xv,cc),xb,INDEX(xv,cc+1),ya,INDEX(yv,rr),yb,INDEX(yv,rr+1),tt,(x-xa)/(xb-xa),uu,(y-ya)/(yb-ya),hA,INDEX(H,rr,cc),hB,INDEX(H,rr,cc+1),hC,INDEX(H,rr+1,cc),hD,INDEX(H,rr+1,cc+1),hh,(1-uu)*((1-tt)*hA+tt*hB)+uu*((1-tt)*hC+tt*hD),gx,((1-uu)*(hB-hA)+uu*(hD-hC))/(xb-xa),gy,((1-tt)*(hC-hA)+tt*(hD-hB))/(yb-ya),HSTACK(hh,gx,gy)))));
+
+/** h at (x,y); x,y may be arrays. seepage_hxy(xs,ys,H,x,y) */
+seepage_hxy = LAMBDA(xs, ys, H, x, y,
+IF(COUNT(x)=1,INDEX(seepage_hfield(xs,ys,H,x,y),1),MAP(x,y,LAMBDA(px,py,INDEX(seepage_hfield(xs,ys,H,px,py),1)))));
+
+/** Internal: stream function psi at every node from the heads (base = psiref, wall = flow line). seepage_psigrid(xs,ys,H,[k],[psiref],[edge]) */
+seepage_psigrid = LAMBDA(xs, ys, H, [k], [psiref], [edge],
+LET(kv,IF(ISOMITTED(k),1,IF(k>0,k,1)),pbase,IF(ISOMITTED(psiref),0,psiref),ev,IF(ISOMITTED(edge),0,edge),xv,TOCOL(xs),yv,TOCOL(ys),n,ROWS(xv),m,ROWS(yv),tx,0.25*MEDIAN(ABS(DROP(xv,1)-DROP(xv,-1))),VX,-kv*seepage_gradgrid(xs,ys,H,1,ev),VY,-kv*seepage_gradgrid(xs,ys,H,2,ev),bot,IF(INDEX(yv,1)<INDEX(yv,m),1,m),INC,MAKEARRAY(m-1,n,LAMBDA(jj,qq,LET(va,INDEX(VX,jj,qq),vb,INDEX(VX,jj+1,qq),IF(AND(ISNUMBER(va),ISNUMBER(vb)),ABS(INDEX(yv,jj+1)-INDEX(yv,jj))*(va+vb)/2,0)))),TRI,MAKEARRAY(m,m-1,LAMBDA(rr,jj,IF(bot=m,--(jj>=rr),--(jj<rr)))),PC,pbase+MMULT(TRI,INC),WSIDE,LAMBDA(rr,cc,cn,IF(OR(cn<1,cn>n),FALSE,IF(ABS(INDEX(xv,cn)-INDEX(xv,cc))>=tx,FALSE,IF(NOT(ISNUMBER(INDEX(H,rr,cn))),TRUE,INDEX(H,rr,cn)<>INDEX(H,rr,cc))))),MAKEARRAY(m,n,LAMBDA(rr,cc,IF(NOT(ISNUMBER(INDEX(H,rr,cc))),NA(),LET(wl,WSIDE(rr,cc,cc-1),wr,WSIDE(rr,cc,cc+1),IF(wl=wr,INDEX(PC,rr,cc),LET(cs,IF(wl,cc+1,cc-1),IF(OR(cs<1,cs>n),INDEX(PC,rr,cc),IF(NOT(ISNUMBER(INDEX(H,rr,cs))),INDEX(PC,rr,cc),INDEX(PC,rr,cs)-(INDEX(xv,cc)-INDEX(xv,cs))*(INDEX(VY,rr,cs)+INDEX(VY,rr,cc))/2))))))))));
+
+/** Table s,x,y,h,vx,vy,vn,psi along segment A->B; v=-k grad h. seepage_segprofile(xs,ys,H,xA,yA,xB,yB,[n],[k],[edge]) */
+seepage_segprofile = LAMBDA(xs, ys, H, xA, yA, xB, yB, [n], [k], [edge],
+LET(np,IF(ISOMITTED(n),50,IF(n>0,n,50)),kv,IF(ISOMITTED(k),1,IF(k>0,k,1)),ev,IF(ISOMITTED(edge),0,edge),GX,seepage_gradgrid(xs,ys,H,1,ev),GY,seepage_gradgrid(xs,ys,H,2,ev),PS,seepage_psigrid(xs,ys,H,kv,0,ev),L,SQRT((xB-xA)^2+(yB-yA)^2),tx,(xB-xA)/L,ty,(yB-yA)/L,s,SEQUENCE(np+1,1,0,L/np),px,xA+s*tx,py,yA+s*ty,hv,seepage_hxy(xs,ys,H,px,py),vx,-kv*seepage_hxy(xs,ys,GX,px,py),vy,-kv*seepage_hxy(xs,ys,GY,px,py),vn,vx*ty-vy*tx,pv,seepage_hxy(xs,ys,PS,px,py),HSTACK(s,px,py,hv,vx,vy,vn,pv)));
+
+/** {length, h avg, h min, h max, Q=psi(B)-psi(A), vn avg} for segment A->B. seepage_segstats(xs,ys,H,xA,yA,xB,yB,[k],[n],[edge]) */
+seepage_segstats = LAMBDA(xs, ys, H, xA, yA, xB, yB, [k], [n], [edge],
+LET(kv,IF(ISOMITTED(k),0,k),nv,IF(ISOMITTED(n),0,n),ev,IF(ISOMITTED(edge),0,edge),P,seepage_segprofile(xs,ys,H,xA,yA,xB,yB,nv,kv,ev),s,CHOOSECOLS(P,1),hv,CHOOSECOLS(P,4),pv,CHOOSECOLS(P,8),ds,DROP(s,1)-DROP(s,-1),L,MAX(s),Q,INDEX(pv,ROWS(pv))-INDEX(pv,1),HSTACK(L,SUM(ds*(DROP(hv,1)+DROP(hv,-1))/2)/L,MIN(hv),MAX(hv),Q,Q/L)));
+
+/** Internal: TRUE if mesh cell (rw,cl) is soil (4 active corners, not a wall slot). seepage_cellok(xs,ys,H,rw,cl) */
+seepage_cellok = LAMBDA(xs, ys, H, rw, cl,
+LET(xv,TOCOL(xs),yv,TOCOL(ys),n,ROWS(xv),m,ROWS(yv),IF(OR(rw<1,cl<1,rw>m-1,cl>n-1),FALSE,IF(NOT(AND(ISNUMBER(INDEX(H,rw,cl)),ISNUMBER(INDEX(H,rw,cl+1)),ISNUMBER(INDEX(H,rw+1,cl)),ISNUMBER(INDEX(H,rw+1,cl+1)))),FALSE,LET(tx,0.25*MEDIAN(ABS(DROP(xv,1)-DROP(xv,-1))),ty,0.25*MEDIAN(ABS(DROP(yv,1)-DROP(yv,-1))),hA,INDEX(H,rw,cl),hB,INDEX(H,rw,cl+1),hC,INDEX(H,rw+1,cl),hD,INDEX(H,rw+1,cl+1),wx,AND(ABS(INDEX(xv,cl+1)-INDEX(xv,cl))<tx,hA<>hB,hC<>hD),wy,AND(ABS(INDEX(yv,rw+1)-INDEX(yv,rw))<ty,hA<>hC,hB<>hD),NOT(OR(wx,wy)))))));
+
+/** Interior node, 4-point stencil: (a+b+c+d)/4 - the four neighbours in any order. seepage_stencil(a,b,c,d) */
+seepage_stencil = LAMBDA(a,b,cValue,d,(a+b+cValue+d)/4);
+
+/** No-flow edge (mirror, half cell): (2n+ta+tb)/4 - n = neighbour into the soil, ta, tb = neighbours along the edge. seepage_stencil1(n,ta,tb) */
+seepage_stencil1 = LAMBDA(n,ta,tb,(2*n+ta+tb)/4);
+
+/** Outer corner between two no-flow edges (quarter cell): (a+b)/2. seepage_stencil2(a,b) */
+seepage_stencil2 = LAMBDA(a,b,(a+b)/2);
+
+/** Re-entrant corner (three-quarter cell): (2fa+2fb+ha+hb)/6 - fa, fb = neighbours across full faces, ha, hb = neighbours across half faces. seepage_stencil3(fa,fb,ha,hb) */
+seepage_stencil3 = LAMBDA(fa,fb,ha,hb,(2*fa+2*fb+ha+hb)/6);
 
 /** Water density (g/cm^3) from temperature in degrees Celsius; cubic fit from the hydrometer example. */
 water_density = LAMBDA(temperature,0.000000036052*temperature^3-0.0000075123*temperature^2+0.000052019*temperature+0.99991);

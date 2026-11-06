@@ -1,7 +1,7 @@
 {
   "version": "0.1",
   "library": "releases/0.1/library.txt",
-  "sha256": "51b597b1c5e5f0131535bebff0bafb271b88fda3f6ceac564aa4f4230a750861",
+  "sha256": "91beb2ba8578acc8a9ab16f41b278650ff8e2a444f69b18350b3a690b02322ff",
   "published": "2026-11-05",
   "status": "published on the owner's authorization; native Excel release validation pending"
 }

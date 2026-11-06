@@ -232,16 +232,18 @@ def gx_group(name):
 gx_order = gmap["order"][:]
 gx_order.insert(gx_order.index("Soil classification") + 1, "Soil laboratory tests")
 
-LAB_GROUPS = [("Water content & specific gravity", ("water_content", "specific_gravity")),
-              ("Grain size: sieve & hydrometer", ("sieve_", "hydrometer_", "grainsize", "step_table")),
-              ("Soil classification", ("classify_", "astmtable")),
-              ("Consolidation", ("consolidation_",)),
-              ("Water properties", ("water_density", "water_viscosity")),
-              ("Utilities", ("",))]
+# Groups follow the chapters of Experimental Soil Mechanics (Bardet, 1997).
+LAB_GROUPS = [("Ch. 1 Grain size: sieve & hydrometer", ("sieve_", "hydrometer_", "grainsize", "step_table")),
+              ("Ch. 2 Water content & soil classification", ("water_content", "classify_", "astmtable")),
+              ("Ch. 3 Density: specific gravity", ("specific_gravity",)),
+              ("Ch. 4 Permeability & seepage", ("water_density", "water_viscosity", "seepage_")),
+              ("Ch. 5 Stress & Mohr circle", ("stress_", "sind", "cosd", "tand")),
+              ("Ch. 6 Consolidation", ("consolidation_",)),
+              ("Ch. 8 Data modeling & utilities", ("",))]
 def lab_group(name):
     for g, pre in LAB_GROUPS:
         if any(name.lower().startswith(p) for p in pre): return g
-    return "Utilities"
+    return "Ch. 8 Data modeling & utilities"
 
 SITES = [
  dict(out=DOCS, label="geoXL", brand="geo<span>XL</span>", versionfn="version",

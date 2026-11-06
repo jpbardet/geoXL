@@ -26,6 +26,31 @@ classify_USC
 classify_AASHTO
 classify_Plasticity
 
+# Stress and Mohr circle (Chapter 5-1, shear tests of Chapter 7)
+Stress_Mohr
+stress_Mohr_pole
+stress_Mohrcircle
+stress_Mohr_failure
+sind
+cosd
+tand
+
+# Seepage: finite-difference solutions (Chapters 4-4 and 4-5)
+seepage_stencil
+seepage_stencil1
+seepage_stencil2
+seepage_stencil3
+seepage_hxy
+seepage_hfield
+seepage_gradgrid
+seepage_psigrid
+seepage_eqline
+seepage_eqlines
+seepage_flowlines
+seepage_segprofile
+seepage_segstats
+seepage_cellok
+
 # Permeability and hydrometer: water properties
 water_density
 water_viscosity
@@ -38,6 +63,10 @@ consolidation_creep
 consolidation_table
 consolidation_U
 consolidation_Tv
+consolidation_Ux
+consolidation_U_approximate
+consolidation_U_variable
 
 # Utilities
 interpolate
+interpolate_table

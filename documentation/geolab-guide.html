@@ -50,17 +50,45 @@
 </section>
 
 <section class=panel id=guide-tests>
-<h2>Laboratory tests and their functions</h2>
+<h2>The book, chapter by chapter</h2>
+<p>geolabXL is the computing companion of <cite>Experimental Soil Mechanics</cite> (J.-P. Bardet, Prentice Hall, 1997). The table lists the functions for each section of the book.</p>
 <table class=args>
-<thead><tr><th>Test (workbook)</th><th>Functions</th></tr></thead>
+<thead><tr><th>Section</th><th>Functions</th></tr></thead>
 <tbody>
-<tr><td>Water content (<code>water_content</code>), Atterberg limits (<code>liquid_limit</code>, <code>liquid_limit_fall_cone</code>, <code>plastic_limit</code>), compaction (<code>compaction_standard</code>, <code>compaction_modified</code>), sand cone, unconfined compression</td><td><a href="#WATER_CONTENT"><code>water_content</code></a></td></tr>
-<tr><td>Specific gravity (<code>specific_gravity</code>)</td><td><a href="#SPECIFIC_GRAVITY"><code>specific_gravity</code></a>, <a href="#WATER_DENSITY"><code>water_density</code></a></td></tr>
-<tr><td>Sieve analysis (<code>sieve_analysis</code>)</td><td><a href="#SIEVE_PASSING"><code>sieve_passing</code></a>, <a href="#GRAINSIZEANALYSIS"><code>grainsizeanalysis</code></a></td></tr>
-<tr><td>Hydrometer analysis (<code>hydrometer_analysis</code>)</td><td><a href="#HYDROMETER_HFALL"><code>hydrometer_hfall</code></a>, <a href="#HYDROMETER_GRAINSIZE"><code>hydrometer_grainSize</code></a>, <a href="#HYDROMETER_PERCENTFINER"><code>hydrometer_percentFiner</code></a>, <a href="#HYDROMETER_CORRECTION"><code>hydrometer_correction</code></a>, <a href="#GRAINSIZEANALYSIS"><code>grainsizeanalysis</code></a>, <a href="#INTERPOLATE"><code>interpolate</code></a></td></tr>
-<tr><td>Soil classification (<code>Classi</code> workbooks): ASTM D2487 (USCS), AASHTO, plasticity chart</td><td><a href="#CLASSIFY_ASTM2487"><code>classify_ASTM2487</code></a>, <a href="#CLASSIFY_ASTM"><code>classify_ASTM</code></a>, <a href="#CLASSIFY_USC"><code>classify_USC</code></a>, <a href="#CLASSIFY_AASHTO"><code>classify_AASHTO</code></a>, <a href="#CLASSIFY_PLASTICITY"><code>classify_Plasticity</code></a></td></tr>
-<tr><td>Permeability (<code>permeability_constant_head</code>, <code>permeability_falling_head</code>)</td><td><a href="#WATER_VISCOSITY"><code>water_viscosity</code></a> (temperature correction to 20 °C)</td></tr>
-<tr><td>One-dimensional consolidation (<code>consolidation</code>)</td><td><a href="#CONSOLIDATION_LOG_TIME"><code>consolidation_log_time</code></a>, <a href="#CONSOLIDATION_SQRT_TIME"><code>consolidation_sqrt_time</code></a>, <a href="#CONSOLIDATION_FITTING"><code>consolidation_fitting</code></a>, <a href="#CONSOLIDATION_CREEP"><code>consolidation_creep</code></a>, <a href="#CONSOLIDATION_TABLE"><code>consolidation_table</code></a>, <a href="#CONSOLIDATION_U"><code>consolidation_U</code></a></td></tr>
+<tr><th colspan=2>Chapter 1. Grain size analysis</th></tr>
+<tr><td>1-1 Principles of grain size analysis</td><td><a href="#GRAINSIZEANALYSIS"><code>grainsizeanalysis</code></a>, <a href="#STEP_TABLE"><code>Step_table</code></a></td></tr>
+<tr><td>1-2 Sieve analysis</td><td><a href="#SIEVE_PASSING"><code>sieve_passing</code></a>, <a href="#GRAINSIZEANALYSIS"><code>grainsizeanalysis</code></a></td></tr>
+<tr><td>1-3 Principles of sedimentation analysis</td><td><a href="#HYDROMETER_HFALL"><code>hydrometer_hfall</code></a>, <a href="#HYDROMETER_GRAINSIZE"><code>hydrometer_grainSize</code></a>, <a href="#WATER_DENSITY"><code>water_density</code></a>, <a href="#WATER_VISCOSITY"><code>water_viscosity</code></a></td></tr>
+<tr><td>1-4 Hydrometer analysis</td><td><a href="#HYDROMETER_ANALYSIS"><code>hydrometer_analysis</code></a>, <a href="#HYDROMETER_CORRECTION"><code>hydrometer_correction</code></a>, <a href="#HYDROMETER_PERCENTFINER"><code>hydrometer_percentFiner</code></a>, <a href="#INTERPOLATE"><code>interpolate</code></a></td></tr>
+<tr><td>1-5 to 1-7 Pipette, buoyancy and combined analyses</td><td><span class=muted>Ordinary Excel formulas in the course workbook</span></td></tr>
+<tr><th colspan=2>Chapter 2. Plasticity, shrinkage, and soil classification</th></tr>
+<tr><td>2-1 Principles of liquid and plastic limits tests</td><td><a href="#CLASSIFY_PLASTICITY"><code>classify_Plasticity</code></a></td></tr>
+<tr><td>2-2 Determination of water content</td><td><a href="#WATER_CONTENT"><code>water_content</code></a></td></tr>
+<tr><td>2-3 Liquid limit test; 2-4 One-point liquid limit test</td><td><a href="#WATER_CONTENT"><code>water_content</code></a> (flow curve: ordinary formulas)</td></tr>
+<tr><td>2-5 Plastic limit test</td><td><a href="#WATER_CONTENT"><code>water_content</code></a></td></tr>
+<tr><td>2-6 to 2-8 Shrinkage limit analysis (principles, mercury, wax)</td><td><span class=muted>Ordinary Excel formulas in the course workbook</span></td></tr>
+<tr><td>2-9 Engineering classification of soils</td><td><a href="#CLASSIFY_ASTM2487"><code>classify_ASTM2487</code></a>, <a href="#CLASSIFY_ASTM"><code>classify_ASTM</code></a>, <a href="#CLASSIFY_USC"><code>classify_USC</code></a>, <a href="#CLASSIFY_AASHTO"><code>classify_AASHTO</code></a>, <a href="#CLASSIFY_PLASTICITY"><code>classify_Plasticity</code></a></td></tr>
+<tr><th colspan=2>Chapter 3. Density and compaction</th></tr>
+<tr><td>3-1 Weight-volume relationships; 3-2 Unit weight of cohesive soils</td><td><span class=muted>Ordinary Excel formulas in the course workbook</span></td></tr>
+<tr><td>3-3 Determination of specific gravity</td><td><a href="#SPECIFIC_GRAVITY"><code>specific_gravity</code></a>, <a href="#WATER_DENSITY"><code>water_density</code></a></td></tr>
+<tr><td>3-4 Principles of compaction; 3-5 Compaction tests; 3-6 Sand cone method</td><td><a href="#WATER_CONTENT"><code>water_content</code></a> (compaction curve: ordinary formulas)</td></tr>
+<tr><th colspan=2>Chapter 4. Permeability and seepage</th></tr>
+<tr><td>4-1 Principles of permeability tests; 4-2 Constant head; 4-3 Falling head</td><td><a href="#WATER_VISCOSITY"><code>water_viscosity</code></a>, <a href="#WATER_DENSITY"><code>water_density</code></a> (temperature correction to 20 °C)</td></tr>
+<tr><td>4-4 Electrical analogy; 4-5 Finite difference solutions of seepage problems</td><td><a href="#SEEPAGE_STENCIL"><code>seepage_stencil</code></a>, <a href="#SEEPAGE_HXY"><code>seepage_hxy</code></a>, <a href="#SEEPAGE_HFIELD"><code>seepage_hfield</code></a>, <a href="#SEEPAGE_FLOWLINES"><code>seepage_flowlines</code></a>, <a href="#SEEPAGE_EQLINES"><code>seepage_eqlines</code></a>, <a href="#SEEPAGE_SEGSTATS"><code>seepage_segstats</code></a></td></tr>
+<tr><th colspan=2>Chapter 5. Stress-strain-strength properties</th></tr>
+<tr><td>5-1 Stress in soils (Mohr circle, pole)</td><td><a href="#STRESS_MOHR_POLE"><code>stress_Mohr_pole</code></a>, <a href="#STRESS_MOHR"><code>Stress_Mohr</code></a>, <a href="#STRESS_MOHRCIRCLE"><code>stress_Mohrcircle</code></a>, <a href="#STRESS_MOHR_FAILURE"><code>stress_Mohr_failure</code></a></td></tr>
+<tr><td>5-2 to 5-5 Strain, stress-strain relations, laboratory tests, elastic properties</td><td><span class=muted>Ordinary Excel formulas in the course workbook</span></td></tr>
+<tr><th colspan=2>Chapter 6. Consolidation</th></tr>
+<tr><td>6-1 Principles of consolidation</td><td><a href="#CONSOLIDATION_U"><code>consolidation_U</code></a>, <a href="#CONSOLIDATION_TV"><code>consolidation_Tv</code></a>, <a href="#CONSOLIDATION_UX"><code>consolidation_Ux</code></a>, <a href="#CONSOLIDATION_U_APPROXIMATE"><code>consolidation_U_approximate</code></a>, <a href="#CONSOLIDATION_U_VARIABLE"><code>consolidation_U_variable</code></a></td></tr>
+<tr><td>6-2 Consolidation test</td><td><a href="#CONSOLIDATION_TABLE"><code>consolidation_table</code></a>, <a href="#CONSOLIDATION_LOG_TIME"><code>consolidation_log_time</code></a>, <a href="#CONSOLIDATION_SQRT_TIME"><code>consolidation_sqrt_time</code></a>, <a href="#CONSOLIDATION_FITTING"><code>consolidation_fitting</code></a>, <a href="#CONSOLIDATION_CREEP"><code>consolidation_creep</code></a></td></tr>
+<tr><th colspan=2>Chapter 7. Shear strength</th></tr>
+<tr><td>7-1 Shear strength of soils (Mohr–Coulomb)</td><td><a href="#STRESS_MOHR_FAILURE"><code>stress_Mohr_failure</code></a>, <a href="#STRESS_MOHRCIRCLE"><code>stress_Mohrcircle</code></a></td></tr>
+<tr><td>7-2, 7-3 Unconfined compression; 7-4, 7-5 Direct shear; 7-6 to 7-8 Triaxial tests</td><td><a href="#WATER_CONTENT"><code>water_content</code></a>, <a href="#STRESS_MOHRCIRCLE"><code>stress_Mohrcircle</code></a> (stress-strain reduction: ordinary formulas)</td></tr>
+<tr><th colspan=2>Chapter 8. Elements of experimental techniques</th></tr>
+<tr><td>8-1 Review of data modeling (regression, interpolation)</td><td><a href="#INTERPOLATE"><code>interpolate</code></a>, <a href="#INTERPOLATE_TABLE"><code>interpolate_table</code></a>, Excel LINEST</td></tr>
+<tr><td>8-2 to 8-5 Statistics, error analysis, units, report writing</td><td><span class=muted>Ordinary Excel formulas in the course workbook</span></td></tr>
+<tr><th colspan=2>Chapter 9. Data processing with spreadsheets</th></tr>
+<tr><td>9-1 to 9-3 Spreadsheets, user-defined functions, worked examples</td><td>geolabXL itself: every function is a LAMBDA you can open in Formulas ▸ Name Manager</td></tr>
 </tbody></table>
 </section>
 
@@ -95,5 +123,5 @@
 
 <section class=panel id=guide-releases>
 <h2>Release notes</h2>
-<p><b>0.1 (November 5, 2026).</b> First release, taken from geoXL 0.25: water content, specific gravity, sieve and hydrometer analysis (<code>sieve_passing</code>, <code>hydrometer_*</code>), soil classification (<code>classify_*</code>), water density and viscosity, and the consolidation methods (<code>consolidation_log_time</code>, <code>consolidation_sqrt_time</code>, <code>consolidation_fitting</code>, <code>consolidation_creep</code>, <code>consolidation_table</code>). Every function is the same as in geoXL. Older dotted names such as <code>water.density</code> are converted when a workbook is updated. One behaviour differs from the older hydrometer workbook: <code>interpolate</code> returns <code>#N/A</code> outside the data range instead of 0, so a % clay cell wrapped in <code>IFERROR(…, "")</code> now shows blank when the readings do not reach 0.005 mm. Native Excel release validation remains pending.</p>
+<p><b>0.1 (November 5, 2026).</b> First release, organized by the chapters of <cite>Experimental Soil Mechanics</cite> and taken from geoXL 0.25: water content, specific gravity, sieve and hydrometer analysis (<code>sieve_passing</code>, <code>hydrometer_*</code>), soil classification (<code>classify_*</code>), water density and viscosity, Mohr circle (<code>stress_Mohr*</code>), finite-difference seepage (<code>seepage_*</code>), consolidation theory (<code>consolidation_U</code>, <code>consolidation_Ux</code>) and the consolidation test methods (<code>consolidation_log_time</code>, <code>consolidation_sqrt_time</code>, <code>consolidation_fitting</code>, <code>consolidation_creep</code>, <code>consolidation_table</code>). Every function is the same as in geoXL. Older dotted names such as <code>water.density</code> are converted when a workbook is updated. One behaviour differs from the older hydrometer workbook: <code>interpolate</code> returns <code>#N/A</code> outside the data range instead of 0, so a % clay cell wrapped in <code>IFERROR(…, "")</code> now shows blank when the readings do not reach 0.005 mm. Native Excel release validation remains pending.</p>
 </section>
