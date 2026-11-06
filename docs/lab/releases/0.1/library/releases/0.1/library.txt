@@ -4,7 +4,7 @@
 // Check the installed version with =geolab_version()
 
 /** geolabXL library version and date. */
-geolab_version = LAMBDA("geolabXL 0.1 (2026-11-05)");
+geolab_version = LAMBDA("geolabXL 0.1 (2026-11-06)");
 
 /** AASHTO soil classification with group index, as text. Inputs: % passing No.10, No.40, No.200 (enter 40 for 40%), LL_, PL_. */
 classify_AASHTO = LAMBDA(pf10_, pf40_, pf200_, LL_, PL_,
@@ -323,6 +323,48 @@ LET(smArg,IF(ISOMITTED(smooth),1,smooth),nArg,IF(ISOMITTED(nmax),0,nmax),big,1E+
 seepage_flowlines = LAMBDA(xs, ys, H, levels, [k], [edge],
 LET(kv,IF(ISOMITTED(k),1,k),ev,IF(ISOMITTED(edge),0,edge),PS,seepage_psigrid(xs,ys,H,kv,0,ev),seepage_eqlines(xs,ys,PS,levels)));
 
+/** Stream function q/k from the heads without iteration: face fluxes summed up from the impervious bottom (psi = 0); thin walls and grid edges use half-cell fluxes. block: x in row 1, y in column 1, heads inside (blank = no soil). */
+seepage_psi = LAMBDA(block,
+    LET(
+        nr, ROWS(block), nc, COLUMNS(block), m, nr - 1, n, nc - 1,
+        xs, TOCOL(INDEX(block, 1, 2):INDEX(block, 1, nc)),
+        ys, INDEX(block, 2, 1):INDEX(block, nr, 1),
+        H, INDEX(block, 2, 2):INDEX(block, nr, nc),
+        ok, --ISNUMBER(H), Hn, IF(ok, H, 0),
+        hl, DROP(Hn, , -1), hr, DROP(Hn, , 1), V, DROP(ok, , -1) * DROP(ok, , 1),
+        D, (hl - hr) * V,
+        psa, MMULT(--(SEQUENCE(1, m) >= SEQUENCE(m)), D) - D / 2 - CHOOSEROWS(D, m) / 2,
+        zr, SEQUENCE(1, n) * 0,
+        hu, VSTACK(TAKE(Hn, 1), DROP(Hn, -1)), hd, VSTACK(DROP(Hn, 1), TAKE(Hn, -1)),
+        oku, VSTACK(zr, DROP(ok, -1)), okd, VSTACK(DROP(ok, 1), zr),
+        G, (IF(oku, hu, Hn) - IF(okd, hd, Hn)) / IF(oku * okd, 4, 2),
+        dx, ABS(DROP(xs, 1) - DROP(xs, -1)),
+        thin, TOROW(dx < 0.25 * MEDIAN(dx)),
+        PL, HSTACK(TAKE(psa, , 1), DROP(psa, , -1)), PR, HSTACK(DROP(psa, , 1), TAKE(psa, , -1)),
+        psb, IF(thin, IF(DROP(ok, , -1), PL + DROP(G, , -1), IF(DROP(ok, , 1), PR - DROP(G, , 1), "")), IF(V, psa, "")),
+        eL, IFERROR(IF(TAKE(ok, , 1), TAKE(psb, , 1) - TAKE(G, , 1), ""), ""),
+        eR, IFERROR(IF(TAKE(ok, , -1), TAKE(psb, , -1) + TAKE(G, , -1), ""), ""),
+        VSTACK(HSTACK("", INDEX(xs, 1), TOROW((DROP(xs, 1) + DROP(xs, -1)) / 2), INDEX(xs, n)),
+               HSTACK(ys, eL, psb, eR))
+    ));
+
+/** Flow net for one chart: {x, y equipotentials | x, y flow lines}, #N/A separated. block: x in row 1, y in column 1, heads inside (blank = no soil); h_levels and psi_levels (q/k) are level lists. Flow lines come from seepage_psi. */
+seepage_flownet = LAMBDA(block, h_levels, psi_levels,
+    LET(
+        nr, ROWS(block), nc, COLUMNS(block),
+        xs, INDEX(block, 1, 2):INDEX(block, 1, nc),
+        ys, INDEX(block, 2, 1):INDEX(block, nr, 1),
+        H, INDEX(block, 2, 2):INDEX(block, nr, nc),
+        pick, LAMBDA(v, LET(t, TOCOL(v), FILTER(t, ISNUMBER(t), ""))),
+        hlev, pick(h_levels), plev, pick(psi_levels),
+        none, HSTACK(NA(), NA()),
+        EQ, IF(ISNUMBER(INDEX(hlev, 1)), seepage_eqlines(xs, ys, H, hlev), none),
+        PB, seepage_psi(block),
+        FL, IF(ISNUMBER(INDEX(plev, 1)), seepage_eqlines(DROP(TAKE(PB, 1), , 1), DROP(TAKE(PB, , 1), 1), DROP(PB, 1, 1), plev), none),
+        n, MAX(ROWS(EQ), ROWS(FL)),
+        HSTACK(EXPAND(EQ, n, 2, NA()), EXPAND(FL, n, 2, NA()))
+    ));
+
 /** Internal: nodal dh/dx (axis=1) or dh/dy (axis=2), wall/blank aware; edge 4=FD mass balance (default),1,2,3. seepage_gradgrid(xs,ys,H,axis,[edge]) */
 seepage_gradgrid = LAMBDA(xs, ys, H, axis, [edge],
 LET(xv,TOCOL(xs),yv,TOCOL(ys),n,ROWS(xv),m,ROWS(yv),tx,0.25*MEDIAN(ABS(DROP(xv,1)-DROP(xv,-1))),ty,0.25*MEDIAN(ABS(DROP(yv,1)-DROP(yv,-1))),ev,TOCOL(IF(ISOMITTED(edge),0,edge)),EMODE,LAMBDA(ee,IF(ee=1,1,IF(ee=2,2,IF(ee=3,3,4)))),eF,EMODE(INDEX(ev,1)),eL,EMODE(INDEX(ev,ROWS(ev))),NX,LAMBDA(ax,IF(ax=1,n,m)),HX,LAMBDA(ax,i,j,IF(ax=1,INDEX(H,j,i),INDEX(H,i,j))),CX,LAMBDA(ax,i,IF(ax=1,INDEX(xv,i),INDEX(yv,i))),ACTV,LAMBDA(ax,i,j,IF(OR(i<1,j<1,i>NX(ax),j>NX(3-ax)),FALSE,ISNUMBER(HX(ax,i,j)))),THIN,LAMBDA(ax,ia,ib,ABS(CX(ax,ib)-CX(ax,ia))<IF(ax=1,tx,ty)),NBR,LAMBDA(ax,i,j,dn,LET(kk,i+dn,IF(NOT(ACTV(ax,kk,j)),0,IF(THIN(ax,i,kk),IF(HX(ax,kk,j)<>HX(ax,i,j),0,LET(kb,kk+dn,IF(ACTV(ax,kb,j),kb,0))),kk)))),PRIM,LAMBDA(ax,i,j,IF(i<=1,i,IF(NOT(ACTV(ax,i-1,j)),i,IF(AND(THIN(ax,i-1,i),HX(ax,i-1,j)=HX(ax,i,j)),i-1,i)))),DQ,LAMBDA(pa,pb,pd,fa,fb,fd,xx,fa*((xx-pb)+(xx-pd))/((pa-pb)*(pa-pd))+fb*((xx-pa)+(xx-pd))/((pb-pa)*(pb-pd))+fd*((xx-pa)+(xx-pb))/((pd-pa)*(pd-pb))),NDERX,LAMBDA(ax,i,j,IF(NOT(ACTV(ax,i,j)),0,LET(iL,NBR(ax,i,j,-1),iR,NBR(ax,i,j,1),IF((iL=0)=(iR=0),0,LET(iq,IF(iR>0,iR,iL),jm,NBR(3-ax,j,i,-1),jp,NBR(3-ax,j,i,1),IF(OR(jm=0,jp=0),0,LET(dd,ABS(CX(ax,iq)-CX(ax,i)),dtm,ABS(CX(3-ax,j)-CX(3-ax,jm)),dtp,ABS(CX(3-ax,jp)-CX(3-ax,j)),aa,dd/2,bb,(dtm+dtp)/2,tsum,(HX(ax,i,jm)-HX(ax,i,j))/dtm+(HX(ax,i,jp)-HX(ax,i,j))/dtp,-(HX(ax,iq,j)-HX(ax,i,j))/dd-(aa/bb)*tsum))))))),DER,LAMBDA(ax,iorig,j,IF(NOT(ACTV(ax,iorig,j)),NA(),LET(i,PRIM(ax,iorig,j),iL,NBR(ax,i,j,-1),iR,NBR(ax,i,j,1),IF(AND(iL>0,iR>0),DQ(CX(ax,iL),CX(ax,i),CX(ax,iR),HX(ax,iL,j),HX(ax,i,j),HX(ax,iR,j),CX(ax,i)),IF(AND(iL=0,iR=0),0,LET(iq,IF(iR>0,iR,iL),md,IF(iL=0,eF,eL),dd,CX(ax,iq)-CX(ax,i),sg,SIGN(dd),IF(md=1,0,IF(md=2,(HX(ax,iq,j)-HX(ax,i,j))/dd,IF(md=3,LET(iqb,NBR(ax,iq,j,SIGN(iq-i)),IF(iqb=0,(HX(ax,iq,j)-HX(ax,i,j))/dd,DQ(CX(ax,i),CX(ax,iq),CX(ax,iqb),HX(ax,i,j),HX(ax,iq,j),HX(ax,iqb,j),CX(ax,i)))),LET(jm,NBR(3-ax,j,i,-1),jp,NBR(3-ax,j,i,1),IF(AND(jm>0,jp>0),-sg*NDERX(ax,i,j),IF(AND(jm=0,jp=0),(HX(ax,iq,j)-HX(ax,i,j))/dd,LET(jn,IF(jm>0,jm,jp),dt,ABS(CX(3-ax,jn)-CX(3-ax,j)),aa,ABS(dd)/2,bb,dt/2,sres,-((HX(ax,iq,j)-HX(ax,i,j))/ABS(dd)*bb+(HX(ax,i,jn)-HX(ax,i,j))/dt*aa),wc,bb*ABS(NDERX(ax,i,jn)),wt,aa*ABS(NDERX(3-ax,j,iq)),-sg*IF(wc+wt=0,sres/(aa+bb),sres*wc/(wc+wt)/bb)))))))))))))),MAKEARRAY(m,n,LAMBDA(rr,qq,IF(axis=1,DER(1,qq,rr),DER(2,rr,qq))))));
@@ -351,17 +393,33 @@ LET(kv,IF(ISOMITTED(k),0,k),nv,IF(ISOMITTED(n),0,n),ev,IF(ISOMITTED(edge),0,edge
 seepage_cellok = LAMBDA(xs, ys, H, rw, cl,
 LET(xv,TOCOL(xs),yv,TOCOL(ys),n,ROWS(xv),m,ROWS(yv),IF(OR(rw<1,cl<1,rw>m-1,cl>n-1),FALSE,IF(NOT(AND(ISNUMBER(INDEX(H,rw,cl)),ISNUMBER(INDEX(H,rw,cl+1)),ISNUMBER(INDEX(H,rw+1,cl)),ISNUMBER(INDEX(H,rw+1,cl+1)))),FALSE,LET(tx,0.25*MEDIAN(ABS(DROP(xv,1)-DROP(xv,-1))),ty,0.25*MEDIAN(ABS(DROP(yv,1)-DROP(yv,-1))),hA,INDEX(H,rw,cl),hB,INDEX(H,rw,cl+1),hC,INDEX(H,rw+1,cl),hD,INDEX(H,rw+1,cl+1),wx,AND(ABS(INDEX(xv,cl+1)-INDEX(xv,cl))<tx,hA<>hB,hC<>hD),wy,AND(ABS(INDEX(yv,rw+1)-INDEX(yv,rw))<ty,hA<>hC,hB<>hD),NOT(OR(wx,wy)))))));
 
-/** Interior node, 4-point stencil: (a+b+c+d)/4 - the four neighbours in any order. seepage_stencil(a,b,c,d) */
-seepage_stencil = LAMBDA(a,b,cValue,d,(a+b+cValue+d)/4);
+/** Interior node. Five-node form: seepage_stencil(old,a,b,cc,d,[w]) - old = this cell, a..d = its 4 neighbours; w = omega for SOR, 0 resets to 0, omitted = plain average. The 4-argument form seepage_stencil(a,b,c,d) still returns (a+b+c+d)/4. */
+seepage_stencil = LAMBDA(old, a, b, cc, [d], [w],
+    LET(
+        avg, IF(ISOMITTED(d), (old + a + b + cc) / 4, (a + b + cc + d) / 4),
+        IF(OR(ISOMITTED(d), ISOMITTED(w)), avg, IF(w = 0, 0, old + w * (avg - old)))
+    ));
 
-/** No-flow edge (mirror, half cell): (2n+ta+tb)/4 - n = neighbour into the soil, ta, tb = neighbours along the edge. seepage_stencil1(n,ta,tb) */
-seepage_stencil1 = LAMBDA(n,ta,tb,(2*n+ta+tb)/4);
+/** No-flow edge (mirror). Five-node form: seepage_stencil1(old,n,ta,tb,[w]) - n = neighbour into the soil, ta, tb = neighbours along the edge; w as in seepage_stencil. The 3-argument form seepage_stencil1(n,ta,tb) still returns (2n+ta+tb)/4. */
+seepage_stencil1 = LAMBDA(old, n, ta, [tb], [w],
+    LET(
+        avg, IF(ISOMITTED(tb), (2 * old + n + ta) / 4, (2 * n + ta + tb) / 4),
+        IF(OR(ISOMITTED(tb), ISOMITTED(w)), avg, IF(w = 0, 0, old + w * (avg - old)))
+    ));
 
-/** Outer corner between two no-flow edges (quarter cell): (a+b)/2. seepage_stencil2(a,b) */
-seepage_stencil2 = LAMBDA(a,b,(a+b)/2);
+/** Outer corner between two no-flow edges. Five-node form: seepage_stencil2(old,a,b,[w]); w as in seepage_stencil. The 2-argument form seepage_stencil2(a,b) still returns (a+b)/2. */
+seepage_stencil2 = LAMBDA(old, a, [b], [w],
+    LET(
+        avg, IF(ISOMITTED(b), (old + a) / 2, (a + b) / 2),
+        IF(OR(ISOMITTED(b), ISOMITTED(w)), avg, IF(w = 0, 0, old + w * (avg - old)))
+    ));
 
-/** Re-entrant corner (three-quarter cell): (2fa+2fb+ha+hb)/6 - fa, fb = neighbours across full faces, ha, hb = neighbours across half faces. seepage_stencil3(fa,fb,ha,hb) */
-seepage_stencil3 = LAMBDA(fa,fb,ha,hb,(2*fa+2*fb+ha+hb)/6);
+/** Re-entrant corner. Five-node form: seepage_stencil3(old,fa,fb,ha,hb,[w]) - fa, fb across full faces, ha, hb across half faces; w as in seepage_stencil. The 4-argument form seepage_stencil3(fa,fb,ha,hb) still returns (2fa+2fb+ha+hb)/6. */
+seepage_stencil3 = LAMBDA(old, fa, fb, ha, [hb], [w],
+    LET(
+        avg, IF(ISOMITTED(hb), (2 * old + 2 * fa + fb + ha) / 6, (2 * fa + 2 * fb + ha + hb) / 6),
+        IF(OR(ISOMITTED(hb), ISOMITTED(w)), avg, IF(w = 0, 0, old + w * (avg - old)))
+    ));
 
 /** Water density (g/cm^3) from temperature in degrees Celsius; cubic fit from the hydrometer example. */
 water_density = LAMBDA(temperature,0.000000036052*temperature^3-0.0000075123*temperature^2+0.000052019*temperature+0.99991);

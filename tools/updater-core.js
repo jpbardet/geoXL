@@ -16,7 +16,7 @@ function tokenize(s) {
     if (/\s/.test(s[i])) { i++; continue; }
     if(s.slice(i,i+2)==='//') { const n=s.indexOf('\n',i); i=n<0?s.length:n; continue; }
     if(s.slice(i,i+2)==='/*') { const n=s.indexOf('*/',i+2); if(n<0) fail('Unclosed comment.'); i=n+2; continue; }
-    const m=s.slice(i).match(/^("(?:[^"]|"")*"|#[A-Za-z0-9/]+[!?]?|(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?|[A-Za-z_][\w.]*|<=|>=|<>|[=&<>+*/^(),;{}\[\]\-])/);
+    const m=s.slice(i).match(/^("(?:[^"]|"")*"|#[A-Za-z0-9/]+[!?]?|(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?|[A-Za-z_][\w.]*|<=|>=|<>|[=&<>+*/^(),;:{}\[\]\-])/);
     if(!m) fail('Unsupported source syntax near: '+s.slice(i,i+60));
     out.push({v:m[1],start:i,end:i+m[1].length}); i+=m[1].length;
   }
@@ -48,7 +48,7 @@ class Parser {
         this.want(')'); n={k:'call',v:t,args};
       }
     } else fail('Unexpected token '+t+'.');
-    const prec={'=':1,'<>':1,'<':1,'>':1,'<=':1,'>=':1,'&':2,'+':2,'-':2,'*':3,'/':3,'^':4};
+    const prec={'=':1,'<>':1,'<':1,'>':1,'<=':1,'>=':1,'&':2,'+':2,'-':2,'*':3,'/':3,'^':4,':':5};
     while(this.peek() in prec && prec[this.peek()]>=min) { const op=this.pop(),p=prec[op];
       n={k:'binary',v:op,a:n,b:this.expression(op==='^'?p:p+1)}; }
     return n;
@@ -146,17 +146,17 @@ function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 function encodeFormula(s) { return s.replace(/_x[0-9a-f]{4}_/gi,m=>'_x005F_'+m.slice(1)); }
 function decodeFormula(s) { return s.replace(/_x([0-9a-f]{4})_/gi,(_,h)=>String.fromCharCode(parseInt(h,16))); }
 function findNamesBlock(w) {
-  return w.match(/<((?:[\w.-]+:)?definedNames)\b[^>]*\/>|<((?:[\w.-]+:)?definedNames)\b[^>]*>[^]*?<\/\2\s*>/);
+  return w.match(/<((?:[\w.-]+:)?definedNames)\b(?:[^>"]|"[^"]*")*\/>|<((?:[\w.-]+:)?definedNames)\b(?:[^>"]|"[^"]*")*>[^]*?<\/\2\s*>/);
 }
 function patchNames(w,entries,replaceNames) {
   const block=findNamesBlock(w),root=w.match(/<((?:[\w.-]+:)?workbook)\b/);if(!root)fail('Workbook XML root not found.');
   const prefix=root[1].includes(':')?root[1].split(':')[0]+':':'';
   let kept='';
   if(block) {
-    const open=block[0].match(/^<[^>]+>/)[0];
+    const open=block[0].match(/^<(?:[^>"]|"[^"]*")+>/)[0];
     if(!open.endsWith('/>')) {
       kept=block[0].slice(open.length).replace(/<\/(?:[\w.-]+:)?definedNames\s*>$/,'');
-      kept=kept.replace(/<(?:[\w.-]+:)?definedName\b[^>]*(?:\/>|>[^]*?<\/(?:[\w.-]+:)?definedName\s*>)/g,s=>{
+      kept=kept.replace(/<(?:[\w.-]+:)?definedName\b(?:[^>"]|"[^"]*")*(?:\/>|>[^]*?<\/(?:[\w.-]+:)?definedName\s*>)/g,s=>{
         const e=xml('<wrap xmlns="'+NS+'">'+s.replace(/(<\/?)[\w.-]+:/g,'$1')+'</wrap>').documentElement.firstElementChild;
         return replaceNames.has((e.getAttribute('name')||'').toLowerCase()+'|'+(e.getAttribute('localSheetId')||''))?'':s;
       });
@@ -388,7 +388,7 @@ function migrateFormula(s,aliases) {
 }
 function migrateFormulaXml(source,tags,aliases,part,stats) {
   const alternatives=tags.join('|');
-  const pattern=new RegExp('(<((?:[\\w.-]+:)?(?:'+alternatives+'))\\b(?![^>]*\\/>)[^>]*>)([^]*?)(<\\/\\2\\s*>)','g');
+  const pattern=new RegExp('(<((?:[\\w.-]+:)?(?:'+alternatives+'))\\b(?!(?:[^>"]|"[^"]*")*\\/>)(?:[^>"]|"[^"]*")*>)([^]*?)(<\\/\\2\\s*>)','g');
   return source.replace(pattern,(whole,open,tag,body,close)=>{
     if(!body||body.includes('<'))return whole;
     // Decode XML entities with the same parser used by workbook validation.

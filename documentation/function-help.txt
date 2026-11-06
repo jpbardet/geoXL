@@ -1087,6 +1087,21 @@ notes: Uses the corrected geoXL 0.19 seepage_gradgrid; edge=3 supports ascending
 notes: Computes seepage_psigrid with bottom reference 0, then contours psi using seepage_eqlines. This is not particle tracking. Inherits the stream-function boundary assumptions and contour limitations.
 notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definitions are preserved, not a new solution of the head field.
 
+[seepage_psi]
+block: Worksheet range of the head grid: x coordinates in the first row, y coordinates in the first column, total heads inside; blank cells = no soil
+returns: Table of the stream function psi = q/k with the same layout: x in the first row (the two edges and the mid-points between grid columns), y in the first column, psi inside.
+notes: Direct calculation, no iteration: between two neighbouring columns the flux through each node face is h(left) - h(right); these fluxes are summed upward from the bottom row, where psi = 0, with half weights at the end nodes. Thin walls (a column pair less than a quarter of the usual spacing apart) and the two grid edges add half a cell of vertical flux.
+notes: Exact for heads that satisfy the stencils: psi is then constant along every no-flow boundary (for example both faces of a sheet pile) and equals Q/k on the impervious structure. Unconverged heads give wandering flow lines where gradients are small, so let the grid converge first.
+notes: Assumes a square grid (as the stencils do), an impervious bottom row and flow from left to right; with flow from right to left psi is negative. Added in geoXL 0.25.
+
+[seepage_flownet]
+block: Worksheet range of the head grid: x coordinates in the first row, y coordinates in the first column, total heads inside; blank cells = no soil
+h_levels: Total-head values of the equipotentials (a range or list; blanks and text are skipped)
+psi_levels: Flow-line values q/k (a range or list; blanks and text are skipped), between 0 and Q/k
+returns: Four columns for one chart: x, y of the equipotentials, then x, y of the flow lines; lines are separated by #N/A and the shorter pair is padded with #N/A.
+notes: Equipotentials come from seepage_eqlines on the heads, flow lines from seepage_eqlines on seepage_psi(block). Thin walls are recognised from the x coordinates (a 0.1 m slot between the two faces) and the head difference across them.
+notes: The block must start at the coordinate row and column: for a grid in C10:AO18 with x in row 9 and y in column B, use B9:AO18. The calculation is heavy; while the grid iterates, wrap it in an On/Off switch: =IF(A2="On", seepage_flownet(...), NA()). Added in geoXL 0.25.
+
 [seepage_gradgrid]
 xs: Strictly monotonic x coordinates, one per H column; row or column vector
 ys: Strictly monotonic y coordinates, one per H row; row or column vector
@@ -1179,41 +1194,47 @@ notes: Internal helper shared by interpolation and contour tracing. Thin x/y int
 notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definitions are preserved, not a new solution of the head field.
 
 [seepage_stencil]
-a: Head at one of the four directly adjacent nodes
-b: Head at a second directly adjacent node
-cValue: Head at a third directly adjacent node
-d: Head at the fourth directly adjacent node
-returns: Interior-node head estimate (a+b+cValue+d)/4, in the same units as the inputs.
-notes: For steady two-dimensional seepage in homogeneous isotropic soil on a uniform square grid, the discrete Laplace equation gives the arithmetic mean of four nearest-neighbor heads. Neighbor order is immaterial.
-notes: Intended for worksheet finite-difference equations and iterative calculation. A single call evaluates a local relation; it does not solve the entire grid. Unequal spacing or anisotropic conductivity requires different weights.
-notes: Example: =seepage_stencil(10,6,8,4) returns 7. Added in geoXL 0.20.
+old: This cell (the node itself), for over-relaxation. In the old 4-argument form, the first neighbour
+a: Head at a neighbour of the node (the four neighbours may be in any order)
+b: Head at another neighbour
+cc: Head at another neighbour
+d: Head at the fourth neighbour (five-node form). Omit for the old form seepage_stencil(a,b,c,d)
+w: Optional control: omega for SOR (1 to 2), 0 resets the node to 0, omitted = plain average
+returns: Interior-node head: (a+b+cc+d)/4, or old + w*(average - old) with over-relaxation.
+notes: Five-node form: =seepage_stencil(D11,D10,C11,D12,E11,$D$7), where D11 is the cell itself and $D$7 holds 0 on Reset and omega otherwise (=IF(C7="Reset",0,omega)). One control cell replaces the IF(reset,...) wrapper around every stencil.
+notes: The update h + w*(average - h) is successive over-relaxation (SOR). With Excel's iterative calculation it typically needs 10 to 50 times fewer iterations than the plain average; omega about 1.8 suits grids of 20 to 40 cells.
+notes: The old 4-argument form still works and returns (a+b+c+d)/4. Example: =seepage_stencil(10,6,8,4) returns 7; =seepage_stencil(5,10,6,8,4,1.5) returns 5+1.5*(7-5) = 8. Added in geoXL 0.20; five-node form in 0.25.
 
 [seepage_stencil1]
+old: This cell (the node itself). In the old 3-argument form, the neighbour into the soil
 n: Head at the neighbor directed into the soil, normal to the no-flow edge
 ta: Head at one neighbor along the no-flow edge
-tb: Head at the other neighbor along the no-flow edge
-returns: No-flow edge-node head estimate (2*n+ta+tb)/4.
-notes: Reflecting the interior neighbor across a zero-normal-flux edge gives a mirror-node half-cell stencil on a uniform square grid in homogeneous isotropic soil. The interior neighbor has double weight.
-notes: Apply only to a straight impermeable boundary aligned with the grid. This is not a prescribed-head boundary formula. Unequal spacing or anisotropic conductivity requires different weights.
-notes: Example: =seepage_stencil1(8,4,12) returns 8. Added in geoXL 0.20.
+tb: Head at the other neighbor along the no-flow edge (five-node form)
+w: Optional control: omega for SOR, 0 resets the node to 0, omitted = plain average
+returns: No-flow edge-node head (2*n+ta+tb)/4, or with over-relaxation.
+notes: Reflecting the interior neighbor across a zero-normal-flux edge gives a mirror-node half-cell stencil on a uniform square grid in homogeneous isotropic soil. The interior neighbor has double weight: n must be the neighbour opposite the boundary, and ta, tb the two neighbours along it.
+notes: On each face of a thin wall, n is the neighbour on the same side of the wall, never across it. Apply only to a straight impermeable boundary aligned with the grid; this is not a prescribed-head formula.
+notes: Example: =seepage_stencil1(8,4,12) returns 8 (old form). Added in geoXL 0.20; five-node form in 0.25.
 
 [seepage_stencil2]
+old: This cell (the node itself). In the old 2-argument form, the first neighbour
 a: Head at one adjacent node into the soil along a no-flow edge
-b: Head at the other adjacent node into the soil along the second no-flow edge
-returns: Outer-corner head estimate (a+b)/2.
+b: Head at the other adjacent node into the soil along the second no-flow edge (five-node form)
+w: Optional control: omega for SOR, 0 resets the node to 0, omitted = plain average
+returns: Outer-corner head (a+b)/2, or with over-relaxation.
 notes: At a convex 90-degree corner where two grid-aligned impermeable boundaries meet, a quarter-cell mass balance on a uniform square grid in homogeneous isotropic soil gives equal weights to the two soil neighbors.
-notes: Both boundaries must have zero normal flux. Do not use this formula at a re-entrant corner or a prescribed-head boundary. Unequal spacing or anisotropic conductivity requires different weights.
-notes: Example: =seepage_stencil2(6,10) returns 8. Added in geoXL 0.20.
+notes: Example: =seepage_stencil2(6,10) returns 8 (old form). Added in geoXL 0.20; five-node form in 0.25.
 
 [seepage_stencil3]
+old: This cell (the node itself). In the old 4-argument form, the first full-face neighbour
 fa: Head at a neighbor across a full control-volume face
 fb: Head at the other neighbor across a full control-volume face
 ha: Head at a neighbor across a half control-volume face
-hb: Head at the other neighbor across a half control-volume face
-returns: Re-entrant-corner head estimate (2*fa+2*fb+ha+hb)/6.
+hb: Head at the other neighbor across a half control-volume face (five-node form)
+w: Optional control: omega for SOR, 0 resets the node to 0, omitted = plain average
+returns: Re-entrant-corner head (2*fa+2*fb+ha+hb)/6, or with over-relaxation.
 notes: At a concave 270-degree soil corner with grid-aligned no-flow boundary segments, a three-quarter-cell mass balance gives full-face neighbors twice the weight of half-face neighbors, for a uniform square grid in homogeneous isotropic soil.
-notes: Identify full and half faces from the soil control volume, not from an arbitrary neighbor order. Unequal spacing or anisotropic conductivity requires different weights.
-notes: Example: =seepage_stencil3(12,6,3,9) returns 8. Added in geoXL 0.20.
+notes: Example: =seepage_stencil3(12,6,3,9) returns 8 (old form). Added in geoXL 0.20; five-node form in 0.25.
 
 [CPT_classify]
 dqs: Three-column sounding array: depth, cone resistance qc, sleeve friction fs; positive depth measured downward

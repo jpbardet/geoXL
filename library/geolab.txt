@@ -3,7 +3,7 @@
 # Raise the version whenever this list changes or a listed function (or one it calls) changes;
 # the build refuses to overwrite a published geolabXL snapshot with different content.
 version: 0.1
-date: 2026-11-05
+date: 2026-11-06
 
 # Water content and specific gravity
 water_content
@@ -47,6 +47,8 @@ seepage_psigrid
 seepage_eqline
 seepage_eqlines
 seepage_flowlines
+seepage_psi
+seepage_flownet
 seepage_segprofile
 seepage_segstats
 seepage_cellok

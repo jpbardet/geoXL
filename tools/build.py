@@ -221,7 +221,8 @@ def page(site, text, record):
     print(f"{L} {record['version']}: {total} functions -> {out.relative_to(ROOT)}/index.html" + (f"  (no help: {', '.join(missing)})" if missing else ""))
 
 gmap = json.loads(read(DOC / "geoxl-groups.json"))
-GX_NEW = [("Soil laboratory tests", ("water_content", "specific_gravity", "sieve_", "hydrometer_")),
+GX_NEW = [("Seepage & flow nets", ("seepage_",)),
+          ("Soil laboratory tests", ("water_content", "specific_gravity", "sieve_", "hydrometer_")),
           ("Consolidation", ("consolidation_",))]
 def gx_group(name):
     g = gmap["map"].get(name.lower())
