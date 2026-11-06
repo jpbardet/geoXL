@@ -1,7 +1,7 @@
 # geoXL — student distribution
 
 - [geoXL: install / update a workbook and function reference](https://jpbardet.github.io/geoXL/) (geotechnical engineering course)
-- [geolabXL: the laboratory library](https://jpbardet.github.io/geoXL/lab/) (soil mechanics laboratory)
+- [geolabXL: the laboratory library](https://jpbardet.github.io/geolabXL/) (soil mechanics laboratory)
 
 Use the updater to import the published LAMBDA library into a new copy of your
 workbook. Save and close the original first. No add-in or macro installation is
@@ -39,7 +39,7 @@ Version 0.25 adds 13 soil-laboratory functions and the separate laboratory page 
 
 ## Maintaining the two pages
 
-There is one library and two student pages.
+There is one library and two separate student sites: geoXL (this repository, `docs/`, jpbardet.github.io/geoXL/) and geolabXL (repository `jpbardet/geolabXL`, `docs/`, jpbardet.github.io/geolabXL/). Both are built from this repository; `tools/build.py` writes the geolabXL site into a sibling checkout `../geolabXL` (or `GEOLABXL_DOCS`). Commit and push that repository separately.
 
 | File | What it is |
 |---|---|
@@ -48,7 +48,7 @@ There is one library and two student pages.
 | `documentation/function-help.txt` | Argument help, returns and method notes for both pages. |
 | `documentation/geoxl-guide.html`, `geoxl-install-notes.html` | geoXL student guide and install-tab notices. |
 | `documentation/geolab-guide.html` | geolabXL student guide. |
-| `tools/build.py` | Builds both libraries, both pages and the frozen release copies under `docs/`. |
+| `tools/build.py` | Builds both libraries, both pages and the frozen release copies (geoXL in `docs/`, geolabXL in `../geolabXL/docs/`). |
 | `tools/updater-core.js`, `tools/page.js`, `tools/page.css` | The in-browser updater and page code shared by both pages. |
 | `tests/updater/` | Runs the real updater in Chromium on folders of workbooks and checks the copies. |
 

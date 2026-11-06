@@ -12,16 +12,18 @@ Sources
 
 Outputs (GitHub Pages serves docs/)
   docs/index.html, docs/update.html, docs/library/...           geoXL (all functions)
-  docs/lab/index.html, docs/lab/update.html, docs/lab/library/  geolabXL (laboratory subset)
-  docs/releases/<v>/ and docs/lab/releases/<v>/                 frozen copy of each release page
+  docs/releases/<v>/                                             frozen copy of each geoXL release page
+  ../geolabXL/docs/...   geolabXL, a separate site (repository jpbardet/geolabXL, jpbardet.github.io/geolabXL/)
+                         with the same layout; set GEOLABXL_DOCS to build it elsewhere
 
 A published library snapshot is never overwritten: change the version first.
 """
-import hashlib, html, json, re, shutil, sys
+import hashlib, html, json, os, re, shutil, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
+LAB_DOCS = Path(os.environ.get("GEOLABXL_DOCS", ROOT.parent / "geolabXL" / "docs")).resolve()
 DOC = ROOT / "documentation"
 E = lambda t: html.escape(str(t), quote=False)
 read = lambda p: Path(p).read_text(encoding="utf-8")
@@ -96,7 +98,8 @@ def snapshot(base, version, text, date):
     return record
 
 gx_record = snapshot(DOCS, gx_version, master, gx_date)
-lab_record = snapshot(DOCS / "lab", lab_version, lab_text, lab_date)
+LAB_DOCS.mkdir(parents=True, exist_ok=True)
+lab_record = snapshot(LAB_DOCS, lab_version, lab_text, lab_date)
 
 # ---------------------------------------------------------------- help text
 helpdb, cur = {}, None
@@ -218,7 +221,7 @@ def page(site, text, record):
         shutil.copy2(out / "library/current.json", arch / "library/current.json")
         shutil.copy2(out / "library/releases" / record["version"] / "library.txt", arch / "library/releases" / record["version"] / "library.txt")
     missing = [n for n, _, _ in defs if n.lower() not in helpdb]
-    print(f"{L} {record['version']}: {total} functions -> {out.relative_to(ROOT)}/index.html" + (f"  (no help: {', '.join(missing)})" if missing else ""))
+    print(f"{L} {record['version']}: {total} functions -> {out}/index.html" + (f"  (no help: {', '.join(missing)})" if missing else ""))
 
 gmap = json.loads(read(DOC / "geoxl-groups.json"))
 GX_NEW = [("Seepage & flow nets", ("seepage_",)),
@@ -258,8 +261,8 @@ SITES = [
       helpers={"elastic_sector_row", "cpt_olsen_scn_row", "cpt_robertson_sbt_row", "intersection_segment_polyline", "slope_friction_circle_fct",
                "lateralpile_integrate", "seepage_cellok", "seepage_gradgrid", "seepage_psigrid", "bearing_effective", "cpt_sbt_names", "cpt_olsen_names"},
       config={"info": "_GeoEXCEL_UpdateInfo", "label": "geoXL", "otherInfo": "_GeoLabXL_UpdateInfo", "refuseOther": True,
-              "refuseMessage": "This workbook was set up with geolabXL, the laboratory library. Update it on the geolabXL page (jpbardet.github.io/geoXL/lab/) so that it keeps only the laboratory functions."}),
- dict(out=DOCS / "lab", label="geolabXL", brand="geolab<span>XL</span>", versionfn="geolab_version",
+              "refuseMessage": "This workbook was set up with geolabXL, the laboratory library. Update it on the geolabXL page, jpbardet.github.io/geolabXL/, so that it keeps only the laboratory functions."}),
+ dict(out=LAB_DOCS, label="geolabXL", brand="geolab<span>XL</span>", versionfn="geolab_version",
       lead="<b>geolabXL</b> is the library of Excel functions for the soil mechanics laboratory: water content, specific gravity, grain size, soil classification, permeability and consolidation. The functions are Excel LAMBDA formulas stored inside each workbook, so they work in Excel without add-ins or macros.",
       works_with="Works with any <code>.xlsx</code> workbook: a new blank workbook, a laboratory template, or a workbook with an older geolabXL version. You download a new copy with the current functions; your original is not changed.",
       dotted="Older workbooks that use names such as <code>water.density</code> are converted automatically to the current names (<code>water_density</code>), including the formulas that use them.",
