@@ -1,4 +1,4 @@
-// GeoEXCEL version 0.26 — complete consolidated named-LAMBDA library (documented)
+// GeoEXCEL version 0.27 — complete consolidated named-LAMBDA library (documented)
 // Module name: GeoEXCEL
 // Paste this entire file into the GeoEXCEL module in Excel Labs.
 // Local names use underscores. Worksheet example: =GeoEXCEL.water_pressure(3, 2)
@@ -71,8 +71,11 @@
 //                    New buoyancy_grain_size and buoyancy_percent_finer (buoyancy or sphere method, Chapter 1-6);
 //                    buoyancy_grain_size divides by the water density as in hydrometer_grainSize.
 
+// 0.27 (2026-11-07): pipette_grain_size and pipette_percent_finer added (pipette analysis, Chapter 1-5),
+//                    from pipette_analysis.xlsx (J.-P. Bardet). No existing function changed.
+
 /** Library version and release date, as text. Use =GeoEXCEL.version() to check which version is installed. */
-version = LAMBDA("GeoEXCEL 0.26 (2026-11-07)");
+version = LAMBDA("GeoEXCEL 0.27 (2026-11-07)");
 
 /** q_ult (kPa) for vertical loads: (author, phi, coh, q, gam, B, [L], [D], [eB], [eL], [use], [out]). Omitted/0 = off. use: "sdi" default, "s" = no depth factors. out 1 = table, 2 = 3 terms. Inclined loads: bearing_capacity_inclined. */
 bearing_capacity = LAMBDA(author,phi,coh,q,gam,B,[L],[D],[eB],[eL],[use],[out],LET(L_,IF(ISOMITTED(L),0,L),D_,IF(ISOMITTED(D),0,D),eB_,IF(ISOMITTED(eB),0,eB),eL_,IF(ISOMITTED(eL),0,eL),u,IF(ISOMITTED(use),"sdi",IF(use=0,"sdi",LOWER(use))),o,IF(ISOMITTED(out),0,out),g,bearing_effective(B,L_,eB_,eL_),Bp,INDEX(g,1),BL,INDEX(g,4),one,{1;1;1},N,bearing_factors(phi,author),s,IF(ISNUMBER(SEARCH("s",u)),bearing_shapeFactors(BL,phi,author),one),d,IF(ISNUMBER(SEARCH("d",u)),bearing_depthFactors(D_/B,phi,author),one),ld,VSTACK(coh,q,gam*Bp/2),t,N*s*d*ld,SWITCH(o,0,SUM(t),2,t,VSTACK(HSTACK("term","N","s","d","load","q_i"),HSTACK({"c";"q";"γ"},N,s,d,ld,t),HSTACK("q_ult","","","","",SUM(t))))));
@@ -2494,6 +2497,25 @@ buoyancy_percent_finer = LAMBDA(mass_immersed, temperature, Gs, concentration, m
         Mw,    mass_in_water,
         Mr,    mass_in_water_dispersing,
         rho_w*Gs*(Mr-mass_immersed)/(Ma*(Gs-1)-Mw*Gs+Mr)/concentration
+    )
+);
+
+/** Pipette method: equivalent particle diameter (mm) from Stokes law, for a sample taken at a given depth (cm) after a given time (min). */
+pipette_grain_size = LAMBDA(Time, depth_sampling, temperature, Gs,
+    LET(
+        mu_w,  water_viscosity(temperature),
+        rho_w, water_density(temperature),
+        20*SQRT(4.5*mu_w*depth_sampling/((Gs-1)*rho_w*981*60*Time))
+    )
+);
+
+/** Pipette method: fraction finer by weight (0 to 1) from the dried pipette sample and the dispersing-agent blank; give the temperature for the wet method. */
+pipette_percent_finer = LAMBDA(mass_sample, mass_dish, mass_dispersing, mass_dispersing_dish, volume_pipette, concentration, [Gs], [temperature],
+    LET(
+        Ms, mass_sample-mass_dish,
+        Md, mass_dispersing-mass_dispersing_dish,
+        V,  volume_pipette-IF(ISOMITTED(temperature), 0, Md/Gs/water_density(temperature)),
+        (Ms-Md)/concentration/V
     )
 );
 

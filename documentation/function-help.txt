@@ -1515,6 +1515,26 @@ mass_in_water_dispersing: Mass of the sphere immersed in water with dispersing a
 returns: Fraction finer by weight (0 to 1) = ρw·Gs·(Mr - mass_immersed)/((Ma·(Gs - 1) - Mw·Gs + Mr)·concentration).
 notes: Returns a fraction, not a percent (multiply by 100 for %). Mr - mass_immersed is the buoyancy added by the particles still in suspension at the depth of the sphere.
 
+[pipette_grain_size]
+Time: Elapsed times since the start of sedimentation (min), one value or a column
+depth_sampling: Depth at which the pipette sample is taken (cm), same size as Time
+temperature: Suspension temperatures (°C), same size as Time
+Gs: Specific gravity of the soil solids
+returns: Equivalent particle diameter (mm) from Stokes' law: 20·SQRT(4.5·η·z/((Gs - 1)·ρw·981·60·Time)).
+notes: Same Stokes formula as hydrometer_grainSize, with the sampling depth z as the fall distance. η and ρw come from water_viscosity and water_density.
+
+[pipette_percent_finer]
+mass_sample: Mass of the dish with the pipette sample (g): dried sample for the dry method, sample as taken for the wet method; one value or a column
+mass_dish: Mass of the empty dish (g), same size as mass_sample
+mass_dispersing: Mass of the blank (dispersing agent, or water and dispersing agent for the wet method) with its dish (g)
+mass_dispersing_dish: Mass of the dish of the blank (g)
+volume_pipette: Volume of the pipette (mL)
+concentration: Initial concentration of the suspension, mass of soil / volume of suspension (g/mL)
+Gs: Optional. Specific gravity of the soil solids; needed for the wet method only
+temperature: Optional. Suspension temperature (°C); give it, with Gs, for the wet method only
+returns: Fraction finer by weight (0 to 1) = (Ms - Md)/(concentration·V), with Ms and Md the net masses of the sample and of the blank.
+notes: Dry method (temperature omitted): V is the pipette volume. Wet method: V = volume_pipette - Md/(Gs·ρw), which accounts for the water displaced by the soil in the sample. Returns a fraction, not a percent (multiply by 100 for %).
+
 [consolidation_log_time]
 t: Elapsed times since the start of the increment (min), a column; t = 0 rows are ignored
 d: Dial changes since the start of the increment (cm), same size as t; settlement may be negative or positive

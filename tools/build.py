@@ -225,7 +225,7 @@ def page(site, text, record):
 
 gmap = json.loads(read(DOC / "geoxl-groups.json"))
 GX_NEW = [("Seepage & flow nets", ("seepage_",)),
-          ("Soil laboratory tests", ("water_content", "specific_gravity", "sieve_", "hydrometer_", "buoyancy_")),
+          ("Soil laboratory tests", ("water_content", "specific_gravity", "sieve_", "hydrometer_", "pipette_", "buoyancy_")),
           ("Consolidation", ("consolidation_",))]
 def gx_group(name):
     g = gmap["map"].get(name.lower())
@@ -237,7 +237,7 @@ gx_order = gmap["order"][:]
 gx_order.insert(gx_order.index("Soil classification") + 1, "Soil laboratory tests")
 
 # Groups follow the chapters of Experimental Soil Mechanics (Bardet, 1997).
-LAB_GROUPS = [("Ch. 1 Grain size: sieve, hydrometer & buoyancy", ("sieve_", "hydrometer_", "buoyancy_", "grainsize", "step_table")),
+LAB_GROUPS = [("Ch. 1 Grain size: sieve, hydrometer, pipette & buoyancy", ("sieve_", "hydrometer_", "pipette_", "buoyancy_", "grainsize", "step_table")),
               ("Ch. 2 Water content & soil classification", ("water_content", "classify_", "astmtable")),
               ("Ch. 3 Density: specific gravity", ("specific_gravity",)),
               ("Ch. 4 Permeability & seepage", ("water_density", "water_viscosity", "seepage_")),
