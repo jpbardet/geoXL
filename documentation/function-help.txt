@@ -1457,12 +1457,12 @@ returns: Temperature correction (g/L) to add to the hydrometer reading: 1000·(0
 notes: Zero at 20 °C. Uses water_density, so it follows the same calibration range.
 
 [hydrometer_hfall]
-Rt: Hydrometer reading corrected for meniscus (and zero), one value or a column
-A: Slope of the hydrometer calibration, fall depth vs reading (cm per reading unit)
-B: Intercept of the hydrometer calibration (cm)
-Vb: Volume of the hydrometer bulb (cm³)
-D: Inside diameter of the sedimentation cylinder (cm)
-returns: Effective fall depth Hr (cm) = A·Rt + B - Vb/(2·Ac), with Ac the cylinder cross-section.
+Hydrometer_reading: Hydrometer reading corrected for meniscus and dispersing agent (Rt), one value or a column
+slope: Slope of the hydrometer calibration, fall depth vs reading (cm per reading unit)
+intercept: Intercept of the hydrometer calibration (cm)
+volume_bulb: Volume of the hydrometer bulb (cm³)
+diameter_cylinder: Inside diameter of the sedimentation cylinder (cm)
+returns: Effective fall depth Hr (cm) = slope·Rt + intercept - volume_bulb/(2·Ac), with Ac the cylinder cross-section.
 notes: The bulb-volume term corrects for the rise of the water surface when the hydrometer is inserted.
 
 [hydrometer_grainSize]
@@ -1483,16 +1483,37 @@ notes: Valid for the ASTM 152H hydrometer, whose scale is calibrated for Gs = 2.
 
 [hydrometer_analysis]
 time: Elapsed times (min), a column
-Rt: Corrected hydrometer readings, same size as time
+Hydrometer_reading: Corrected hydrometer readings Rt, same size as time
 temperature: Water temperatures (°C), same size as time
 W: Oven-dry mass of soil in suspension (g)
 Gs: Specific gravity of the soil solids
-D: Inside diameter of the sedimentation cylinder (cm)
-Vb: Volume of the hydrometer bulb (cm³)
-a: Slope of the fall-depth calibration (cm per reading unit)
-b: Intercept of the fall-depth calibration (cm)
+diameter_cylinder: Inside diameter of the sedimentation cylinder (cm)
+volume_bulb: Volume of the hydrometer bulb (cm³)
+slope: Slope of the fall-depth calibration (cm per reading unit)
+intercept: Intercept of the fall-depth calibration (cm)
 returns: Three columns per reading: fall depth (cm), equivalent diameter (mm) and percent finer (%).
 notes: Combines hydrometer_hfall, hydrometer_grainSize and hydrometer_percentFiner in one call.
+
+[buoyancy_grain_size]
+time: Elapsed times since the start of sedimentation (min), one value or a column
+temperature: Suspension temperatures (°C), same size as time
+depth: Depth of the centre of the immersed sphere below the suspension surface (cm)
+Gs: Specific gravity of the soil solids
+volume: Volume of the sphere (cm³), for example (Ma - Mw)/water_density(T)
+diameter_cylinder: Inside diameter of the sedimentation cylinder (cm)
+returns: Equivalent particle diameter (mm) from Stokes' law: SQRT(30·η·Hr/((Gs - 1)·981·ρw·time)), with Hr = depth - volume/(2·Ac).
+notes: The volume term corrects the fall depth for the rise of the suspension surface when the sphere is immersed. η and ρw come from water_viscosity and water_density.
+
+[buoyancy_percent_finer]
+mass_immersed: Mass of the sphere weighed in the suspension (g), one value or a column
+temperature: Suspension temperatures (°C), same size as mass_immersed
+Gs: Specific gravity of the soil solids
+concentration: Initial concentration of the suspension, mass of soil / volume of suspension (g/cm³)
+mass_in_air: Mass of the sphere in air Ma (g)
+mass_in_water: Mass of the sphere immersed in water Mw (g)
+mass_in_water_dispersing: Mass of the sphere immersed in water with dispersing agent Mr (g)
+returns: Fraction finer by weight (0 to 1) = ρw·Gs·(Mr - mass_immersed)/((Ma·(Gs - 1) - Mw·Gs + Mr)·concentration).
+notes: Returns a fraction, not a percent (multiply by 100 for %). Mr - mass_immersed is the buoyancy added by the particles still in suspension at the depth of the sphere.
 
 [consolidation_log_time]
 t: Elapsed times since the start of the increment (min), a column; t = 0 rows are ignored

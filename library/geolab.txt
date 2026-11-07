@@ -2,20 +2,22 @@
 # One name per line, exactly as in library/geoXL.txt. Functions they call are added automatically.
 # Raise the version whenever this list changes or a listed function (or one it calls) changes;
 # the build refuses to overwrite a published geolabXL snapshot with different content.
-version: 0.1
-date: 2026-11-06
+version: 0.2
+date: 2026-11-07
 
 # Water content and specific gravity
 water_content
 specific_gravity
 
-# Grain size: sieve and hydrometer
+# Grain size: sieve, hydrometer and buoyancy
 sieve_passing
 hydrometer_analysis
 hydrometer_correction
 hydrometer_hfall
 hydrometer_grainSize
 hydrometer_percentFiner
+buoyancy_grain_size
+buoyancy_percent_finer
 grainsizeanalysis
 Step_table
 

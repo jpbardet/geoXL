@@ -1,4 +1,4 @@
-// GeoEXCEL version 0.25 — complete consolidated named-LAMBDA library (documented)
+// GeoEXCEL version 0.26 — complete consolidated named-LAMBDA library (documented)
 // Module name: GeoEXCEL
 // Paste this entire file into the GeoEXCEL module in Excel Labs.
 // Local names use underscores. Worksheet example: =GeoEXCEL.water_pressure(3, 2)
@@ -65,8 +65,14 @@
 //                    heads, no iteration) and seepage_flownet (equipotentials and flow lines for one chart).
 //                    No existing function changed.
 
+// 0.26 (2026-11-07): hydrometer and buoyancy functions from buoyancy_analysis.xlsx (J.-P. Bardet).
+//                    hydrometer_hfall, hydrometer_grainSize and hydrometer_analysis take descriptive argument
+//                    names (same order, same results); hydrometer_analysis no longer refers to an undefined Rt.
+//                    New buoyancy_grain_size and buoyancy_percent_finer (buoyancy or sphere method, Chapter 1-6);
+//                    buoyancy_grain_size divides by the water density as in hydrometer_grainSize.
+
 /** Library version and release date, as text. Use =GeoEXCEL.version() to check which version is installed. */
-version = LAMBDA("GeoEXCEL 0.25 (2026-11-06)");
+version = LAMBDA("GeoEXCEL 0.26 (2026-11-07)");
 
 /** q_ult (kPa) for vertical loads: (author, phi, coh, q, gam, B, [L], [D], [eB], [eL], [use], [out]). Omitted/0 = off. use: "sdi" default, "s" = no depth factors. out 1 = table, 2 = 3 terms. Inclined loads: bearing_capacity_inclined. */
 bearing_capacity = LAMBDA(author,phi,coh,q,gam,B,[L],[D],[eB],[eL],[use],[out],LET(L_,IF(ISOMITTED(L),0,L),D_,IF(ISOMITTED(D),0,D),eB_,IF(ISOMITTED(eB),0,eB),eL_,IF(ISOMITTED(eL),0,eL),u,IF(ISOMITTED(use),"sdi",IF(use=0,"sdi",LOWER(use))),o,IF(ISOMITTED(out),0,out),g,bearing_effective(B,L_,eB_,eL_),Bp,INDEX(g,1),BL,INDEX(g,4),one,{1;1;1},N,bearing_factors(phi,author),s,IF(ISNUMBER(SEARCH("s",u)),bearing_shapeFactors(BL,phi,author),one),d,IF(ISNUMBER(SEARCH("d",u)),bearing_depthFactors(D_/B,phi,author),one),ld,VSTACK(coh,q,gam*Bp/2),t,N*s*d*ld,SWITCH(o,0,SUM(t),2,t,VSTACK(HSTACK("term","N","s","d","load","q_i"),HSTACK({"c";"q";"γ"},N,s,d,ld,t),HSTACK("q_ult","","","","",SUM(t))))));
@@ -2433,17 +2439,22 @@ hydrometer_correction = LAMBDA(T,
     1000*(0.99823-water_density(T)-0.000025*(T-20))
 );
 
-/** Hydrometer effective fall depth Hr (cm) from corrected reading Rt, calibration Hr = A·Rt + B, bulb volume Vb (cm³) and cylinder diameter D (cm). */
-hydrometer_hfall = LAMBDA(Rt, A, B, Vb, D,
+/** Hydrometer effective fall depth Hr (cm) from corrected reading Rt, calibration Hr = slope·Rt + intercept, bulb volume (cm³) and cylinder diameter (cm). */
+hydrometer_hfall = LAMBDA(Hydrometer_reading, slope, intercept, volume_bulb, diameter_cylinder,
     LET(
-        Ac, D^2*PI()/4,
-        A*Rt+B-Vb/(2*Ac)
+        area,     diameter_cylinder^2*PI()/4,
+        distance, slope*Hydrometer_reading+intercept,
+        distance-volume_bulb/(2*area)
     )
 );
 
 /** Hydrometer equivalent particle diameter (mm) from Stokes law: temperature T (°C), fall depth Hr (cm), Gs and elapsed time (min). */
 hydrometer_grainSize = LAMBDA(T, Hr, Gs, time,
-    SQRT(30*water_viscosity(T)*Hr/(Gs-1)/981/water_density(T)/time)
+    LET(
+        mu_w,  water_viscosity(T),
+        rho_w, water_density(T),
+        SQRT(30*mu_w*Hr/(Gs-1)/981/rho_w/time)
+    )
 );
 
 /** Hydrometer percent finer (%) from dry mass W (g), corrected reading Rt, Gs and temperature T (°C); 152H hydrometer (factor 0.6226·Gs/(Gs-1)). */
@@ -2452,13 +2463,37 @@ hydrometer_percentFiner = LAMBDA(W, Rt, Gs, T,
 );
 
 /** Hydrometer analysis in one call: {fall depth (cm), diameter (mm), percent finer (%)} for each reading. */
-hydrometer_analysis = LAMBDA(time, Rt, temperature, W, Gs, D, Vb, a, b,
+hydrometer_analysis = LAMBDA(time, Hydrometer_reading, temperature, W, Gs, diameter_cylinder, volume_bulb, slope, intercept,
     LET(
-        Ac,           D^2*PI()/4,
-        distanceFall, a*Rt+b-Vb/(2*Ac),
-        grainSize,    SQRT(30*water_viscosity(temperature)*distanceFall/(Gs-1)/981/water_density(temperature)/time),
-        percentFiner, 100/W*(Rt+hydrometer_correction(temperature))*0.6226*Gs/(Gs-1),
+        mu_w,         water_viscosity(temperature),
+        rho_w,        water_density(temperature),
+        area,         diameter_cylinder^2*PI()/4,
+        distanceFall, slope*Hydrometer_reading+intercept-volume_bulb/(2*area),
+        grainSize,    SQRT(30*mu_w*distanceFall/(Gs-1)/981/rho_w/time),
+        percentFiner, 100/W*(Hydrometer_reading+hydrometer_correction(temperature))*0.6226*Gs/(Gs-1),
         HSTACK(distanceFall,grainSize,percentFiner)
+    )
+);
+
+/** Buoyancy (sphere) method: equivalent particle diameter (mm) from Stokes law, for a sphere immersed at a given depth (cm) in a cylinder of given diameter (cm). */
+buoyancy_grain_size = LAMBDA(time, temperature, depth, Gs, volume, diameter_cylinder,
+    LET(
+        area,  PI()*diameter_cylinder^2/4,
+        H_r,   depth-volume/2/area,
+        mu,    water_viscosity(temperature),
+        rho_w, water_density(temperature),
+        SQRT(30*mu*H_r/(Gs-1)/981/rho_w/time)
+    )
+);
+
+/** Buoyancy (sphere) method: fraction finer by weight (0 to 1) from the mass of the sphere immersed in the suspension and the three calibration masses of the sphere. */
+buoyancy_percent_finer = LAMBDA(mass_immersed, temperature, Gs, concentration, mass_in_air, mass_in_water, mass_in_water_dispersing,
+    LET(
+        rho_w, water_density(temperature),
+        Ma,    mass_in_air,
+        Mw,    mass_in_water,
+        Mr,    mass_in_water_dispersing,
+        rho_w*Gs*(Mr-mass_immersed)/(Ma*(Gs-1)-Mw*Gs+Mr)/concentration
     )
 );
 
