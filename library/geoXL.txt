@@ -2460,7 +2460,7 @@ liquid_limit = LAMBDA(blows, moisture,
 plastic_limit = LAMBDA(moisture,
     LET(
         w, data_trim(moisture),
-        VSTACK(AVERAGE(w), IF(ROWS(w)>1, STDEV.S(w), 0))
+        VSTACK(AVERAGE(w), IF(ROWS(w)>1, STDEV(w), 0))
     )
 );
 
