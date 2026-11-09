@@ -1436,7 +1436,7 @@ tare: Mass of the empty container (g); a single value or a column
 wet: Mass of container + moist soil (g), same size as tare
 dry: Mass of container + oven-dried soil (g), same size as tare
 returns: Water content w as a fraction, (wet - dry)/(dry - tare), one value per row; format the cell as % to show percent.
-notes: Returns "" where a mass is missing or dry = tare, so partly filled data sheets stay clean.
+notes: Trailing empty rows are ignored, so the input ranges may be longer than the data and the results fit the data. A missing mass inside the data gives an error, which shows where to look.
 notes: Argument order is tare, wet, dry. Check the order of the columns you select.
 
 [specific_gravity]
@@ -1444,7 +1444,13 @@ Ws: Mass of oven-dried soil (g)
 Wfw: Mass of pycnometer filled with water at the test temperature (g)
 Wfws: Mass of pycnometer filled with water and soil at the test temperature (g)
 returns: Specific gravity of solids Gs = Ws/(Ws + Wfw - Wfws), at the test temperature.
-notes: Returns "" when the inputs are missing or inconsistent. To refer Gs to 20 °C, multiply by water_density(T)/water_density(20).
+notes: Trailing empty rows are ignored. To refer Gs to 20 °C, multiply by water_density(T)/water_density(20).
+
+[liquid_limit]
+blows: Column of blow counts N of the specimens (Casagrande cup)
+water_content: Column of the water contents w of the specimens, as fractions or percents
+returns: {LL; A}: the liquid limit LL = A·log10(25) + B and the slope A of the flow line w = A·log10(N) + B, fitted by least squares (same unit as water_content).
+notes: A is negative: the water content decreases when the number of blows increases. Trailing empty rows are ignored.
 
 [sieve_passing]
 retained: Column of masses retained on each sieve (g), from the coarsest sieve down to the pan

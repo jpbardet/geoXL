@@ -7,6 +7,7 @@ date: 2026-11-07
 
 # Water content and specific gravity
 water_content
+liquid_limit
 specific_gravity
 
 # Grain size: sieve, hydrometer, pipette and buoyancy

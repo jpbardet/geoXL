@@ -2419,14 +2419,41 @@ mse_get = LAMBDA(tbl, key,
 
 // ===== Soil laboratory: water content, specific gravity, grain size =====
 
-/** Water content w (fraction) from tare, wet and dry masses: (wet - dry)/(dry - tare). Accepts single values or columns; returns "" where the masses are missing. */
+/** Water content w (fraction) from tare, wet and dry masses: (wet - dry)/(dry - tare). Accepts single values or columns; trailing empty rows are ignored, so that the results fit the data; #N/A if the columns have different numbers of rows. */
 water_content = LAMBDA(tare, wet, dry,
-    IFERROR((wet-dry)/(dry-tare),"")
+    LET(
+        mt, data_trim(tare),
+        mw, data_trim(wet),
+        md, data_trim(dry),
+        IF(OR(ROWS(mw)<>ROWS(mt), ROWS(md)<>ROWS(mt)), NA(),
+            (mw-md)/(md-mt))
+    )
 );
 
-/** Specific gravity of solids Gs (pycnometer): Ws/(Ws + Wfw - Wfws). Ws dry soil mass, Wfw flask + water, Wfws flask + water + soil; returns "" when undefined. */
+/** Specific gravity of solids Gs (pycnometer): Ws/(Ws + Wfw - Wfws). Ws dry soil mass, Wfw flask + water, Wfws flask + water + soil; single values or columns, trailing empty rows ignored. */
 specific_gravity = LAMBDA(Ws, Wfw, Wfws,
-    IFERROR(IF(Ws/(Ws+Wfw-Wfws)=0,"",Ws/(Ws+Wfw-Wfws)),"")
+    LET(
+        s,  data_trim(Ws),
+        fw, data_trim(Wfw),
+        fs, data_trim(Wfws),
+        IF(OR(ROWS(fw)<>ROWS(s), ROWS(fs)<>ROWS(s)), NA(),
+            s/(s+fw-fs))
+    )
+);
+
+/** Liquid limit (Casagrande cup) from the blow counts N and the water contents w of the specimens: flow line w = A·log10(N) + B fitted by least squares; returns {LL; A}, LL = A·log10(25) + B. Trailing empty rows are ignored. */
+liquid_limit = LAMBDA(blows, water_content,
+    LET(
+        N, data_trim(blows),
+        w, data_trim(water_content),
+        IF(ROWS(N)<>ROWS(w), NA(),
+            LET(
+                x, LOG10(N),
+                A, SLOPE(w, x),
+                B, INTERCEPT(w, x),
+                VSTACK(A*LOG10(25)+B, A)
+            ))
+    )
 );
 
 /** Sieve analysis from masses retained (top sieve first): {mass passing, percent finer} for each sieve. */
