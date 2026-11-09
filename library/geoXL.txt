@@ -2457,9 +2457,9 @@ hydrometer_correction = LAMBDA(T,
 hydrometer_hfall = LAMBDA(Hydrometer_reading, slope, intercept, volume_bulb, diameter_cylinder, [Cm],
     LET(
         cm,       IF(ISOMITTED(Cm), 0, Cm),
-        R,        data_trim(Hydrometer_reading)+cm,
+        Rm,       data_trim(Hydrometer_reading)+cm,
         area,     diameter_cylinder^2*PI()/4,
-        distance, slope*R+intercept,
+        distance, slope*Rm+intercept,
         distance-volume_bulb/(2*area)
     )
 );
@@ -2482,10 +2482,10 @@ hydrometer_percentFiner = LAMBDA(W, Rt, Gs, T, [Cm], [Cd],
     LET(
         cm, IF(ISOMITTED(Cm), 0, Cm),
         cd, IF(ISOMITTED(Cd), 0, Cd),
-        r,  data_trim(Rt),
+        rd, data_trim(Rt),
         t,  data_trim(T),
-        IF(ROWS(r)<>ROWS(t), NA(),
-            100/W*(r+cm-cd+hydrometer_correction(t))*0.6226*Gs/(Gs-1))
+        IF(ROWS(rd)<>ROWS(t), NA(),
+            100/W*(rd+cm-cd+hydrometer_correction(t))*0.6226*Gs/(Gs-1))
     )
 );
 
