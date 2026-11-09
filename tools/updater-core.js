@@ -234,7 +234,7 @@ async function patchAFE(zip,lib,legacy,warnings,aliases=dottedAliases(lib)) {
       const payload=encodeProject(data,encoding);
       const match=source.match(/(<(?:[\w.-]+:)?AFEJSONBlob\b[^>]*>)[^]*?(<\/(?:[\w.-]+:)?AFEJSONBlob\s*>)/);
       if(!match)fail('Excel Labs XML payload not found.');
-      zip.file(path,source.replace(match[0],match[1]+payload+match[2]));changed.push(path);
+      zip.file(path,source.replace(match[0],match[1]+payload+match[2]),{createFolders:false});changed.push(path);
     }
   }
   return changed;
@@ -412,7 +412,7 @@ async function migrateDottedReferences(zip,lib,workbook,aliases=dottedAliases(li
     else if(/^xl\/charts\/[^/]+\.xml$/i.test(path))tags=['f'];
     else continue;
     const before=await zip.file(path).async('string'),after=migrateFormulaXml(before,tags,aliases,path,stats);
-    if(after!==before){xml(after);zip.file(path,after);}
+    if(after!==before){xml(after);zip.file(path,after,{createFolders:false});}
   }
   return {workbook,stats};
 }
@@ -481,7 +481,7 @@ async function updateWorkbook(bytes,filename,lib,options={}) {
     warnings.push(total+' call'+(total>1?'s':'')+' with the old GeoEXCEL. / GEOXL. prefix converted to the plain names ('+names.slice(0,8).join(', ')+(names.length>8?', …':'')+').');}
   for(const [m,n] of migration.stats.moved)warnings.push(n+' call'+(n>1?'s':'')+' written with the older arguments renamed: '+m);
   if(migration.stats.review.length)fail('Cannot safely retire old names: '+migration.stats.review.map(r=>r.part+': '+r.issues.join('; ')).join(' | '));
-  zip.file('xl/workbook.xml',workbook);
+  zip.file('xl/workbook.xml',workbook,{createFolders:false});
   const changed=[...new Set(['xl/workbook.xml',...migration.stats.parts,...await patchAFE(zip,lib,!!options.legacy,warnings,aliases)])];
   const output=await zip.generateAsync({type:'uint8array',compression:'DEFLATE',compressionOptions:{level:6}});
   const check=await JSZip.loadAsync(output,{checkCRC32:true});
