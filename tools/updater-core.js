@@ -115,6 +115,23 @@ function compile(ast,defs,module,env=new Map()) {
   else fail('Unsupported Excel function '+ast.v+'. The updater needs a compatibility entry before this release can be installed.');
   return target+'('+args.map(a=>go(a)).join(',')+')';
 }
+// Excel opens a package only when every entry is a part with a declared content type (Default by extension
+// or Override by name). Refuse to write anything else, so that a damaged copy is never handed to a user.
+async function checkPackage(zip){
+  const names=Object.keys(zip.files);
+  const dirs=names.filter(n=>zip.files[n].dir||n.endsWith('/'));
+  if(dirs.length)fail('Package check failed: folder entries '+dirs.join(', '));
+  if(!zip.file('[Content_Types].xml'))fail('Package check failed: [Content_Types].xml is missing');
+  const ct=xml(await zip.file('[Content_Types].xml').async('string'));
+  const defaults=new Set(Array.from(ct.getElementsByTagName('Default')).map(e=>(e.getAttribute('Extension')||'').toLowerCase()));
+  const overrides=new Set(Array.from(ct.getElementsByTagName('Override')).map(e=>(e.getAttribute('PartName')||'').replace(/^\//,'').toLowerCase()));
+  for(const n of names){
+    if(n==='[Content_Types].xml')continue;
+    const ext=(n.split('.').pop()||'').toLowerCase();
+    if(!defaults.has(ext)&&!overrides.has(n.toLowerCase()))fail('Package check failed: no content type for '+n);
+  }
+}
+
 async function readLibrary(source) {
   if(source.length>2000000) fail('Library is too large (limit 2 MB).');
   const all=declarations(source),defs=new Map();
@@ -483,8 +500,10 @@ async function updateWorkbook(bytes,filename,lib,options={}) {
   if(migration.stats.review.length)fail('Cannot safely retire old names: '+migration.stats.review.map(r=>r.part+': '+r.issues.join('; ')).join(' | '));
   zip.file('xl/workbook.xml',workbook,{createFolders:false});
   const changed=[...new Set(['xl/workbook.xml',...migration.stats.parts,...await patchAFE(zip,lib,!!options.legacy,warnings,aliases)])];
+  for(const n of Object.keys(zip.files))if(zip.files[n].dir)zip.remove(n); // an .xlsx package has no folder entries: Excel reports one as unreadable content
   const output=await zip.generateAsync({type:'uint8array',compression:'DEFLATE',compressionOptions:{level:6}});
   const check=await JSZip.loadAsync(output,{checkCRC32:true});
+  await checkPackage(check);
   const actual=Array.from(xml(await check.file('xl/workbook.xml').async('string')).getElementsByTagNameNS(NS,'definedName'));
   for(const node of actual)if(aliases.has(node.getAttribute('name').toLowerCase()))fail('Obsolete dotted definition remains: '+node.getAttribute('name'));
   for(const e of entries) {

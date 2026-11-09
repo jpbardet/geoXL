@@ -1475,10 +1475,11 @@ retained: Column of masses retained on each sieve (g), from the coarsest sieve d
 returns: Two columns per sieve: mass passing (g) and percent finer (%).
 notes: Percent finer is relative to the total of the retained masses (pan included). Returns "" when the total is zero.
 
-[data_trim]
-x: A column of values, which may end with empty cells
-returns: The column without its trailing empty cells.
-notes: Used by the laboratory functions so that their results fit the readings exactly; the templates can keep spare empty rows. Returns #N/A if the column is empty. Empty cells inside the data are kept and give an error downstream, which signals a missing reading.
+[trim_rows]
+out: The result of a calculation, one row per row of the input ranges
+ref: The input column that decides how many rows are kept, for instance the column of readings
+returns: The rows of out up to the last filled cell of ref.
+notes: The last line of the laboratory functions, so that a formula whose input ranges are longer than the data returns one result per row of data and nothing below. #N/A if ref is empty. A missing value inside the data still gives an error, which signals it.
 
 [hydrometer_correction]
 T: Water temperature during the reading (°C); a single value or a column (trailing empty cells are ignored)

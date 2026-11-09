@@ -491,17 +491,15 @@ elastic_triangle = LAMBDA(B, x, y,
         HSTACK("Stress sy, sx, sxy =", sy, sx, sxy)
     ));
 
-/** Interpolate y at X from (Xa, Ya); X may be a column. Xa may be increasing or decreasing; trailing empty rows of Xa and Ya are ignored. mode: "linear" (default), "logx", "logy", "logxy". outside: omitted = #N/A, "extrapolate", "clamp". */
+/** Interpolate y at X from (Xa, Ya); X may be a column. Xa may be increasing or decreasing. mode: "linear" (default), "logx", "logy", "logxy". outside: omitted = #N/A, "extrapolate", "clamp". */
 Interpolate = LAMBDA(X, Xa, Ya, [mode], [outside],
     LET(
         md, IF(ISOMITTED(mode), "LINEAR", UPPER(mode)),
         od, IF(ISOMITTED(outside), "ERROR", UPPER(outside)),
         lx, OR(md = "LOGX", md = "LOGXY"),
         ly, OR(md = "LOGY", md = "LOGXY"),
-        xa, data_trim(Xa),
-        ya, data_trim(Ya),
-        xs, SORTBY(xa, xa),
-        ys, SORTBY(ya, xa),
+        xs, SORTBY(TOCOL(Xa), TOCOL(Xa)),
+        ys, SORTBY(TOCOL(Ya), TOCOL(Xa)),
         n, ROWS(xs),
         xlo, INDEX(xs, 1),
         xhi, INDEX(xs, n),
@@ -2419,72 +2417,43 @@ mse_get = LAMBDA(tbl, key,
 
 // ===== Soil laboratory: water content, specific gravity, grain size =====
 
-/** Water content w (fraction) from tare, wet and dry masses: (wet - dry)/(dry - tare). Accepts single values or columns; trailing empty rows are ignored, so that the results fit the data; #N/A if the columns have different numbers of rows. */
+/** Water content w (fraction) from tare, wet and dry masses: (wet - dry)/(dry - tare). Single values or columns; the results stop at the last row of data. */
 water_content = LAMBDA(tare, wet, dry,
-    LET(
-        mt, data_trim(tare),
-        mw, data_trim(wet),
-        md, data_trim(dry),
-        IF(OR(ROWS(mw)<>ROWS(mt), ROWS(md)<>ROWS(mt)), NA(),
-            (mw-md)/(md-mt))
-    )
+    trim_rows((wet-dry)/(dry-tare), wet)
 );
 
-/** Specific gravity of solids Gs (pycnometer): Ws/(Ws + Wfw - Wfws). Ws dry soil mass, Wfw flask + water, Wfws flask + water + soil; single values or columns, trailing empty rows ignored. */
+/** Specific gravity of solids Gs (pycnometer): Ws/(Ws + Wfw - Wfws). Ws dry soil mass, Wfw flask + water, Wfws flask + water + soil; single values or columns, the results stop at the last row of data. */
 specific_gravity = LAMBDA(Ws, Wfw, Wfws,
-    LET(
-        s,  data_trim(Ws),
-        fw, data_trim(Wfw),
-        fs, data_trim(Wfws),
-        IF(OR(ROWS(fw)<>ROWS(s), ROWS(fs)<>ROWS(s)), NA(),
-            s/(s+fw-fs))
-    )
+    trim_rows(Ws/(Ws+Wfw-Wfws), Ws)
 );
 
-/** Liquid limit (Casagrande cup) from the blow counts N and the water contents w of the specimens: flow line w = A·log10(N) + B fitted by least squares; returns {LL; A}, LL = A·log10(25) + B. Trailing empty rows are ignored. */
+/** Liquid limit (Casagrande cup) from the blow counts N and the water contents w of the specimens: flow line w = A·log10(N) + B fitted by least squares; returns {LL; A}, LL = A·log10(25) + B. */
 liquid_limit = LAMBDA(blows, moisture,
     LET(
-        N, data_trim(blows),
-        w, data_trim(moisture),
-        IF(ROWS(N)<>ROWS(w), NA(),
-            LET(
-                x, LOG10(N),
-                A, SLOPE(w, x),
-                B, INTERCEPT(w, x),
-                VSTACK(A*LOG10(25)+B, A)
-            ))
+        x, LOG10(trim_rows(blows, blows)),
+        A, SLOPE(moisture, x),
+        B, INTERCEPT(moisture, x),
+        VSTACK(A*LOG10(25)+B, A)
     )
 );
 
-/** Plastic limit from the water contents of the threads rolled to 3 mm: returns {PL; standard deviation}, PL = mean of the water contents. Trailing empty rows are ignored. */
+/** Plastic limit from the water contents of the threads rolled to 3 mm: returns {PL; standard deviation}, PL = mean of the water contents. */
 plastic_limit = LAMBDA(moisture,
-    LET(
-        w, data_trim(moisture),
-        VSTACK(AVERAGE(w), IF(ROWS(w)>1, STDEV(w), 0))
-    )
+    VSTACK(AVERAGE(moisture), STDEV(moisture))
 );
 
-/** Fall cone test: cone penetration (mm) from the dial readings before and after the drop. Trailing empty rows are ignored; #N/A if the columns have different numbers of rows. */
+/** Fall cone test: cone penetration (mm) from the dial readings before and after the drop; the results stop at the last row of data. */
 cone_penetration = LAMBDA(initial, final,
-    LET(
-        a, data_trim(initial),
-        b, data_trim(final),
-        IF(ROWS(a)<>ROWS(b), NA(), ABS(b-a))
-    )
+    trim_rows(ABS(final-initial), final)
 );
 
-/** Liquid limit by fall cone from the penetrations d (mm) and water contents w of the specimens: line w = A·d + B fitted by least squares; returns {LL; A}, LL = A·d_ref + B with d_ref = 20 mm unless given. Trailing empty rows are ignored. */
+/** Liquid limit by fall cone from the penetrations d (mm) and water contents w of the specimens: line w = A·d + B fitted by least squares; returns {LL; A}, LL = A·d_ref + B with d_ref = 20 mm unless given. */
 liquid_limit_cone = LAMBDA(penetration, moisture, [d_ref],
     LET(
-        d,  data_trim(penetration),
-        w,  data_trim(moisture),
         dr, IF(ISOMITTED(d_ref), 20, d_ref),
-        IF(ROWS(d)<>ROWS(w), NA(),
-            LET(
-                A, SLOPE(w, d),
-                B, INTERCEPT(w, d),
-                VSTACK(A*dr+B, A)
-            ))
+        A,  SLOPE(moisture, penetration),
+        B,  INTERCEPT(moisture, penetration),
+        VSTACK(A*dr+B, A)
     )
 );
 
@@ -2498,55 +2467,45 @@ sieve_passing = LAMBDA(retained,
     )
 );
 
-/** Rows of data in a column: the column without its trailing empty cells, so that results fit the data. #N/A if the column is empty. */
-data_trim = LAMBDA(x,
-    LET(
-        last, IFERROR(XMATCH(TRUE, TOCOL(x)<>"", 0, -1), 0),
-        IF(last=0, NA(), TAKE(TOCOL(x), last))
-    )
+/** Results that fit the data: the rows of out up to the last filled cell of the input column ref. Used as the last line of the laboratory functions, so that a formula whose input ranges are longer than the data returns one result per row of data. */
+trim_rows = LAMBDA(out, ref,
+    TAKE(out, XMATCH(TRUE, TOCOL(ref)<>"", 0, -1))
 );
 
-/** Hydrometer temperature correction (g/L) from water temperature T (°C), relative to 20 °C. Trailing empty rows of T are ignored. */
+/** Hydrometer temperature correction (g/L) from water temperature T (°C), relative to 20 °C; the results stop at the last row of data. */
 hydrometer_correction = LAMBDA(T,
-    LET(
-        t, data_trim(T),
-        1000*(0.99823-water_density(t)-0.000025*(t-20))
-    )
+    trim_rows(1000*(0.99823-water_density(T)-0.000025*(T-20)), T)
 );
 
-/** Hydrometer effective fall depth Hr (cm) from reading Rt plus meniscus correction Cm, calibration Hr = slope·(Rt+Cm) + intercept, bulb volume (cm³) and cylinder diameter (cm). Trailing empty rows are ignored. */
+/** Hydrometer effective fall depth Hr (cm) from reading Rt plus meniscus correction Cm, calibration Hr = slope·(Rt+Cm) + intercept, bulb volume (cm³) and cylinder diameter (cm); the results stop at the last row of data. */
 hydrometer_hfall = LAMBDA(Hydrometer_reading, slope, intercept, volume_bulb, diameter_cylinder, [Cm],
     LET(
-        cm,       IF(ISOMITTED(Cm), 0, Cm),
-        Rm,       data_trim(Hydrometer_reading)+cm,
+        cm_,       IF(ISOMITTED(Cm), 0, Cm),
         area,     diameter_cylinder^2*PI()/4,
-        distance, slope*Rm+intercept,
-        distance-volume_bulb/(2*area)
+        distance, slope*(Hydrometer_reading+cm_)+intercept,
+        out,      distance-volume_bulb/(2*area),
+        trim_rows(out, Hydrometer_reading)
     )
 );
 
-/** Hydrometer equivalent particle diameter (mm) from Stokes law: temperature T (°C), fall depth Hr (cm), Gs and elapsed time (min). Trailing empty rows are ignored; #N/A if the columns have different numbers of readings. */
+/** Hydrometer equivalent particle diameter (mm) from Stokes law: temperature T (°C), fall depth Hr (cm), Gs and elapsed time (min); the results stop at the last row of data. */
 hydrometer_grainSize = LAMBDA(T, Hr, Gs, time,
     LET(
-        t,     data_trim(T),
-        h,     data_trim(Hr),
-        tm,    data_trim(time),
-        mu_w,  water_viscosity(t),
-        rho_w, water_density(t),
-        IF(OR(ROWS(h)<>ROWS(t), ROWS(tm)<>ROWS(t)), NA(),
-            SQRT(30*mu_w*h/(Gs-1)/981/rho_w/tm))
+        tw,     trim_rows(T, time),
+        tm,    trim_rows(time, time),
+        mu_w,  water_viscosity(tw),
+        rho_w, water_density(tw),
+        SQRT(30*mu_w*Hr/(Gs-1)/981/rho_w/tm)
     )
 );
 
-/** Hydrometer percent finer (%) from dry mass W (g), reading Rt, Gs, temperature T (°C), meniscus correction Cm and dispersing agent correction Cd (g/L); 152H hydrometer (factor 0.6226·Gs/(Gs-1)). Trailing empty rows are ignored. */
+/** Hydrometer percent finer (%) from dry mass W (g), reading Rt, Gs, temperature T (°C), meniscus correction Cm and dispersing agent correction Cd (g/L); 152H hydrometer (factor 0.6226·Gs/(Gs-1)); the results stop at the last row of data. */
 hydrometer_percentFiner = LAMBDA(W, Rt, Gs, T, [Cm], [Cd],
     LET(
-        cm, IF(ISOMITTED(Cm), 0, Cm),
-        cd, IF(ISOMITTED(Cd), 0, Cd),
-        rd, data_trim(Rt),
-        t,  data_trim(T),
-        IF(ROWS(rd)<>ROWS(t), NA(),
-            100/W*(rd+cm-cd+hydrometer_correction(t))*0.6226*Gs/(Gs-1))
+        cm_,  IF(ISOMITTED(Cm), 0, Cm),
+        cd_,  IF(ISOMITTED(Cd), 0, Cd),
+        out, 100/W*(Rt+cm_-cd_+hydrometer_correction(T))*0.6226*Gs/(Gs-1),
+        trim_rows(out, Rt)
     )
 );
 
@@ -2563,68 +2522,56 @@ hydrometer_analysis = LAMBDA(time, Hydrometer_reading, temperature, W, Gs, diame
     )
 );
 
-/** Buoyancy (sphere) method: equivalent particle diameter (mm) from Stokes law, for a sphere immersed at a given depth (cm) in a cylinder of given diameter (cm). Trailing empty rows of time and temperature are ignored; #N/A if they have different numbers of readings. */
+/** Buoyancy (sphere) method: equivalent particle diameter (mm) from Stokes law, for a sphere immersed at a given depth (cm) in a cylinder of given diameter (cm); the results stop at the last row of data. */
 buoyancy_grain_size = LAMBDA(time, temperature, depth, Gs, volume, diameter_cylinder,
     LET(
-        tm,    data_trim(time),
-        t,     data_trim(temperature),
         area,  PI()*diameter_cylinder^2/4,
         H_r,   depth-volume/2/area,
-        mu,    water_viscosity(t),
-        rho_w, water_density(t),
-        IF(ROWS(tm)<>ROWS(t), NA(),
-            SQRT(30*mu*H_r/(Gs-1)/981/rho_w/tm))
+        mu,    water_viscosity(temperature),
+        rho_w, water_density(temperature),
+        out,   SQRT(30*mu*H_r/(Gs-1)/981/rho_w/time),
+        trim_rows(out, time)
     )
 );
 
-/** Buoyancy (sphere) method: fraction finer by weight (0 to 1) from the mass of the sphere immersed in the suspension and the three calibration masses of the sphere. Trailing empty rows are ignored; #N/A if the masses and temperatures have different numbers of readings. */
+/** Buoyancy (sphere) method: fraction finer by weight (0 to 1) from the mass of the sphere immersed in the suspension and the three calibration masses of the sphere; the results stop at the last row of data. */
 buoyancy_percent_finer = LAMBDA(mass_immersed, temperature, Gs, concentration, mass_in_air, mass_in_water, mass_in_water_dispersing,
     LET(
-        Mt,    data_trim(mass_immersed),
-        t,     data_trim(temperature),
-        rho_w, water_density(t),
+        rho_w, water_density(temperature),
         Ma,    mass_in_air,
         Mw,    mass_in_water,
         Mr,    mass_in_water_dispersing,
-        IF(ROWS(Mt)<>ROWS(t), NA(),
-            rho_w*Gs*(Mr-Mt)/(Ma*(Gs-1)-Mw*Gs+Mr)/concentration)
+        out,   rho_w*Gs*(Mr-mass_immersed)/(Ma*(Gs-1)-Mw*Gs+Mr)/concentration,
+        trim_rows(out, mass_immersed)
     )
 );
 
-/** Pipette method: equivalent particle diameter (mm) from Stokes law, for a sample taken at a given depth (cm) after a given time (min). Trailing empty rows are ignored; #N/A if the columns have different numbers of readings. */
+/** Pipette method: equivalent particle diameter (mm) from Stokes law, for a sample taken at a given depth (cm) after a given time (min); the results stop at the last row of data. */
 pipette_grain_size = LAMBDA(Time, depth_sampling, temperature, Gs,
     LET(
-        tm,    data_trim(Time),
-        h,     data_trim(depth_sampling),
-        t,     data_trim(temperature),
-        mu_w,  water_viscosity(t),
-        rho_w, water_density(t),
-        IF(OR(ROWS(h)<>ROWS(tm), ROWS(t)<>ROWS(tm)), NA(),
-            20*SQRT(4.5*mu_w*h/((Gs-1)*rho_w*981*60*tm)))
+        mu_w,  water_viscosity(temperature),
+        rho_w, water_density(temperature),
+        out,   20*SQRT(4.5*mu_w*depth_sampling/((Gs-1)*rho_w*981*60*Time)),
+        trim_rows(out, Time)
     )
 );
 
-/** Pipette method: fraction finer by weight (0 to 1) from the dried pipette sample and the dispersing-agent blank; give Gs and the temperature for the wet method. Trailing empty rows are ignored; #N/A if the columns have different numbers of readings. */
+/** Pipette method: fraction finer by weight (0 to 1) from the dried pipette sample and the dispersing-agent blank; give Gs and the temperature for the wet method; the results stop at the last row of data. */
 pipette_percent_finer = LAMBDA(mass_sample, mass_dish, mass_dispersing, mass_dispersing_dish, volume_pipette, concentration, [Gs], [temperature],
     LET(
-        ms, data_trim(mass_sample),
-        mb, data_trim(mass_dish),
-        Md, mass_dispersing-mass_dispersing_dish,
-        wet, NOT(ISOMITTED(temperature)),
-        t,  IF(wet, data_trim(temperature), ms),
-        V,  volume_pipette-IF(wet, Md/Gs/water_density(t), 0),
-        IF(OR(ROWS(mb)<>ROWS(ms), ROWS(t)<>ROWS(ms)), NA(),
-            (ms-mb-Md)/concentration/V)
+        Ms,  mass_sample-mass_dish,
+        Md,  mass_dispersing-mass_dispersing_dish,
+        V,   volume_pipette-IF(ISOMITTED(temperature), 0, Md/Gs/water_density(temperature)),
+        out, (Ms-Md)/concentration/V,
+        trim_rows(out, mass_sample)
     )
 );
 
-/** Combined grain size analysis: percent finer of the whole sample, from the separate percents finer of a sieve analysis and of a sedimentation analysis listed in one column. Rows whose method is "Sieve" are kept; the other rows (hydrometer, pipette, buoyancy) are multiplied by W200/Wtot. Trailing empty rows are ignored; #N/A if method and percent_finer have different numbers of rows. */
+/** Combined grain size analysis: percent finer of the whole sample, from the separate percents finer of a sieve analysis and of a sedimentation analysis listed in one column. Rows whose method is "Sieve" are kept; the other rows (hydrometer, pipette, buoyancy) are multiplied by W200/Wtot; the results stop at the last row of data. */
 combined_percent_finer = LAMBDA(method, percent_finer, mass_passing_200, mass_total,
     LET(
-        m, data_trim(method),
-        p, data_trim(percent_finer),
-        IF(ROWS(m)<>ROWS(p), NA(),
-            p*IF(UPPER(m)="SIEVE", 1, mass_passing_200/mass_total))
+        out, percent_finer*IF(UPPER(method)="SIEVE", 1, mass_passing_200/mass_total),
+        trim_rows(out, method)
     )
 );
 
