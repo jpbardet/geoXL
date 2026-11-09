@@ -282,7 +282,7 @@ returns: Row {label, σy/q, σx/q, τxy/q}; q is the maximum pressure.
 
 [Interpolate]
 X: Value(s) at which to interpolate
-Xa: Column of known x values (increasing or decreasing)
+Xa: Column of known x values (increasing or decreasing); trailing empty rows are ignored
 Ya: Column of known y values
 mode: "linear" (default), "logx", "logy" or "logxy"
 outside: Omit for #N/A outside the table, "extrapolate" or "clamp"
@@ -1542,6 +1542,14 @@ Gs: Optional. Specific gravity of the soil solids; needed for the wet method onl
 temperature: Optional. Suspension temperature (°C); give it, with Gs, for the wet method only
 returns: Fraction finer by weight (0 to 1) = (Ms - Md)/(concentration·V), with Ms and Md the net masses of the sample and of the blank.
 notes: Dry method (temperature omitted): V is the pipette volume. Wet method: V = volume_pipette - Md/(Gs·ρw), which accounts for the water displaced by the soil in the sample. Returns a fraction, not a percent (multiply by 100 for %).
+
+[combined_percent_finer]
+method: Column naming the analysis of each row: "Sieve" for the sieve analysis, any other text (Hydrometer, Pipette, Buoyancy) for the sedimentation analysis
+percent_finer: Column of the separate percents finer, as fractions or percents, one per row of method
+mass_passing_200: Dry mass passing the No. 200 sieve, W200 (g)
+mass_total: Total dry mass of the sample in the sieve analysis, Wtot (g)
+returns: Combined percent finer of each row, in the same unit as percent_finer.
+notes: p = (W200/Wtot)·p_h for the sedimentation rows (Chapter 1-7); the sieve rows are unchanged. Trailing empty rows are ignored, so the input ranges may be longer than the data.
 
 [consolidation_log_time]
 t: Elapsed times since the start of the increment (min), a column; t = 0 rows are ignored

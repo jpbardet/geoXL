@@ -491,15 +491,17 @@ elastic_triangle = LAMBDA(B, x, y,
         HSTACK("Stress sy, sx, sxy =", sy, sx, sxy)
     ));
 
-/** Interpolate y at X from (Xa, Ya); X may be a column. Xa may be increasing or decreasing. mode: "linear" (default), "logx", "logy", "logxy". outside: omitted = #N/A, "extrapolate", "clamp". */
+/** Interpolate y at X from (Xa, Ya); X may be a column. Xa may be increasing or decreasing; trailing empty rows of Xa and Ya are ignored. mode: "linear" (default), "logx", "logy", "logxy". outside: omitted = #N/A, "extrapolate", "clamp". */
 Interpolate = LAMBDA(X, Xa, Ya, [mode], [outside],
     LET(
         md, IF(ISOMITTED(mode), "LINEAR", UPPER(mode)),
         od, IF(ISOMITTED(outside), "ERROR", UPPER(outside)),
         lx, OR(md = "LOGX", md = "LOGXY"),
         ly, OR(md = "LOGY", md = "LOGXY"),
-        xs, SORTBY(TOCOL(Xa), TOCOL(Xa)),
-        ys, SORTBY(TOCOL(Ya), TOCOL(Xa)),
+        xa, data_trim(Xa),
+        ya, data_trim(Ya),
+        xs, SORTBY(xa, xa),
+        ys, SORTBY(ya, xa),
         n, ROWS(xs),
         xlo, INDEX(xs, 1),
         xhi, INDEX(xs, n),
@@ -2554,6 +2556,16 @@ pipette_percent_finer = LAMBDA(mass_sample, mass_dish, mass_dispersing, mass_dis
         V,  volume_pipette-IF(wet, Md/Gs/water_density(t), 0),
         IF(OR(ROWS(mb)<>ROWS(ms), ROWS(t)<>ROWS(ms)), NA(),
             (ms-mb-Md)/concentration/V)
+    )
+);
+
+/** Combined grain size analysis: percent finer of the whole sample, from the separate percents finer of a sieve analysis and of a sedimentation analysis listed in one column. Rows whose method is "Sieve" are kept; the other rows (hydrometer, pipette, buoyancy) are multiplied by W200/Wtot. Trailing empty rows are ignored; #N/A if method and percent_finer have different numbers of rows. */
+combined_percent_finer = LAMBDA(method, percent_finer, mass_passing_200, mass_total,
+    LET(
+        m, data_trim(method),
+        p, data_trim(percent_finer),
+        IF(ROWS(m)<>ROWS(p), NA(),
+            p*IF(UPPER(m)="SIEVE", 1, mass_passing_200/mass_total))
     )
 );
 
