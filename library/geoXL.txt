@@ -2442,10 +2442,10 @@ specific_gravity = LAMBDA(Ws, Wfw, Wfws,
 );
 
 /** Liquid limit (Casagrande cup) from the blow counts N and the water contents w of the specimens: flow line w = A·log10(N) + B fitted by least squares; returns {LL; A}, LL = A·log10(25) + B. Trailing empty rows are ignored. */
-liquid_limit = LAMBDA(blows, water_content,
+liquid_limit = LAMBDA(blows, moisture,
     LET(
         N, data_trim(blows),
-        w, data_trim(water_content),
+        w, data_trim(moisture),
         IF(ROWS(N)<>ROWS(w), NA(),
             LET(
                 x, LOG10(N),
@@ -2457,9 +2457,9 @@ liquid_limit = LAMBDA(blows, water_content,
 );
 
 /** Plastic limit from the water contents of the threads rolled to 3 mm: returns {PL; standard deviation}, PL = mean of the water contents. Trailing empty rows are ignored. */
-plastic_limit = LAMBDA(water_content,
+plastic_limit = LAMBDA(moisture,
     LET(
-        w, data_trim(water_content),
+        w, data_trim(moisture),
         VSTACK(AVERAGE(w), IF(ROWS(w)>1, STDEV.S(w), 0))
     )
 );
@@ -2474,10 +2474,10 @@ cone_penetration = LAMBDA(initial, final,
 );
 
 /** Liquid limit by fall cone from the penetrations d (mm) and water contents w of the specimens: line w = A·d + B fitted by least squares; returns {LL; A}, LL = A·d_ref + B with d_ref = 20 mm unless given. Trailing empty rows are ignored. */
-liquid_limit_cone = LAMBDA(penetration, water_content, [d_ref],
+liquid_limit_cone = LAMBDA(penetration, moisture, [d_ref],
     LET(
         d,  data_trim(penetration),
-        w,  data_trim(water_content),
+        w,  data_trim(moisture),
         dr, IF(ISOMITTED(d_ref), 20, d_ref),
         IF(ROWS(d)<>ROWS(w), NA(),
             LET(
