@@ -2437,32 +2437,56 @@ sieve_passing = LAMBDA(retained,
     )
 );
 
-/** Hydrometer temperature correction (g/L) from water temperature T (°C), relative to 20 °C. */
-hydrometer_correction = LAMBDA(T,
-    1000*(0.99823-water_density(T)-0.000025*(T-20))
+/** Rows of data in a column: the column without its trailing empty cells, so that results fit the data. #N/A if the column is empty. */
+data_trim = LAMBDA(x,
+    LET(
+        last, IFERROR(XMATCH(TRUE, TOCOL(x)<>"", 0, -1), 0),
+        IF(last=0, NA(), TAKE(TOCOL(x), last))
+    )
 );
 
-/** Hydrometer effective fall depth Hr (cm) from corrected reading Rt, calibration Hr = slope·Rt + intercept, bulb volume (cm³) and cylinder diameter (cm). */
-hydrometer_hfall = LAMBDA(Hydrometer_reading, slope, intercept, volume_bulb, diameter_cylinder,
+/** Hydrometer temperature correction (g/L) from water temperature T (°C), relative to 20 °C. Trailing empty rows of T are ignored. */
+hydrometer_correction = LAMBDA(T,
     LET(
+        t, data_trim(T),
+        1000*(0.99823-water_density(t)-0.000025*(t-20))
+    )
+);
+
+/** Hydrometer effective fall depth Hr (cm) from reading Rt plus meniscus correction Cm, calibration Hr = slope·(Rt+Cm) + intercept, bulb volume (cm³) and cylinder diameter (cm). Trailing empty rows are ignored. */
+hydrometer_hfall = LAMBDA(Hydrometer_reading, slope, intercept, volume_bulb, diameter_cylinder, [Cm],
+    LET(
+        cm,       IF(ISOMITTED(Cm), 0, Cm),
+        R,        data_trim(Hydrometer_reading)+cm,
         area,     diameter_cylinder^2*PI()/4,
-        distance, slope*Hydrometer_reading+intercept,
+        distance, slope*R+intercept,
         distance-volume_bulb/(2*area)
     )
 );
 
-/** Hydrometer equivalent particle diameter (mm) from Stokes law: temperature T (°C), fall depth Hr (cm), Gs and elapsed time (min). */
+/** Hydrometer equivalent particle diameter (mm) from Stokes law: temperature T (°C), fall depth Hr (cm), Gs and elapsed time (min). Trailing empty rows are ignored; #N/A if the columns have different numbers of readings. */
 hydrometer_grainSize = LAMBDA(T, Hr, Gs, time,
     LET(
-        mu_w,  water_viscosity(T),
-        rho_w, water_density(T),
-        SQRT(30*mu_w*Hr/(Gs-1)/981/rho_w/time)
+        t,     data_trim(T),
+        h,     data_trim(Hr),
+        tm,    data_trim(time),
+        mu_w,  water_viscosity(t),
+        rho_w, water_density(t),
+        IF(OR(ROWS(h)<>ROWS(t), ROWS(tm)<>ROWS(t)), NA(),
+            SQRT(30*mu_w*h/(Gs-1)/981/rho_w/tm))
     )
 );
 
-/** Hydrometer percent finer (%) from dry mass W (g), corrected reading Rt, Gs and temperature T (°C); 152H hydrometer (factor 0.6226·Gs/(Gs-1)). */
-hydrometer_percentFiner = LAMBDA(W, Rt, Gs, T,
-    100/W*(Rt+hydrometer_correction(T))*0.6226*Gs/(Gs-1)
+/** Hydrometer percent finer (%) from dry mass W (g), reading Rt, Gs, temperature T (°C), meniscus correction Cm and dispersing agent correction Cd (g/L); 152H hydrometer (factor 0.6226·Gs/(Gs-1)). Trailing empty rows are ignored. */
+hydrometer_percentFiner = LAMBDA(W, Rt, Gs, T, [Cm], [Cd],
+    LET(
+        cm, IF(ISOMITTED(Cm), 0, Cm),
+        cd, IF(ISOMITTED(Cd), 0, Cd),
+        r,  data_trim(Rt),
+        t,  data_trim(T),
+        IF(ROWS(r)<>ROWS(t), NA(),
+            100/W*(r+cm-cd+hydrometer_correction(t))*0.6226*Gs/(Gs-1))
+    )
 );
 
 /** Hydrometer analysis in one call: {fall depth (cm), diameter (mm), percent finer (%)} for each reading. */

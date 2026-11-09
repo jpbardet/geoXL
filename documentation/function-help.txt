@@ -1451,19 +1451,25 @@ retained: Column of masses retained on each sieve (g), from the coarsest sieve d
 returns: Two columns per sieve: mass passing (g) and percent finer (%).
 notes: Percent finer is relative to the total of the retained masses (pan included). Returns "" when the total is zero.
 
+[data_trim]
+x: A column of values, which may end with empty cells
+returns: The column without its trailing empty cells.
+notes: Used by the laboratory functions so that their results fit the readings exactly; the templates can keep spare empty rows. Returns #N/A if the column is empty. Empty cells inside the data are kept and give an error downstream, which signals a missing reading.
+
 [hydrometer_correction]
-T: Water temperature during the reading (°C); a single value or a column
+T: Water temperature during the reading (°C); a single value or a column (trailing empty cells are ignored)
 returns: Temperature correction (g/L) to add to the hydrometer reading: 1000·(0.99823 - water_density(T) - 0.000025·(T - 20)).
 notes: Zero at 20 °C. Uses water_density, so it follows the same calibration range.
 
 [hydrometer_hfall]
-Hydrometer_reading: Hydrometer reading corrected for meniscus and dispersing agent (Rt), one value or a column
-slope: Slope of the hydrometer calibration, fall depth vs reading (cm per reading unit)
+Hydrometer_reading: Hydrometer reading Rt (g/L), one value or a column (trailing empty cells are ignored)
+slope: Slope of the hydrometer calibration, fall depth vs reading (cm per g/L)
 intercept: Intercept of the hydrometer calibration (cm)
 volume_bulb: Volume of the hydrometer bulb (cm³)
 diameter_cylinder: Inside diameter of the sedimentation cylinder (cm)
-returns: Effective fall depth Hr (cm) = slope·Rt + intercept - volume_bulb/(2·Ac), with Ac the cylinder cross-section.
-notes: The bulb-volume term corrects for the rise of the water surface when the hydrometer is inserted.
+Cm: Optional meniscus correction (g/L), added to the reading; default 0
+returns: Effective fall depth Hr (cm) = slope·(Rt + Cm) + intercept - volume_bulb/(2·Ac), with Ac the cylinder cross-section.
+notes: The depth depends on the position of the hydrometer, read at the top of the meniscus; the dispersing agent correction does not apply to it. The bulb-volume term corrects for the rise of the water surface when the hydrometer is inserted.
 
 [hydrometer_grainSize]
 T: Water temperature (°C), one value or a column
@@ -1471,15 +1477,17 @@ Hr: Effective fall depth (cm), usually from hydrometer_hfall
 Gs: Specific gravity of the soil solids
 time: Elapsed time since the start of sedimentation (min)
 returns: Equivalent particle diameter (mm) from Stokes' law: SQRT(30·η·Hr/((Gs - 1)·981·ρw·time)).
-notes: Viscosity η and water density ρw come from water_viscosity(T) and water_density(T). Stokes' law assumes spherical particles settling independently.
+notes: Viscosity η and water density ρw come from water_viscosity(T) and water_density(T). Trailing empty cells are ignored; #N/A if T, Hr and time do not have the same number of readings. Stokes' law assumes spherical particles settling independently.
 
 [hydrometer_percentFiner]
 W: Oven-dry mass of the soil in suspension (g)
-Rt: Hydrometer reading corrected for meniscus and zero (152H hydrometer, g/L)
+Rt: Hydrometer reading (g/L), one value or a column (trailing empty cells are ignored)
 Gs: Specific gravity of the soil solids
 T: Water temperature (°C), one value or a column
-returns: Percent finer (%) = 100/W·(Rt + hydrometer_correction(T))·0.6226·Gs/(Gs - 1).
-notes: Valid for the ASTM 152H hydrometer, whose scale is calibrated for Gs = 2.65.
+Cm: Optional meniscus correction (g/L); default 0
+Cd: Optional dispersing agent correction (g/L); default 0
+returns: Percent finer (%) = 100/W·(Rt + Cm - Cd + hydrometer_correction(T))·0.6226·Gs/(Gs - 1).
+notes: Valid for the ASTM 152H hydrometer, whose scale is calibrated for Gs = 2.65. #N/A if Rt and T do not have the same number of readings.
 
 [hydrometer_analysis]
 time: Elapsed times (min), a column
