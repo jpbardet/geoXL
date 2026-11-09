@@ -2456,6 +2456,30 @@ liquid_limit = LAMBDA(blows, water_content,
     )
 );
 
+/** Fall cone test: cone penetration (mm) from the dial readings before and after the drop. Trailing empty rows are ignored; #N/A if the columns have different numbers of rows. */
+cone_penetration = LAMBDA(initial, final,
+    LET(
+        a, data_trim(initial),
+        b, data_trim(final),
+        IF(ROWS(a)<>ROWS(b), NA(), ABS(b-a))
+    )
+);
+
+/** Liquid limit by fall cone from the penetrations d (mm) and water contents w of the specimens: line w = A·d + B fitted by least squares; returns {LL; A}, LL = A·d_ref + B with d_ref = 20 mm unless given. Trailing empty rows are ignored. */
+liquid_limit_cone = LAMBDA(penetration, water_content, [d_ref],
+    LET(
+        d,  data_trim(penetration),
+        w,  data_trim(water_content),
+        dr, IF(ISOMITTED(d_ref), 20, d_ref),
+        IF(ROWS(d)<>ROWS(w), NA(),
+            LET(
+                A, SLOPE(w, d),
+                B, INTERCEPT(w, d),
+                VSTACK(A*dr+B, A)
+            ))
+    )
+);
+
 /** Sieve analysis from masses retained (top sieve first): {mass passing, percent finer} for each sieve. */
 sieve_passing = LAMBDA(retained,
     LET(

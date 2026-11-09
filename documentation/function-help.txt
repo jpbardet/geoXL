@@ -1452,6 +1452,19 @@ water_content: Column of the water contents w of the specimens, as fractions or 
 returns: {LL; A}: the liquid limit LL = A·log10(25) + B and the slope A of the flow line w = A·log10(N) + B, fitted by least squares (same unit as water_content).
 notes: A is negative: the water content decreases when the number of blows increases. Trailing empty rows are ignored.
 
+[cone_penetration]
+initial: Column of dial readings before the drop of the cone (mm)
+final: Column of dial readings after the drop (mm), same size as initial
+returns: Cone penetration d = |final - initial| (mm) for each specimen.
+notes: Trailing empty rows are ignored, so the input ranges may be longer than the data.
+
+[liquid_limit_cone]
+penetration: Column of cone penetrations d (mm), for instance the result of cone_penetration
+water_content: Column of the water contents w of the specimens, as fractions or percents
+d_ref: Optional. Penetration at which the liquid limit is read (mm); 20 mm (80 g, 30° cone) if omitted
+returns: {LL; A}: the liquid limit LL = A·d_ref + B and the slope A of the line w = A·d + B, fitted by least squares (same unit as water_content).
+notes: BS 1377-2 fall cone method; the four or more specimens should give penetrations between about 15 and 25 mm. Trailing empty rows are ignored.
+
 [sieve_passing]
 retained: Column of masses retained on each sieve (g), from the coarsest sieve down to the pan
 returns: Two columns per sieve: mass passing (g) and percent finer (%).

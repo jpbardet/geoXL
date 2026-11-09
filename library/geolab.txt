@@ -8,6 +8,8 @@ date: 2026-11-07
 # Water content and specific gravity
 water_content
 liquid_limit
+cone_penetration
+liquid_limit_cone
 specific_gravity
 
 # Grain size: sieve, hydrometer, pipette and buoyancy
