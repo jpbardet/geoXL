@@ -10,6 +10,7 @@ water_content
 liquid_limit
 cone_penetration
 liquid_limit_cone
+plastic_limit
 specific_gravity
 
 # Grain size: sieve, hydrometer, pipette and buoyancy
