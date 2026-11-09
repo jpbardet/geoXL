@@ -2502,44 +2502,58 @@ hydrometer_analysis = LAMBDA(time, Hydrometer_reading, temperature, W, Gs, diame
     )
 );
 
-/** Buoyancy (sphere) method: equivalent particle diameter (mm) from Stokes law, for a sphere immersed at a given depth (cm) in a cylinder of given diameter (cm). */
+/** Buoyancy (sphere) method: equivalent particle diameter (mm) from Stokes law, for a sphere immersed at a given depth (cm) in a cylinder of given diameter (cm). Trailing empty rows of time and temperature are ignored; #N/A if they have different numbers of readings. */
 buoyancy_grain_size = LAMBDA(time, temperature, depth, Gs, volume, diameter_cylinder,
     LET(
+        tm,    data_trim(time),
+        t,     data_trim(temperature),
         area,  PI()*diameter_cylinder^2/4,
         H_r,   depth-volume/2/area,
-        mu,    water_viscosity(temperature),
-        rho_w, water_density(temperature),
-        SQRT(30*mu*H_r/(Gs-1)/981/rho_w/time)
+        mu,    water_viscosity(t),
+        rho_w, water_density(t),
+        IF(ROWS(tm)<>ROWS(t), NA(),
+            SQRT(30*mu*H_r/(Gs-1)/981/rho_w/tm))
     )
 );
 
-/** Buoyancy (sphere) method: fraction finer by weight (0 to 1) from the mass of the sphere immersed in the suspension and the three calibration masses of the sphere. */
+/** Buoyancy (sphere) method: fraction finer by weight (0 to 1) from the mass of the sphere immersed in the suspension and the three calibration masses of the sphere. Trailing empty rows are ignored; #N/A if the masses and temperatures have different numbers of readings. */
 buoyancy_percent_finer = LAMBDA(mass_immersed, temperature, Gs, concentration, mass_in_air, mass_in_water, mass_in_water_dispersing,
     LET(
-        rho_w, water_density(temperature),
+        Mt,    data_trim(mass_immersed),
+        t,     data_trim(temperature),
+        rho_w, water_density(t),
         Ma,    mass_in_air,
         Mw,    mass_in_water,
         Mr,    mass_in_water_dispersing,
-        rho_w*Gs*(Mr-mass_immersed)/(Ma*(Gs-1)-Mw*Gs+Mr)/concentration
+        IF(ROWS(Mt)<>ROWS(t), NA(),
+            rho_w*Gs*(Mr-Mt)/(Ma*(Gs-1)-Mw*Gs+Mr)/concentration)
     )
 );
 
-/** Pipette method: equivalent particle diameter (mm) from Stokes law, for a sample taken at a given depth (cm) after a given time (min). */
+/** Pipette method: equivalent particle diameter (mm) from Stokes law, for a sample taken at a given depth (cm) after a given time (min). Trailing empty rows are ignored; #N/A if the columns have different numbers of readings. */
 pipette_grain_size = LAMBDA(Time, depth_sampling, temperature, Gs,
     LET(
-        mu_w,  water_viscosity(temperature),
-        rho_w, water_density(temperature),
-        20*SQRT(4.5*mu_w*depth_sampling/((Gs-1)*rho_w*981*60*Time))
+        tm,    data_trim(Time),
+        h,     data_trim(depth_sampling),
+        t,     data_trim(temperature),
+        mu_w,  water_viscosity(t),
+        rho_w, water_density(t),
+        IF(OR(ROWS(h)<>ROWS(tm), ROWS(t)<>ROWS(tm)), NA(),
+            20*SQRT(4.5*mu_w*h/((Gs-1)*rho_w*981*60*tm)))
     )
 );
 
-/** Pipette method: fraction finer by weight (0 to 1) from the dried pipette sample and the dispersing-agent blank; give the temperature for the wet method. */
+/** Pipette method: fraction finer by weight (0 to 1) from the dried pipette sample and the dispersing-agent blank; give Gs and the temperature for the wet method. Trailing empty rows are ignored; #N/A if the columns have different numbers of readings. */
 pipette_percent_finer = LAMBDA(mass_sample, mass_dish, mass_dispersing, mass_dispersing_dish, volume_pipette, concentration, [Gs], [temperature],
     LET(
-        Ms, mass_sample-mass_dish,
+        ms, data_trim(mass_sample),
+        mb, data_trim(mass_dish),
         Md, mass_dispersing-mass_dispersing_dish,
-        V,  volume_pipette-IF(ISOMITTED(temperature), 0, Md/Gs/water_density(temperature)),
-        (Ms-Md)/concentration/V
+        wet, NOT(ISOMITTED(temperature)),
+        t,  IF(wet, data_trim(temperature), ms),
+        V,  volume_pipette-IF(wet, Md/Gs/water_density(t), 0),
+        IF(OR(ROWS(mb)<>ROWS(ms), ROWS(t)<>ROWS(ms)), NA(),
+            (ms-mb-Md)/concentration/V)
     )
 );
 
