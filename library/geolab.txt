@@ -29,6 +29,7 @@ grainsizeanalysis
 Step_table
 
 # Soil classification
+soil_fractions
 classify_ASTM2487
 classify_ASTM
 classify_USC

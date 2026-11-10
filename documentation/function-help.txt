@@ -82,6 +82,13 @@ organic_: Organic indicator: omit or 0 = inorganic, 1 = organic (organic fine so
 returns: Text "symbol - group name", e.g. "CL - Lean clay with sand"; organic soils give "OL - Organic clay", "OH - Sandy organic silt" etc.
 notes: From 0.14 its group names agree with classify_ASTM2487, which follows the D2487 flow charts without a table.
 
+[soil_fractions]
+pf4: Percent passing the No. 4 sieve (4.75 mm); one value, or a row of values for several soils
+pf200: Percent passing the No. 200 sieve (0.075 mm)
+pf_clay: Optional. Percent finer than 0.005 mm, from a sedimentation analysis (Chapters 1-4 to 1-7)
+returns: {gravel; sand; silt; clay} in %: gravel = 100 - pf4, sand = pf4 - pf200, silt = pf200 - pf_clay, clay = pf_clay.
+notes: Without pf_clay, silt and clay are left empty (their sum is the fines content pf200). Limits between fractions: 4.75 mm, 0.075 mm and 0.005 mm, as in Chapter 1-1.
+
 [classify_Plasticity]
 LL: Liquid limit (%)
 PL: Plastic limit (%)

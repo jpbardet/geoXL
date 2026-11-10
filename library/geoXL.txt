@@ -173,6 +173,17 @@ classify_ASTM = LAMBDA(list, pf4_, pf200_, [Cu_], [Cc_], [LL_], [PL_], [organic_
         IF(isOrg, IF(key="OCH", "OH", "OL"), INDEX(g, j, 1))&" - "&INDEX(g, j, 2)
     ));
 
+/** Soil fractions (%) from the percents passing the No. 4 (4.75 mm) and No. 200 (0.075 mm) sieves and, optionally, the percent finer than 0.005 mm: {gravel; sand; silt; clay}. Without the clay value, silt and clay are left empty. Several soils side by side give one column per soil. */
+soil_fractions = LAMBDA(pf4, pf200, [pf_clay],
+    LET(
+        gravel, 100-pf4,
+        sand,   pf4-pf200,
+        silt,   IF(ISOMITTED(pf_clay), "", pf200-pf_clay),
+        clay,   IF(ISOMITTED(pf_clay), "", pf_clay),
+        VSTACK(gravel, sand, silt, clay)
+    )
+);
+
 /** Fine-grained soil symbol from the plasticity chart (ASTM D2487): CL, CH, ML, MH, CL-ML, or OL, OH when organic is not 0. Inputs: LL and PL in %, optional organic (0 or omitted = inorganic). */
 classify_Plasticity = LAMBDA(LL, PL, [organic],
     LET(
