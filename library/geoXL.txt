@@ -2437,11 +2437,6 @@ liquid_limit = LAMBDA(blows, moisture,
     )
 );
 
-/** Plastic limit from the water contents of the threads rolled to 3 mm: returns {PL; standard deviation}, PL = mean of the water contents. */
-plastic_limit = LAMBDA(moisture,
-    VSTACK(AVERAGE(moisture), STDEV(moisture))
-);
-
 /** Fall cone test: cone penetration (mm) from the dial readings before and after the drop; the results stop at the last row of data. */
 cone_penetration = LAMBDA(initial, final,
     trim_rows(ABS(final-initial), final)
