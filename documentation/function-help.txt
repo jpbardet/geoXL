@@ -82,11 +82,17 @@ organic_: Organic indicator: omit or 0 = inorganic, 1 = organic (organic fine so
 returns: Text "symbol - group name", e.g. "CL - Lean clay with sand"; organic soils give "OL - Organic clay", "OH - Sandy organic silt" etc.
 notes: From 0.14 its group names agree with classify_ASTM2487, which follows the D2487 flow charts without a table.
 
+[clean_curve]
+d: Column of grain sizes (mm), possibly with the pan, blank rows or text
+p: Column of percents finer, one per row of d
+returns: Two columns {d, p} with only the points that have a positive size and a numeric percent finer.
+notes: Used by soil_fractions and grainsizeanalysis so that a pan row (size 0 or empty), spare empty rows, or labels in the ranges do not break the logarithmic interpolation.
+
 [soil_fractions]
-d: Column of grain sizes (mm): sieve openings and, if a sedimentation test was made, particle diameters; any order
-p: Column of percents finer, one per size
-returns: {gravel; sand; silt; clay} in %, with the limits 75, 4.75, 0.075 and 0.005 mm.
-notes: The percent finer at each limit is interpolated linearly in log d between the two points that bracket it (Eq. 10 of Chapter 1-2). Above the largest size it is 100 %, below the smallest 0 %: without a hydrometer test, all the fines are counted as silt. With only the two sieves No. 4 and No. 200, use =soil_fractions({4.75;0.075}, cells of % passing No. 4 and No. 200).
+d: Column of grain sizes (mm): sieve openings and, if a sedimentation test was made, particle diameters; any order; the pan and blank rows are ignored
+p: Column of percents finer, one per size, in % or as fractions (0 to 1)
+returns: {gravel; sand; silt; clay} on the scale of p, with the limits 75, 4.75, 0.075 and 0.005 mm. The four values add up to the percent finer than 75 mm (100 % without cobbles or boulders).
+notes: The percent finer at each limit is interpolated linearly in log d between the two points that bracket it (Eq. 10 of Chapter 1-2). Above the largest size it is 100 % (or 1), below the smallest 0: without a hydrometer test, all the fines are counted as silt, and gravel can only be separated from sand if the curve includes the No. 4 sieve (4.75 mm). With only the sieves No. 4 and No. 200, use =soil_fractions({4.75;0.075}, cells of % passing No. 4 and No. 200).
 
 [classify_Plasticity]
 LL: Liquid limit (%)

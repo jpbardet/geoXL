@@ -173,14 +173,28 @@ classify_ASTM = LAMBDA(list, pf4_, pf200_, [Cu_], [Cc_], [LL_], [PL_], [organic_
         IF(isOrg, IF(key="OCH", "OH", "OL"), INDEX(g, j, 1))&" - "&INDEX(g, j, 2)
     ));
 
-/** Soil fractions (%) from a grain size curve: d grain sizes (mm), p percents finer, in any order. Returns {gravel; sand; silt; clay}, with the limits 75, 4.75, 0.075 and 0.005 mm. The percent finer at a limit is interpolated linearly in log d between the two bracketing points (Chapter 1-2); it is 100 above the largest size and 0 below the smallest. */
+/** Grain size curve without the unusable rows: the points with a positive size d (mm) and a numeric percent finer p, as two columns {d, p}. Removes the pan (size 0 or empty), blank rows and text. */
+clean_curve = LAMBDA(d, p,
+    LET(
+        dc, TOCOL(d),
+        pc, TOCOL(p),
+        ok, ISNUMBER(dc)*ISNUMBER(pc)*(IF(ISNUMBER(dc), dc, 0)>0),
+        HSTACK(FILTER(dc, ok), FILTER(pc, ok))
+    )
+);
+
+/** Soil fractions from a grain size curve: d grain sizes (mm), p percents finer (in % or as fractions), in any order. Returns {gravel; sand; silt; clay} on the scale of p, with the limits 75, 4.75, 0.075 and 0.005 mm. The percent finer at a limit is interpolated linearly in log d between the two bracketing points (Chapter 1-2); it is 100 % above the largest size and 0 below the smallest. The four fractions add up to the percent finer than 75 mm. */
 soil_fractions = LAMBDA(d, p,
     LET(
-        pd,    LAMBDA(x, IF(x>MAX(d), 100, IF(x<MIN(d), 0, Interpolate(x, d, p, "logx")))),
-        p75,   pd(75),
-        p4,    pd(4.75),
-        p200,  pd(0.075),
-        p005,  pd(0.005),
+        c,    clean_curve(d, p),
+        dd,   TAKE(c, , 1),
+        pp,   TAKE(c, , -1),
+        full, IF(MAX(pp)>1, 100, 1),
+        pd,   LAMBDA(x, IF(x>MAX(dd), full, IF(x<MIN(dd), 0, Interpolate(x, dd, pp, "logx")))),
+        p75,  pd(75),
+        p4,   pd(4.75),
+        p200, pd(0.075),
+        p005, pd(0.005),
         VSTACK(p75-p4, p4-p200, p200-p005, p005)
     )
 );
@@ -1728,17 +1742,20 @@ intersection_polygon_line_slope = LAMBDA(polyline, M, t,
     ));
 
 // Sources: Axial_Piles_2024.xlsx, Bearing_CPT_2024.xlsx, Bearing_PMT_2024.xlsx, Bearing_SPT_2024.xlsx, CPT_settlement_2024.xlsx, PMT_settlement_2025.xlsx, Sieve_Examples_2024.xlsx
-/** Grain-size analysis: {D10; D30; D60; Cu; Cc; % clay; % silt; % sand; % gravel}. Inputs: d diameters (mm), p percents finer. D10, D30, D60 are interpolated linearly in log d (0 when outside the curve); the fractions come from soil_fractions. */
+/** Grain-size analysis: {D10; D30; D60; Cu; Cc; % clay; % silt; % sand; % gravel}. Inputs: d diameters (mm), p percents finer. D10, D30, D60 are interpolated linearly in log d (0 when outside the curve); the fractions come from soil_fractions; rows without a positive size (pan) or without a number are ignored. */
 grainsizeanalysis = LAMBDA(d, p,
     LET(
-        Pmin, MIN(p),
-        Pmax, MAX(p),
-        D10_, IF(AND(Pmin<10, 10<Pmax), Interpolate(10, p, d, "logy"), 0),
-        D30_, IF(AND(Pmin<30, 30<Pmax), Interpolate(30, p, d, "logy"), 0),
-        D60_, IF(AND(Pmin<60, 60<Pmax), Interpolate(60, p, d, "logy"), 0),
+        c,    clean_curve(d, p),
+        dd,   TAKE(c, , 1),
+        pp,   TAKE(c, , -1),
+        Pmin, MIN(pp),
+        Pmax, MAX(pp),
+        D10_, IF(AND(Pmin<10, 10<Pmax), Interpolate(10, pp, dd, "logy"), 0),
+        D30_, IF(AND(Pmin<30, 30<Pmax), Interpolate(30, pp, dd, "logy"), 0),
+        D60_, IF(AND(Pmin<60, 60<Pmax), Interpolate(60, pp, dd, "logy"), 0),
         Cu,   IF(D10_>0, D60_/D10_, 0),
         Cc,   IF(AND(D10_>0, D60_>0), D30_^2/D10_/D60_, 0),
-        f,    soil_fractions(d, p),
+        f,    soil_fractions(dd, pp),
         VSTACK(D10_, D30_, D60_, Cu, Cc, INDEX(f, 4), INDEX(f, 3), INDEX(f, 2), INDEX(f, 1))
     )
 );
