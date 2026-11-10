@@ -173,14 +173,15 @@ classify_ASTM = LAMBDA(list, pf4_, pf200_, [Cu_], [Cc_], [LL_], [PL_], [organic_
         IF(isOrg, IF(key="OCH", "OH", "OL"), INDEX(g, j, 1))&" - "&INDEX(g, j, 2)
     ));
 
-/** Soil fractions (%) from the percents passing the No. 4 (4.75 mm) and No. 200 (0.075 mm) sieves and, optionally, the percent finer than 0.005 mm: {gravel; sand; silt; clay}. Without the clay value, silt and clay are left empty. Several soils side by side give one column per soil. */
-soil_fractions = LAMBDA(pf4, pf200, [pf_clay],
+/** Soil fractions (%) from a grain size curve: d grain sizes (mm), p percents finer, in any order. Returns {gravel; sand; silt; clay}, with the limits 75, 4.75, 0.075 and 0.005 mm. The percent finer at a limit is interpolated linearly in log d between the two bracketing points (Chapter 1-2); it is 100 above the largest size and 0 below the smallest. */
+soil_fractions = LAMBDA(d, p,
     LET(
-        gravel, 100-pf4,
-        sand,   pf4-pf200,
-        silt,   IF(ISOMITTED(pf_clay), "", pf200-pf_clay),
-        clay,   IF(ISOMITTED(pf_clay), "", pf_clay),
-        VSTACK(gravel, sand, silt, clay)
+        pd,    LAMBDA(x, IF(x>MAX(d), 100, IF(x<MIN(d), 0, Interpolate(x, d, p, "logx")))),
+        p75,   pd(75),
+        p4,    pd(4.75),
+        p200,  pd(0.075),
+        p005,  pd(0.005),
+        VSTACK(p75-p4, p4-p200, p200-p005, p005)
     )
 );
 
@@ -1727,7 +1728,7 @@ intersection_polygon_line_slope = LAMBDA(polyline, M, t,
     ));
 
 // Sources: Axial_Piles_2024.xlsx, Bearing_CPT_2024.xlsx, Bearing_PMT_2024.xlsx, Bearing_SPT_2024.xlsx, CPT_settlement_2024.xlsx, PMT_settlement_2025.xlsx, Sieve_Examples_2024.xlsx
-/** Grain-size analysis: {D10; D30; D60; Cu; Cc; % clay; % silt; % sand; % gravel}. Inputs: d diameters (mm), p percent passing (any order). */
+/** Grain-size analysis: {D10; D30; D60; Cu; Cc; % clay; % silt; % sand; % gravel}. Inputs: d diameters (mm), p percents finer. D10, D30, D60 are interpolated linearly in log d (0 when outside the curve); the fractions come from soil_fractions. */
 grainsizeanalysis = LAMBDA(d, p,
     LET(
         Pmin, MIN(p),
@@ -1735,14 +1736,12 @@ grainsizeanalysis = LAMBDA(d, p,
         D10_, IF(AND(Pmin<10, 10<Pmax), Interpolate(10, p, d, "logy"), 0),
         D30_, IF(AND(Pmin<30, 30<Pmax), Interpolate(30, p, d, "logy"), 0),
         D60_, IF(AND(Pmin<60, 60<Pmax), Interpolate(60, p, d, "logy"), 0),
-        Dmin, MIN(d),
-        Dmax, MAX(d),
-        clay, IF(Dmin<=0.005, Interpolate(0.005, d, p, "logx"), 0),
-        silt, IF(Dmin<=0.075, Interpolate(0.075, d, p, "logx"), 0),
-        sand, IF(Dmax>=4.75, Interpolate(4.75, d, p, "logx"), 100),
-        gravel, IF(Dmax>=75, Interpolate(75, d, p, "logx"), 100),
-        VSTACK(D10_, D30_, D60_, IF(D10_>0, D60_/D10_, 0), IF(AND(D10_>0, D60_>0), D30_^2/D10_/D60_, 0), clay, silt-clay, sand-silt, gravel-sand)
-    ));
+        Cu,   IF(D10_>0, D60_/D10_, 0),
+        Cc,   IF(AND(D10_>0, D60_>0), D30_^2/D10_/D60_, 0),
+        f,    soil_fractions(d, p),
+        VSTACK(D10_, D30_, D60_, Cu, Cc, INDEX(f, 4), INDEX(f, 3), INDEX(f, 2), INDEX(f, 1))
+    )
+);
 
 // Sources: Axial_Piles_2024.xlsx
 /** Pile capacity in clay by the α method with tip 9·Su·A: {ultimate; shaft; tip}. Inputs: zSu (depth, Su), pa, a tip area, p perimeter, L, author (terzaghi, reese), optional D_ top depth. */
