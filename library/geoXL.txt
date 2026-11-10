@@ -229,66 +229,43 @@ classify_USC = LAMBDA(pf4_, pf200_, [Cu_], [Cc_], [LL_], [PL_], [organic_],
     )
 );
 
-/** ASTM D2487 decision tree for a group symbol: 1 gravel, 2 sand, 3 fine-grained LL < 50, 4 fine-grained LL >= 50, 5 organic OL, 6 organic OH, 0 for Pt. */
-classify_tree = LAMBDA(symbol,
-    IFS(symbol="Pt", 0, LEFT(symbol)="G", 1, LEFT(symbol)="S", 2, symbol="OL", 5, symbol="OH", 6, RIGHT(symbol)="H", 4, TRUE, 3)
-);
-
-/** Nodes of one decision tree from the tree table (columns: tree, id, parent, x, y, label, kind, key). Returns id, parent, x, y, label, kind, key; y is scaled so that the deepest row is at 22. */
-tree_nodes = LAMBDA(table, tree,
+/** Chart data for the ASTM D2487 decision tree of one soil. trees: tree table (tree, id, parent, x, y, label, kind, key). symbol, name: from classify_ASTM2487. Returns the tree title, a row of headings, then the node labels and the x, y of the lines, the soil's path, the start, the questions, the group symbols, the group names and the end of the path (#N/A where a series has no point). */
+ASTM_tree_chart = LAMBDA(trees, symbol, name,
     LET(
-        rows, FILTER(DROP(table, , 1), TAKE(table, , 1)=tree),
-        y,    CHOOSECOLS(rows, 4),
-        HSTACK(TAKE(rows, , 3), y*22/MAX(y), DROP(rows, , 4))
-    )
-);
-
-/** Elbow lines from the parents to the nodes in rows child of a tree_nodes table: parent, half a column to the right, down to the node row, node. gap = 1 adds a #N/A row after each line. Returns x, y and the node key. */
-tree_elbows = LAMBDA(nodes, child, gap,
-    LET(
-        x,   CHOOSECOLS(nodes, 3),
-        y,   CHOOSECOLS(nodes, 4),
-        pr,  XMATCH(INDEX(CHOOSECOLS(nodes, 2), child), TAKE(nodes, , 1)),
-        m,   4+gap,
-        i,   SEQUENCE(m*ROWS(child)),
-        k,   INT((i-1)/m)+1,
-        s,   MOD(i-1, m)+1,
-        ch,  INDEX(child, k),
-        pa,  INDEX(pr, k),
-        xm,  INDEX(x, pa)+0.5,
-        HSTACK(CHOOSE(s, INDEX(x, pa), xm, xm, INDEX(x, ch), NA()),
-               CHOOSE(s, INDEX(y, pa), INDEX(y, pa), INDEX(y, ch), INDEX(y, ch), NA()),
-               INDEX(CHOOSECOLS(nodes, 7), ch))
-    )
-);
-
-/** All the lines of a tree for one chart series: elbows from every parent to its children, separated by #N/A. */
-tree_edges = LAMBDA(nodes,
-    tree_elbows(nodes, FILTER(SEQUENCE(ROWS(nodes)), CHOOSECOLS(nodes, 2)>0), 1)
-);
-
-/** Key of the node where a soil ends: the node labelled with the group name, else the node labelled with the group symbol, else "#". */
-tree_key = LAMBDA(nodes, symbol, name,
-    LET(
-        label, CHOOSECOLS(nodes, 5),
-        key,   CHOOSECOLS(nodes, 7),
-        XLOOKUP(name, label, key, XLOOKUP(symbol, label, key, "#"))
-    )
-);
-
-/** Path of a soil through the tree: the elbows from the root to the node with that key, as one continuous line (x, y, key); #N/A when the soil is not in this tree. */
-tree_path = LAMBDA(nodes, key,
-    LET(
-        k, CHOOSECOLS(nodes, 7),
-        tree_elbows(nodes, FILTER(SEQUENCE(ROWS(nodes)), (CHOOSECOLS(nodes, 2)>0)*(LEFT(key, LEN(k))=k), NA()), 0)
-    )
-);
-
-/** x and y of the nodes of one kind (root, q, sym or leaf), #N/A for the others, so that each kind is one chart series with its own label style. */
-tree_points = LAMBDA(nodes, kind,
-    LET(
-        on, CHOOSECOLS(nodes, 6)=kind,
-        HSTACK(IF(on, CHOOSECOLS(nodes, 3), NA()), IF(on, CHOOSECOLS(nodes, 4), NA()))
+        tree,   IFS(symbol="Pt", 0, LEFT(symbol)="G", 1, LEFT(symbol)="S", 2, symbol="OL", 5, symbol="OH", 6, RIGHT(symbol)="H", 4, TRUE, 3),
+        titles, {"Coarse-grained soil, gravel (% gravel > % sand)"; "Coarse-grained soil, sand (% sand ≥ % gravel)"; "Fine-grained soil, LL < 50"; "Fine-grained soil, LL ≥ 50"; "Organic fine-grained soil, OL (LL < 50)"; "Organic fine-grained soil, OH (LL ≥ 50)"},
+        nodes,  FILTER(DROP(trees, , 1), TAKE(trees, , 1)=tree),
+        id,     TAKE(nodes, , 1),
+        par,    CHOOSECOLS(nodes, 2),
+        x,      CHOOSECOLS(nodes, 3),
+        yraw,   CHOOSECOLS(nodes, 4),
+        y,      yraw*22/MAX(yraw),
+        label,  CHOOSECOLS(nodes, 5),
+        kind,   CHOOSECOLS(nodes, 6),
+        key,    CHOOSECOLS(nodes, 7),
+        endkey, XLOOKUP(name, label, key, XLOOKUP(symbol, label, key, "#")),
+        idx,    SEQUENCE(ROWS(id)),
+        elbows, LAMBDA(child, gap, LET(
+                    pr, XMATCH(INDEX(par, child), id),
+                    m,  4+gap,
+                    i,  SEQUENCE(m*ROWS(child)),
+                    k,  INT((i-1)/m)+1,
+                    s,  MOD(i-1, m)+1,
+                    ch, INDEX(child, k),
+                    pa, INDEX(pr, k),
+                    xm, INDEX(x, pa)+0.5,
+                    HSTACK(CHOOSE(s, INDEX(x, pa), xm, xm, INDEX(x, ch), NA()),
+                           CHOOSE(s, INDEX(y, pa), INDEX(y, pa), INDEX(y, ch), INDEX(y, ch), NA())))),
+        lines,  elbows(FILTER(idx, par>0), 1),
+        path,   elbows(FILTER(idx, (par>0)*(LEFT(endkey, LEN(key))=key), NA()), 0),
+        pts,    LAMBDA(kd, HSTACK(IF(kind=kd, x, NA()), IF(kind=kd, y, NA()))),
+        endpt,  XLOOKUP(endkey, key, HSTACK(x, y), NA()),
+        nr,     ROWS(lines),
+        data,   HSTACK(EXPAND(label, nr, , ""), lines, EXPAND(path, nr, , NA()),
+                       EXPAND(HSTACK(pts("root"), pts("q"), pts("sym"), pts("leaf")), nr, , NA()),
+                       EXPAND(endpt, nr, 2, NA())),
+        heads,  {"label", "x line", "y line", "x path", "y path", "x start", "y start", "x question", "y question", "x symbol", "y symbol", "x name", "y name", "x end", "y end"},
+        VSTACK(EXPAND(INDEX(titles, tree), 1, 15, ""), heads, data)
     )
 );
 

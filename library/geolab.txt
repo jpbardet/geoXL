@@ -37,12 +37,7 @@ classify_ASTM
 classify_USC
 classify_AASHTO
 classify_Plasticity
-classify_tree
-tree_nodes
-tree_edges
-tree_key
-tree_path
-tree_points
+ASTM_tree_chart
 
 # Stress and Mohr circle (Chapter 5-1, shear tests of Chapter 7)
 Stress_Mohr

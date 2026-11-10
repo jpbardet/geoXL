@@ -111,44 +111,12 @@ PL_: Optional. Plastic limit (%)
 organic_: Optional. Organic content (%); more than 90 gives Pt (peat)
 returns: USCS group symbol (ASTM D2487), the first column of classify_ASTM2487.
 notes: Well graded: Cu >= 4 (gravel) or Cu >= 6 (sand) and 1 <= Cc <= 3. Dual symbols for 5 to 12 % fines; CL-ML fines give SC-SM or GC-GM.
-[classify_tree]
-symbol: USCS group symbol, for example from classify_ASTM2487
-returns: Number of the ASTM D2487 decision tree that ends with this symbol: 1 gravel, 2 sand, 3 fine-grained LL < 50, 4 fine-grained LL >= 50, 5 organic OL, 6 organic OH; 0 for Pt.
-notes: OL and OH soils reach trees 5 and 6 through trees 3 and 4.
-
-[tree_nodes]
-table: Tree table with columns tree, id, parent, x, y, label, kind, key (one row per node, all trees stacked)
-tree: Tree number, as from classify_tree
-returns: The nodes of that tree: id, parent, x, y, label, kind, key, with y scaled so that the lowest row is at 22.
-notes: kind is root, q (question), sym (group symbol) or leaf (group name). key is the path of ids from the root, such as /1/2/3/.
-
-[tree_edges]
-nodes: Nodes from tree_nodes
-returns: x, y and key of the elbow lines from every parent to its children, with a #N/A row after each line, for one chart series.
-notes: Set the chart to show #N/A as an empty cell so that the lines are not joined.
-
-[tree_elbows]
-nodes: Nodes from tree_nodes
-child: Row numbers of the nodes to draw
-gap: 1 adds a #N/A row after each line, 0 joins them
-returns: x, y and key of the elbow lines from the parents to those nodes. Used by tree_edges and tree_path.
-
-[tree_key]
-nodes: Nodes from tree_nodes
-symbol: Group symbol
-name: Group name
-returns: Key of the node labelled with the group name, else of the node labelled with the symbol, else "#".
-
-[tree_path]
-nodes: Nodes from tree_nodes
-key: Key of the node where the soil ends, from tree_key
-returns: x, y and key of the path from the root to that node, as one continuous line; #N/A when the soil is not in this tree.
-
-[tree_points]
-nodes: Nodes from tree_nodes
-kind: root, q, sym or leaf
-returns: x and y of the nodes of that kind, #N/A for the other nodes, so that each kind is one chart series with its own label style.
-
+[ASTM_tree_chart]
+trees: Tree table with columns tree, id, parent, x, y, label, kind, key (one row per node, the six trees stacked)
+symbol: Group symbol from classify_ASTM2487
+name: Group name from classify_ASTM2487
+returns: One block for the decision-tree chart: the tree title (row 1), the headings (row 2), then the node labels and the x, y of the lines, the soil's path, the start, the questions, the group symbols, the group names and the end of the path.
+notes: The tree follows from the symbol: gravel, sand, fine-grained LL < 50 or LL >= 50, organic OL or OH (organic soils reach these through the fine-grained trees). Lines are separated by #N/A: set the chart to show #N/A as an empty cell. Pt has no tree.
 
 [consolidation_test]
 Tarray: Column of elapsed times (min)
