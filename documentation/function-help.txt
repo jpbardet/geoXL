@@ -1452,6 +1452,17 @@ moisture: Column of the water contents w of the specimens, as fractions or perce
 returns: {LL; A}: the liquid limit LL = A·log10(25) + B and the slope A of the flow line w = A·log10(N) + B, fitted by least squares (same unit as water_content).
 notes: A is negative: the water content decreases when the number of blows increases. Trailing empty rows are ignored.
 
+[shrinkage_limit]
+dish: Mass of the coated dish (g); one value per sample, samples side by side or one under the other
+wet: Mass of the dish with the wet soil pat (g)
+dry: Mass of the dish with the oven-dried pat (g)
+V: Volume of the wet pat, equal to the volume of the dish (cm³)
+mass_waxed: Mass of the dry pat coated with wax (g)
+buoyant_waxed: Buoyant mass of the waxed pat immersed in water (g)
+rho_wax: Unit mass of the wax (g/cm³)
+returns: Five values per sample, {V0; w; SL; SR; LS}: volume of the dry pat V0 = Msp - Mbsp - Mp/ρwax (cm³), initial water content w, shrinkage limit SL = w - (V - V0)/M0, shrinkage ratio SR = M0/V0, linear shrinkage LS = 1 - (V0/V)^(1/3).
+notes: M0 = dry - dish is the mass of dry soil and Mp = mass_waxed - M0 the mass of wax. The unit mass of water is taken as 1 g/cm³. For samples in columns (D9:E9, …) the results spill as five rows under each sample.
+
 [cone_penetration]
 initial: Column of dial readings before the drop of the cone (mm)
 final: Column of dial readings after the drop (mm), same size as initial

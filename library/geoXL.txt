@@ -2437,6 +2437,19 @@ liquid_limit = LAMBDA(blows, moisture,
     )
 );
 
+/** Shrinkage test (wax method), one column per sample: masses of the dish, dish + wet soil, dish + dry soil (g), volume of the wet pat V (cm³), mass of the dry pat coated with wax and its buoyant mass in water (g), unit mass of wax (g/cm³). Returns {V0; w; SL; SR; LS}: dry volume, initial water content, shrinkage limit, shrinkage ratio, linear shrinkage (unit mass of water 1 g/cm³). */
+shrinkage_limit = LAMBDA(dish, wet, dry, V, mass_waxed, buoyant_waxed, rho_wax,
+    LET(
+        M0, dry-dish,
+        w,  (wet-dry)/M0,
+        V0, mass_waxed-buoyant_waxed-(mass_waxed-M0)/rho_wax,
+        SL, w-(V-V0)/M0,
+        SR, M0/V0,
+        LS, 1-(V0/V)^(1/3),
+        VSTACK(V0, w, SL, SR, LS)
+    )
+);
+
 /** Fall cone test: cone penetration (mm) from the dial readings before and after the drop; the results stop at the last row of data. */
 cone_penetration = LAMBDA(initial, final,
     trim_rows(ABS(final-initial), final)
