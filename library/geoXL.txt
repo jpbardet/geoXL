@@ -229,6 +229,69 @@ classify_USC = LAMBDA(pf4_, pf200_, [Cu_], [Cc_], [LL_], [PL_], [organic_],
     )
 );
 
+/** ASTM D2487 decision tree for a group symbol: 1 gravel, 2 sand, 3 fine-grained LL < 50, 4 fine-grained LL >= 50, 5 organic OL, 6 organic OH, 0 for Pt. */
+classify_tree = LAMBDA(symbol,
+    IFS(symbol="Pt", 0, LEFT(symbol)="G", 1, LEFT(symbol)="S", 2, symbol="OL", 5, symbol="OH", 6, RIGHT(symbol)="H", 4, TRUE, 3)
+);
+
+/** Nodes of one decision tree from the tree table (columns: tree, id, parent, x, y, label, kind, key). Returns id, parent, x, y, label, kind, key; y is scaled so that the deepest row is at 22. */
+tree_nodes = LAMBDA(table, tree,
+    LET(
+        rows, FILTER(DROP(table, , 1), TAKE(table, , 1)=tree),
+        y,    CHOOSECOLS(rows, 4),
+        HSTACK(TAKE(rows, , 3), y*22/MAX(y), DROP(rows, , 4))
+    )
+);
+
+/** Elbow lines from the parents to the nodes in rows child of a tree_nodes table: parent, half a column to the right, down to the node row, node. gap = 1 adds a #N/A row after each line. Returns x, y and the node key. */
+tree_elbows = LAMBDA(nodes, child, gap,
+    LET(
+        x,   CHOOSECOLS(nodes, 3),
+        y,   CHOOSECOLS(nodes, 4),
+        pr,  XMATCH(INDEX(CHOOSECOLS(nodes, 2), child), TAKE(nodes, , 1)),
+        m,   4+gap,
+        i,   SEQUENCE(m*ROWS(child)),
+        k,   INT((i-1)/m)+1,
+        s,   MOD(i-1, m)+1,
+        ch,  INDEX(child, k),
+        pa,  INDEX(pr, k),
+        xm,  INDEX(x, pa)+0.5,
+        HSTACK(CHOOSE(s, INDEX(x, pa), xm, xm, INDEX(x, ch), NA()),
+               CHOOSE(s, INDEX(y, pa), INDEX(y, pa), INDEX(y, ch), INDEX(y, ch), NA()),
+               INDEX(CHOOSECOLS(nodes, 7), ch))
+    )
+);
+
+/** All the lines of a tree for one chart series: elbows from every parent to its children, separated by #N/A. */
+tree_edges = LAMBDA(nodes,
+    tree_elbows(nodes, FILTER(SEQUENCE(ROWS(nodes)), CHOOSECOLS(nodes, 2)>0), 1)
+);
+
+/** Key of the node where a soil ends: the node labelled with the group name, else the node labelled with the group symbol, else "#". */
+tree_key = LAMBDA(nodes, symbol, name,
+    LET(
+        label, CHOOSECOLS(nodes, 5),
+        key,   CHOOSECOLS(nodes, 7),
+        XLOOKUP(name, label, key, XLOOKUP(symbol, label, key, "#"))
+    )
+);
+
+/** Path of a soil through the tree: the elbows from the root to the node with that key, as one continuous line (x, y, key); #N/A when the soil is not in this tree. */
+tree_path = LAMBDA(nodes, key,
+    LET(
+        k, CHOOSECOLS(nodes, 7),
+        tree_elbows(nodes, FILTER(SEQUENCE(ROWS(nodes)), (CHOOSECOLS(nodes, 2)>0)*(LEFT(key, LEN(k))=k), NA()), 0)
+    )
+);
+
+/** x and y of the nodes of one kind (root, q, sym or leaf), #N/A for the others, so that each kind is one chart series with its own label style. */
+tree_points = LAMBDA(nodes, kind,
+    LET(
+        on, CHOOSECOLS(nodes, 6)=kind,
+        HSTACK(IF(on, CHOOSECOLS(nodes, 3), NA()), IF(on, CHOOSECOLS(nodes, 4), NA()))
+    )
+);
+
 /** Square-root-of-time analysis of a consolidation test: Cv, d0, d100, drainage length and compression ratios. Inputs: time and dial-reading columns, fitting window ta–tb, initial height hi. */
 consolidation_test = LAMBDA(Tarray, Xarray, ta, tb, hi,
     LET(
@@ -540,7 +603,7 @@ elastic_triangle = LAMBDA(B, x, y,
 
 /** Average of each row of a range or array, across its columns: returns one value per row. Empty cells are ignored, as in AVERAGE. */
 average_by_row = LAMBDA(array,
-    BYROW(array, LAMBDA(r, AVERAGE(r)))
+    BYROW(array, LAMBDA(rw, AVERAGE(rw)))
 );
 
 /** Interpolate y at X from (Xa, Ya); X may be a column. Xa may be increasing or decreasing. mode: "linear" (default), "logx", "logy", "logxy". outside: omitted = #N/A, "extrapolate", "clamp". */
