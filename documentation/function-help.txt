@@ -58,13 +58,13 @@ BL: Shape ratio B/L
 returns: Skempton Nc (dimensionless) for undrained bearing, qu = cu·Nc + q.
 
 [classify_AASHTO]
-pf10_: Percent passing No. 10 sieve (enter 40 for 40 %)
-pf40_: Percent passing No. 40 sieve (%)
-pf200_: Percent passing No. 200 sieve (%)
-LL_: Liquid limit LL (%), optional
-PL_: Plastic limit PL (%), optional
-returns: AASHTO group (e.g. A-2-4) with group index, as text.
-notes: Percentages are entered as numbers (40), not fractions (0.40).
+pf10_: Percent passing the No. 10 sieve (2.00 mm)
+pf40_: Percent passing the No. 40 sieve (0.425 mm)
+pf200_: Percent passing the No. 200 sieve (0.075 mm)
+LL_: Optional. Liquid limit (%); omit LL and PL for a nonplastic soil
+PL_: Optional. Plastic limit (%)
+returns: AASHTO group with its group index, e.g. "A-7-6 (12)".
+notes: Groups are tested from left to right in the AASHTO table; "max" includes the limit, and LL 40 max / 41 min means LL <= 40 / LL > 40 (PI 10 max / 11 min likewise). GI = (F-35)[0.2+0.005(LL-40)] + 0.01(F-15)(PI-10), rounded and never negative; for A-2-6 and A-2-7 only the PI term is used; GI = 0 for A-1, A-3, A-2-4, A-2-5. A-7-5 when PL >= 30, A-7-6 otherwise.
 
 [ASTMtable]
 returns: Constant 100 × 2 table {group symbol, group name} of ASTM D2487 group names, in the original row order. Use it without parentheses: =ASTMtable.
@@ -83,21 +83,22 @@ returns: Text "symbol - group name", e.g. "CL - Lean clay with sand"; organic so
 notes: From 0.14 its group names agree with classify_ASTM2487, which follows the D2487 flow charts without a table.
 
 [classify_Plasticity]
-LL: Liquid limit LL (%)
-PL: Plastic limit PL (%)
-organic: Organic indicator: omit or 0 = inorganic, 1 = organic
-returns: Symbol from the plasticity chart: CL, CH, ML, MH, OL, OH or "CL & ML".
+LL: Liquid limit (%)
+PL: Plastic limit (%)
+organic: Optional. Not 0 for an organic soil (OL, OH)
+returns: Symbol of the fine-grained soil on the plasticity chart: CL, CH, ML, MH, CL-ML, OL or OH; an error message if LL < PL or the point lies above the U-line.
+notes: A-line PI = 0.73(LL-20); U-line PI = 0.9(LL-8), vertical at LL = 16 up to PI = 7. CL-ML when LL < 50, 4 <= PI <= 7 and the point is on or above the A-line; H when LL >= 50.
 
 [classify_USC]
-pf4_: Percent passing No. 4 sieve (%)
-pf200_: Percent passing No. 200 sieve (%)
-Cu_: Coefficient of uniformity Cu = D60/D10, optional
-Cc_: Coefficient of curvature Cc = D30²/(D10·D60), optional
-LL_: Liquid limit LL (%), optional
-PL_: Plastic limit PL (%), optional
-organic_: Organic indicator: omit or 0 = inorganic, 1 = organic
-returns: USCS group symbol (e.g. SW-SM, CL).
-notes: Coarse soils with CL-ML fines give SC-SM or GC-GM. Equal sand and gravel fractions classify as sand.
+pf4_: Percent passing the No. 4 sieve
+pf200_: Percent passing the No. 200 sieve
+Cu_: Optional. Coefficient of uniformity D60/D10
+Cc_: Optional. Coefficient of curvature D30²/(D10·D60)
+LL_: Optional. Liquid limit (%)
+PL_: Optional. Plastic limit (%)
+organic_: Optional. Organic content (%); more than 90 gives Pt (peat)
+returns: USCS group symbol (ASTM D2487), the first column of classify_ASTM2487.
+notes: Well graded: Cu >= 4 (gravel) or Cu >= 6 (sand) and 1 <= Cc <= 3. Dual symbols for 5 to 12 % fines; CL-ML fines give SC-SM or GC-GM.
 
 [consolidation_test]
 Tarray: Column of elapsed times (min)

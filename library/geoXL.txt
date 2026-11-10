@@ -119,16 +119,32 @@ bearing_Skempton = LAMBDA(DB, BL,
         Nc0_+(Nc1_-Nc0_)*BL
     ));
 
-/** AASHTO soil classification with group index, as text. Inputs: % passing No.10, No.40, No.200 (enter 40 for 40%), LL_, PL_. */
-classify_AASHTO = LAMBDA(pf10_, pf40_, pf200_, LL_, PL_,
+/** AASHTO soil classification with group index, e.g. "A-7-6 (12)". Inputs: % passing No.10, No.40, No.200, LL and PL (%; omit both for a nonplastic soil). Limits as in the AASHTO table: "max" includes the limit; LL 40 max / 41 min means LL <= 40 / LL > 40, PI 10 max / 11 min means PI <= 10 / PI > 10. */
+classify_AASHTO = LAMBDA(pf10_, pf40_, pf200_, [LL_], [PL_],
     LET(
-        LL, IF(ISOMITTED(LL_), 0, LL_),
-        PL, IF(ISOMITTED(PL_), 0, PL_),
-        PI, LL-PL,
-        g, MAX(0, (pf200_-35)*(0.2+0.005*(LL-40))+0.01*(pf200_-15)*(PI-10)),
-        GI, "("&g&")",
-        IFS(pf10_<pf40_, "% passing No.10 must be larger than % passing No.40", pf40_<pf200_, "% passing No.40 must be larger than % passing No.200", LL<PL, "liquid limit must be larger or equal plastic limit", AND(pf10_<50, pf40_<30, pf200_<15, PI<6), "A-1a - Stone fragment gravel and sand", AND(pf40_<50, pf200_<25, PI<6), "A-1b - Stone fragment gravel and sand", AND(pf40_>51, pf200_<10, PL<=0), "A-3 - Fine sand", AND(pf200_<35, LL<40, PI<10), "A-2-4"&GI&" - Silty or clayey gravel sand", AND(pf200_<35, LL>41, PI<10), "A-2-5"&GI&" - Silty or clayey gravel sand", AND(pf200_<35, LL<40, PI>11), "A-2-6"&GI&" - Silty or clayey gravel sand", AND(pf200_<35, LL>41, PI>11), "A-2-7"&GI&" - Silty or clayey gravel sand", AND(pf200_>=36, LL<40, PI<10), "A-4"&GI&" - Silty soil", AND(pf200_>=36, LL>41, PI<10), "A-5"&GI&" - Silty soil", AND(pf200_>=36, LL<40, PI>11), "A-6"&GI&" - Clayey soil", AND(pf200_>=36, LL>41, PI>11, PL>30), "A-7-5"&GI&" - Clayey soil", AND(pf200_>=36, LL>41, PI>11, PL<30), "A-7-6"&GI&" - Clayey soil", TRUE, "N-C")
-    ));
+        LL,   IF(ISOMITTED(LL_), 0, LL_),
+        PL,   IF(ISOMITTED(PL_), 0, PL_),
+        PI,   LL-PL,
+        F,    pf200_,
+        low,  LL<=40,
+        lean, PI<=10,
+        group, IFS(
+            OR(pf10_<pf40_, pf40_<F),            "Error: percents passing must decrease from No.10 to No.200",
+            LL<PL,                               "Error: liquid limit smaller than plastic limit",
+            AND(pf10_<=50, pf40_<=30, F<=15, PI<=6), "A-1a",
+            AND(pf40_<=50, F<=25, PI<=6),        "A-1b",
+            AND(pf40_>50, F<=10, PI=0),          "A-3",
+            F<=35,                               "A-2-"&IF(lean, IF(low, 4, 5), IF(low, 6, 7)),
+            lean,                                IF(low, "A-4", "A-5"),
+            low,                                 "A-6",
+            TRUE,                                IF(PL>=30, "A-7-5", "A-7-6")),
+        GI,   IFS(
+            OR(LEFT(group, 3)="A-1", group="A-3", group="A-2-4", group="A-2-5"), 0,
+            LEFT(group, 3)="A-2",                MAX(0, ROUND(0.01*(F-15)*(PI-10), 0)),
+            TRUE,                                MAX(0, ROUND((F-35)*(0.2+0.005*(LL-40))+0.01*(F-15)*(PI-10), 0))),
+        IF(LEFT(group, 5)="Error", group, group&" ("&GI&")")
+    )
+);
 
 /** ASTM classification lookup: 100 rows {group symbol, group name}, in the original row order with repeated symbols. Use ASTMtable as the first argument of classify_ASTM. Stored in the library, so no ASTMnames worksheet is needed. */
 ASTMtable = {"Pt","Peat";"SW","Well-graded sand";"SW","Well-graded sand with gravel";"SP","Poorly graded sand";"SP","Poorly graded sand with gravel";"SW-SM","Well-graded sand with silt";"SW-SM","Well-graded sand with silt and gravel";"SW-SC","Well-graded sand with clay (or silty clay)";"SW-SC","Well-graded sand with clay and gravel (or silty clay and gravel)";"SP-SM","Poorly graded sand with silt";"SP-SM","Poorly graded sand with silt and gravel";"SP-SC","Poorly graded sand with clay (or silty clay)";"SP-SC","Poorly graded sand with clay and gravel (or silty clay and gravel)";"SM","Silty sand";"SM","Silty sand with gravel";"SC","Clayey sand";"SC","Clayey sand with gravel";"SC-SM","silty, clayey sand";"SC-SM","silty, clayey sand with gravel";"GW","Well-graded gravel";"GW","Well-graded gravel with sand";"GP","Poorly graded gravel";"GP","Poorly graded gravel with sand";"GW-GM","Well-graded gravel with silt";"GW-GM","Well-graded gravel with silt and sand";"GW-GC","Well-graded gravel with clay (or silty clay)";"GW-GC","Well-graded gravel with clay and sand (or silty clay and sand)";"GP-GM","Poorly graded gravel with silt";"GP-GM","Poorly graded gravel with silt and sand";"GP-GC","Poorly graded gravel with clay (or silty clay)";"GP-GC","Poorly graded gravel with clay and sand (or silty clay and sand)";"GM","Silty gravel";"GM","Silty gravel with sand";"GC","Clayey gravel";"GC","Clayey gravel with sand";"GC-GM","silty, clayey gravel";"GC-GM","silty, clayey gravel with sand";"CL","Lean clay";"CL","Lean clay with sand";"CL","Lean clay with gravel";"CL","Sandy lean clay";"CL","Sandy lean clay with gravel";"CL","Gravelly lean clay";"CL","Gravelly lean clay with sand";"CL-ML","Silty clay";"CL-ML","Silty clay with sand";"CL-ML","Silty clay with gravel";"CL-ML","Sandy silty clay";"CL-ML","Sandy silty clay with gravel";"CL-ML","Gravelly silty clay";"CL-ML","Gravelly silty clay with sand";"ML","Silt";"ML","Silt with sand";"ML","Silt with gravel";"ML","Sandy silt";"ML","Sandy silt with gravel";"ML","Gravelly silt";"ML","Gravelly silt with sand";"OML","Organic silt";"OML","Organic silt with sand";"OML","Organic silt with gravel";"OML","Sandy organic silt";"OML","Sandy organic silt with gravel";"OML","Gravelly organic silt";"OML","Gravelly organic silt with sand";"OML","Organic clay";"OML","Organic clay with sand";"OML","Organic clay with gravel";"OML","Sandy organic clay";"OML","Sandy organic clay with gravel";"OML","Gravelly organic clay";"OML","Gravelly organic clay with sand";"CH","Fat clay";"CH","Fat clay with sand";"CH","Fat clay with gravel";"CH","Sandy fat clay";"CH","Sandy fat clay with gravel";"CH","Gravelly fat clay";"CH","Gravelly fat clay with sand";"MH","Elastic silt";"MH","Elastic silt with sand";"MH","Elastic silt with gravel";"MH","Sandy elastic silt";"MH","Sandy elastic silt with gravel";"MH","Gravelly elastic silt";"MH","Gravelly elastic silt with sand";"OCH","Organic clay";"OCH","Organic clay with sand";"OCH","Organic clay with gravel";"OCH","Sandy organic clay";"OCH","Sandy organic clay with gravel";"OCH","Gravelly organic clay";"OCH","Gravelly organic clay with sand";"OCH","Organic silt";"OCH","Organic silt with sand";"OCH","Organic silt with gravel";"OCH","Sandy organic silt";"OCH","Sandy organic silt with gravel";"OCH","Gravelly organic silt";"OCH","Gravelly organic silt with sand"};
@@ -157,30 +173,35 @@ classify_ASTM = LAMBDA(list, pf4_, pf200_, [Cu_], [Cc_], [LL_], [PL_], [organic_
         IF(isOrg, IF(key="OCH", "OH", "OL"), INDEX(g, j, 1))&" - "&INDEX(g, j, 2)
     ));
 
-/** Fine-grained soil symbol from the plasticity chart (CL, CH, ML, MH, OL, OH, CL & ML). Inputs: LL, PL in %, optional organic (0 = inorganic). */
+/** Fine-grained soil symbol from the plasticity chart (ASTM D2487): CL, CH, ML, MH, CL-ML, or OL, OH when organic is not 0. Inputs: LL and PL in %, optional organic (0 or omitted = inorganic). */
 classify_Plasticity = LAMBDA(LL, PL, [organic],
     LET(
-        organic_, IF(ISOMITTED(organic), 0, organic),
-        PI, LL-PL,
-        isAboveUline, IFS(LL<7, PI>LL, AND(7<=LL, LL<=15), PI>7, TRUE, PI>0.9*(LL-8)),
-        isAboveAline, IF(LL<25.48, PI>4, PI>0.73*(LL-20)),
-        IFS(LL<PL, "Error: Liquid limit must be larger or equal to plastic limit", isAboveUline, "Error: Above U line in plasticity chart", AND(4<=PI, PI<=7, LL>PI, PI>=0.73*(LL-20)), "CL & ML", isAboveAline, IF(organic=0, "C", "O")&IF(LL>50, "H", "L"), TRUE, IF(organic=0, "M", "O")&IF(LL>50, "H", "L"))
-    ));
+        org,   IF(ISOMITTED(organic), 0, organic),
+        PI,    LL-PL,
+        Aline, 0.73*(LL-20),
+        Uline, MAX(7, 0.9*(LL-8)),
+        HL,    IF(LL>=50, "H", "L"),
+        IFS(
+            LL<PL,                             "Error: liquid limit smaller than plastic limit",
+            PI>Uline,                          "Error: above the U-line",
+            org<>0,                            "O"&HL,
+            AND(LL<50, PI>=4, PI<=7, PI>=Aline), "CL-ML",
+            AND(PI>7, PI>=Aline),              "C"&HL,
+            TRUE,                              "M"&HL)
+    )
+);
 
-/** USCS group symbol from gradation and plasticity. Inputs: % passing No.4 and No.200, optional Cu = D60/D10, Cc = D30²/(D10·D60), LL, PL, organic. */
+/** USCS group symbol (ASTM D2487), from classify_ASTM2487. Inputs: % passing No.4 and No.200, optional Cu = D60/D10, Cc = D30²/(D10·D60), LL, PL (%), organic content (%; more than 90 gives Pt). */
 classify_USC = LAMBDA(pf4_, pf200_, [Cu_], [Cc_], [LL_], [PL_], [organic_],
     LET(
-        organic, IF(ISOMITTED(organic_), 0, organic_),
-        Cu, IF(ISOMITTED(Cu_), 0, Cu_),
-        Cc, IF(ISOMITTED(Cc_), 0, Cc_),
-        LL, IF(ISOMITTED(LL_), 0, LL_),
-        PL, IF(ISOMITTED(PL_), 0, PL_),
-        fines, classify_Plasticity(LL, PL),
-        clayFines, LEFT(fines, 1)="C",
-        isSand, pf4_-pf200_>=100-pf4_,
-        isWellGraded, IF(isSand, AND(Cu>6, Cc>1, Cc<3), AND(Cu>4, Cc>1, Cc<3)),
-        IFS(pf4_<pf200_, "Error: Percent passing No.4 must be larger than percent passing No.200", organic>90, "Pt", LEFT(fines, 3)="Err", fines, AND(0<=pf200_, pf200_<5), IF(isSand, IF(isWellGraded, "SW", "SP"), IF(isWellGraded, "GW", "GP")), AND(5<=pf200_, pf200_<12, isSand), IF(isWellGraded, IF(clayFines, "SW-SC", "SW-SM"), IF(clayFines, "SP-SC", "SP-SM")), AND(5<=pf200_, pf200_<12, NOT(isSand)), IF(isWellGraded, IF(clayFines, "GW-GC", "GW-GM"), IF(clayFines, "GP-GC", "GP-GM")), AND(12<=pf200_, pf200_<50, fines="CL & ML"), IF(isSand, "SC-SM", "GC-GM"), AND(12<=pf200_, pf200_<50), IF(clayFines, IF(isSand, "SC", "GC"), IF(isSand, "SM", "GM")), pf200_>=50, fines)
-    ));
+        org, IF(ISOMITTED(organic_), 0, organic_),
+        Cu,  IF(ISOMITTED(Cu_), 0, Cu_),
+        Cc,  IF(ISOMITTED(Cc_), 0, Cc_),
+        LL,  IF(ISOMITTED(LL_), 0, LL_),
+        PL,  IF(ISOMITTED(PL_), 0, PL_),
+        IF(org>90, "Pt", INDEX(classify_ASTM2487(pf4_, pf200_, Cu, Cc, LL, PL), 1, 1))
+    )
+);
 
 /** Square-root-of-time analysis of a consolidation test: Cv, d0, d100, drainage length and compression ratios. Inputs: time and dial-reading columns, fitting window ta–tb, initial height hi. */
 consolidation_test = LAMBDA(Tarray, Xarray, ta, tb, hi,
