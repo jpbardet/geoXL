@@ -186,16 +186,16 @@ clean_curve = LAMBDA(d, p,
 /** Soil fractions from a grain size curve: d grain sizes (mm), p percents finer (in % or as fractions), in any order. Returns {gravel; sand; silt; clay} on the scale of p, with the limits 75, 4.75, 0.075 and 0.005 mm. The percent finer at a limit is interpolated linearly in log d between the two bracketing points (Chapter 1-2); it is 100 % above the largest size and 0 below the smallest. The four fractions add up to the percent finer than 75 mm. */
 soil_fractions = LAMBDA(d, p,
     LET(
-        c,    clean_curve(d, p),
-        dd,   TAKE(c, , 1),
-        pp,   TAKE(c, , -1),
+        curve,    clean_curve(d, p),
+        dd,   TAKE(curve, , 1),
+        pp,   TAKE(curve, , -1),
         full, IF(MAX(pp)>1, 100, 1),
         pd,   LAMBDA(x, IF(x>MAX(dd), full, IF(x<MIN(dd), 0, Interpolate(x, dd, pp, "logx")))),
-        p75,  pd(75),
-        p4,   pd(4.75),
-        p200, pd(0.075),
-        p005, pd(0.005),
-        VSTACK(p75-p4, p4-p200, p200-p005, p005)
+        p_75,  pd(75),
+        p_4,   pd(4.75),
+        p_200, pd(0.075),
+        p_005, pd(0.005),
+        VSTACK(p_75-p_4, p_4-p_200, p_200-p_005, p_005)
     )
 );
 
@@ -1745,9 +1745,9 @@ intersection_polygon_line_slope = LAMBDA(polyline, M, t,
 /** Grain-size analysis: {D10; D30; D60; Cu; Cc; % clay; % silt; % sand; % gravel}. Inputs: d diameters (mm), p percents finer. D10, D30, D60 are interpolated linearly in log d (0 when outside the curve); the fractions come from soil_fractions; rows without a positive size (pan) or without a number are ignored. */
 grainsizeanalysis = LAMBDA(d, p,
     LET(
-        c,    clean_curve(d, p),
-        dd,   TAKE(c, , 1),
-        pp,   TAKE(c, , -1),
+        curve,    clean_curve(d, p),
+        dd,   TAKE(curve, , 1),
+        pp,   TAKE(curve, , -1),
         Pmin, MIN(pp),
         Pmax, MAX(pp),
         D10_, IF(AND(Pmin<10, 10<Pmax), Interpolate(10, pp, dd, "logy"), 0),
