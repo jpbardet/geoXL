@@ -79,5 +79,6 @@ consolidation_U_approximate
 consolidation_U_variable
 
 # Utilities
+average_by_row
 interpolate
 interpolate_table

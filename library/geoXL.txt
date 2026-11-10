@@ -491,6 +491,11 @@ elastic_triangle = LAMBDA(B, x, y,
         HSTACK("Stress sy, sx, sxy =", sy, sx, sxy)
     ));
 
+/** Average of each row of a range or array, across its columns: returns one value per row. Empty cells are ignored, as in AVERAGE. */
+average_by_row = LAMBDA(array,
+    BYROW(array, LAMBDA(r, AVERAGE(r)))
+);
+
 /** Interpolate y at X from (Xa, Ya); X may be a column. Xa may be increasing or decreasing. mode: "linear" (default), "logx", "logy", "logxy". outside: omitted = #N/A, "extrapolate", "clamp". */
 Interpolate = LAMBDA(X, Xa, Ya, [mode], [outside],
     LET(

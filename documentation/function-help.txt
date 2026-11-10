@@ -280,6 +280,11 @@ x: Horizontal offset (m)
 y: Depth (m)
 returns: Row {label, σy/q, σx/q, τxy/q}; q is the maximum pressure.
 
+[average_by_row]
+array: A range or array of numbers, for instance the results of several samples side by side
+returns: The average of each row across its columns, one value per row.
+notes: Empty cells are ignored, as in AVERAGE. Example: =average_by_row(D15#) averages the samples of the shrinkage test row by row.
+
 [Interpolate]
 X: Value(s) at which to interpolate
 Xa: Column of known x values (increasing or decreasing); trailing empty rows are ignored
