@@ -7,12 +7,18 @@ date: 2026-11-07
 
 # Water content and specific gravity
 trim_rows
+trim_cols
 water_content
 liquid_limit
 cone_penetration
 liquid_limit_cone
 shrinkage_limit
 specific_gravity
+wax_unit_weight
+unit_weight_wax
+field_unit_weight
+sand_unit_weight
+sand_cone_volume
 
 # Grain size: sieve, hydrometer, pipette and buoyancy
 sieve_passing

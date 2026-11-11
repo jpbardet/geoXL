@@ -2516,8 +2516,59 @@ water_content = LAMBDA(tare, wet, dry,
 );
 
 /** Specific gravity of solids Gs (pycnometer): Ws/(Ws + Wfw - Wfws). Ws dry soil mass, Wfw flask + water, Wfws flask + water + soil; single values or columns, the results stop at the last row of data. */
-specific_gravity = LAMBDA(Ws, Wfw, Wfws,
-    trim_rows(Ws/(Ws+Wfw-Wfws), Ws)
+specific_gravity = LAMBDA(Ws, Wfw, Wfws, [T],
+    LET(
+        Gs, Ws/(Ws+Wfw-Wfws),
+        K,  IF(ISOMITTED(T), 1, water_density(T)/water_density(20)),
+        trim_rows(Gs*K, Ws)
+    )
+);
+
+/** Unit weight of wax (kN/m3) by weighing in water: gamma_w·W2/(W1 + W2 - W3). W1 immersed metal block, W2 wax piece, W3 immersed metal and wax (g); single values, columns or rows (one per test); the results stop at the last test. Optional gamma_w (default 9.81 kN/m3). */
+wax_unit_weight = LAMBDA(W1, W2, W3, [gamma_w],
+    LET(
+        gw,  IF(ISOMITTED(gamma_w), 9.81, gamma_w),
+        out, gw*W2/(W1+W2-W3),
+        IF(ROWS(W2)=1, trim_cols(out, W2), trim_rows(out, W2))
+    )
+);
+
+/** Unit weight of a cohesive soil by weighing in water (wax coating). W soil, Wp waxed soil, WI immersed waxed soil (g), gamma_p wax unit weight (kN/m3), wet and dry masses for the water content, optional tare and gamma_w (default 9.81 kN/m3). One sample per column: returns {gamma; w; gamma_d} (kN/m3, fraction, kN/m3) for each sample, up to the last sample. */
+unit_weight_wax = LAMBDA(W, Wp, WI, gamma_p, wet, dry, [tare], [gamma_w],
+    LET(
+        gw,  IF(ISOMITTED(gamma_w), 9.81, gamma_w),
+        t,   IF(ISOMITTED(tare), 0, tare),
+        g,   gw*W/(Wp-WI-gw/gamma_p*(Wp-W)),
+        wc,  water_content(t, wet, dry),
+        gd,  g/(1+wc),
+        trim_cols(VSTACK(g, wc, gd), W)
+    )
+);
+
+/** Bulk and dry unit weight in the field: {gamma; gamma_d} = {g·mass/V; gamma/(1 + moisture)}. mass of the soil (g), V volume of the hole (cm3), moisture water content (fraction), optional g (default 9.81 m/s2); results in kN/m3. */
+field_unit_weight = LAMBDA(mass, V, moisture, [g],
+    LET(
+        gr,  IF(ISOMITTED(g), 9.81, g),
+        gm,  gr*mass/V,
+        VSTACK(gm, gm/(1+moisture))
+    )
+);
+
+/** Unit weight of the sand of the sand cone (kN/m3): g·(mold and sand - mold)/(pi·D²·H/4). Masses in g, D and H in cm; one test per row, the results stop at the last test. Optional g (default 9.81 m/s2). */
+sand_unit_weight = LAMBDA(mold_sand, mold, D, H, [g],
+    LET(
+        gr,  IF(ISOMITTED(g), 9.81, g),
+        trim_rows(gr*(mold_sand-mold)/(PI()*D^2*H/4), mold_sand)
+    )
+);
+
+/** Volume of the hole of the sand cone test (cm3): (jar_before - jar_after - Wc)/(gamma_sand/g). jar_before, jar_after masses of jar and sand before and after the test (g); cone_before, cone_after masses of jar and sand before and after filling the cone and base plate (g, one calibration per row; Wc is their average difference); gamma_sand unit weight of the sand (kN/m3); optional g (default 9.81 m/s2). */
+sand_cone_volume = LAMBDA(jar_before, jar_after, cone_before, cone_after, gamma_sand, [g],
+    LET(
+        gr,  IF(ISOMITTED(g), 9.81, g),
+        Wc,  AVERAGE(trim_rows(cone_before-cone_after, cone_before)),
+        (jar_before-jar_after-Wc)/(gamma_sand/gr)
+    )
 );
 
 /** Liquid limit (Casagrande cup) from the blow counts N and the water contents w of the specimens: flow line w = A·log10(N) + B fitted by least squares; returns {LL; A}, LL = A·log10(25) + B. */
@@ -2571,6 +2622,11 @@ sieve_passing = LAMBDA(retained,
 /** Results that fit the data: the rows of out up to the last filled cell of the input column ref. Used as the last line of the laboratory functions, so that a formula whose input ranges are longer than the data returns one result per row of data. */
 trim_rows = LAMBDA(out, ref,
     TAKE(out, XMATCH(TRUE, TOCOL(ref)<>"", 0, -1))
+);
+
+/** Results that fit the data, for one sample per column: the columns of out up to the last filled cell of the input row ref. */
+trim_cols = LAMBDA(out, ref,
+    TAKE(out, , XMATCH(TRUE, TOROW(ref)<>"", 0, -1))
 );
 
 /** Hydrometer temperature correction (g/L) from water temperature T (°C), relative to 20 °C; the results stop at the last row of data. */

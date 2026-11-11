@@ -1467,8 +1467,56 @@ notes: Argument order is tare, wet, dry. Check the order of the columns you sele
 Ws: Mass of oven-dried soil (g)
 Wfw: Mass of pycnometer filled with water at the test temperature (g)
 Wfws: Mass of pycnometer filled with water and soil at the test temperature (g)
-returns: Specific gravity of solids Gs = Ws/(Ws + Wfw - Wfws), at the test temperature.
-notes: Trailing empty rows are ignored. To refer Gs to 20 °C, multiply by water_density(T)/water_density(20).
+T: Optional. Water temperature during the test (°C); Gs is then referred to 20 °C
+returns: Specific gravity of solids Gs = Ws/(Ws + Wfw - Wfws), at the test temperature, or K·Gs at 20 °C when T is given, with K = water_density(T)/water_density(20) (ASTM D854).
+notes: Trailing empty rows are ignored.
+
+[wax_unit_weight]
+W1: Mass of the metal block immersed in water (g)
+W2: Mass of the wax piece (g)
+W3: Mass of the metal block and wax piece immersed in water (g)
+gamma_w: Optional. Unit weight of water (kN/m3); default 9.81
+returns: Unit weight of the wax, gamma_w·W2/(W1 + W2 - W3) (kN/m3), one value per test.
+notes: Tests in a row (one per column) or in a column (one per row); empty tests at the end are ignored.
+
+[unit_weight_wax]
+W: Mass of the soil sample (g)
+Wp: Mass of the waxed soil sample (g)
+WI: Mass of the waxed soil sample immersed in water (g)
+gamma_p: Unit weight of the wax (kN/m3), for instance the average of wax_unit_weight
+wet: Mass of the wet soil for the water content (g)
+dry: Mass of the dry soil for the water content (g)
+tare: Optional. Mass of the dish (g); default 0
+gamma_w: Optional. Unit weight of water (kN/m3); default 9.81
+returns: For each sample (one per column), 3 rows: bulk unit weight gamma = gamma_w·W/(Wp - WI - (gamma_w/gamma_p)(Wp - W)) (kN/m3), water content w (fraction), and dry unit weight gamma/(1 + w) (kN/m3).
+notes: Empty samples at the right are ignored. Average the samples with average_by_row.
+
+[field_unit_weight]
+mass: Mass of the soil excavated from the hole (g)
+V: Volume of the hole (cm3)
+moisture: Water content of the soil (fraction)
+g: Optional. Gravity acceleration (m/s2); default 9.81
+returns: {gamma; gamma_d}: bulk unit weight g·mass/V and dry unit weight gamma/(1 + moisture), in kN/m3.
+notes: Used for the sand cone and the rubber balloon tests (for the balloon, V is the difference of the volume readings).
+
+[sand_unit_weight]
+mold_sand: Mass of the mold filled with sand (g), one test per row
+mold: Mass of the empty mold (g)
+D: Inside diameter of the mold (cm)
+H: Inside height of the mold (cm)
+g: Optional. Gravity acceleration (m/s2); default 9.81
+returns: Unit weight of the sand g·(mold_sand - mold)/(pi·D²·H/4) (kN/m3), one value per test.
+notes: Empty tests at the end are ignored.
+
+[sand_cone_volume]
+jar_before: Mass of the jar and sand before the test (g)
+jar_after: Mass of the jar and sand after the test (g)
+cone_before: Mass of the jar and sand before filling the cone and base plate (g), one calibration per row
+cone_after: Mass of the jar and sand after filling the cone and base plate (g)
+gamma_sand: Unit weight of the sand (kN/m3), for instance the average of sand_unit_weight
+g: Optional. Gravity acceleration (m/s2); default 9.81
+returns: Volume of the hole (jar_before - jar_after - Wc)/(gamma_sand/g) in cm3, with Wc the average mass of sand that fills the cone and base plate.
+notes: The unit weights follow from field_unit_weight(soil mass, volume, water content).
 
 [liquid_limit]
 blows: Column of blow counts N of the specimens (Casagrande cup)
@@ -1504,6 +1552,12 @@ notes: BS 1377-2 fall cone method; the four or more specimens should give penetr
 retained: Column of masses retained on each sieve (g), from the coarsest sieve down to the pan
 returns: Two columns per sieve: mass passing (g) and percent finer (%).
 notes: Percent finer is relative to the total of the retained masses (pan included). Returns "" when the total is zero.
+
+[trim_cols]
+out: The result of a calculation, one column per sample
+ref: The input row that decides how many columns are kept
+returns: The columns of out up to the last filled cell of ref.
+notes: The counterpart of trim_rows for worksheets with one sample per column.
 
 [trim_rows]
 out: The result of a calculation, one row per row of the input ranges
