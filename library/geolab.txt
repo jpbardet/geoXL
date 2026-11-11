@@ -69,6 +69,17 @@ cosd
 tand
 
 # Seepage: finite-difference solutions (Chapters 4-4 and 4-5)
+seepage_stencil_relax
+seepage_stencil_interior
+seepage_stencil_edge
+seepage_stencil_outer_corner
+seepage_stencil_reentrant
+seepage_stencil_interface
+seepage_stencil_weighted
+seepage_permeability_ratio
+seepage_stencil_unconfined
+seepage_unconfined_flow
+seepage_free_surface
 seepage_stencil
 seepage_stencil1
 seepage_stencil2

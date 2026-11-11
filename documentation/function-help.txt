@@ -1217,6 +1217,97 @@ returns: TRUE for a cell with four numeric corner heads and no detected thin wal
 notes: Internal helper shared by interpolation and contour tracing. Thin x/y intervals are detected relative to one quarter of the median absolute spacing. A thin interval across unequal paired heads is treated as a wall slot.
 notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definitions are preserved, not a new solution of the head field.
 
+[seepage_stencil_relax]
+node: Current value of the node (the cell itself)
+average: New value given by the stencil
+omega: Relaxation factor: 1 plain average (Gauss-Seidel), between 1 and 2 over-relaxation (SOR), 0 resets the node to 0
+returns: node + omega·(average - node), or 0 when omega = 0. Shared by all seepage_stencil_ functions.
+
+[seepage_stencil_interior]
+node: The cell itself (total head at the node)
+north: Head at the neighbour above (i, j-1)
+west: Head at the neighbour on the left (i-1, j)
+south: Head at the neighbour below (i, j+1)
+east: Head at the neighbour on the right (i+1, j)
+omega: Optional. Relaxation factor; default 1; 0 resets to 0
+returns: The relaxed average (north + west + south + east)/4 (Chapter 4-5, Fig. 4a).
+notes: Example: =seepage_stencil_interior(C5, C4, B5, C6, D5, 1.5).
+
+[seepage_stencil_edge]
+node: The cell itself
+inward: Head at the neighbour inside the soil, across the full face
+along_a: Head at one neighbour along the impervious boundary
+along_b: Head at the other neighbour along the boundary
+omega: Optional. Relaxation factor; default 1; 0 resets to 0
+returns: The relaxed value of (2·inward + along_a + along_b)/4, node on a straight impervious boundary (Chapter 4-5, Fig. 4b).
+
+[seepage_stencil_outer_corner]
+node: The cell itself
+along_a: Head at one neighbour along the boundary
+along_b: Head at the other neighbour along the boundary
+omega: Optional. Relaxation factor; default 1; 0 resets to 0
+returns: The relaxed value of (along_a + along_b)/2: outer corner, or node on a 45-degree boundary (Chapter 4-5, Fig. 4c, e).
+
+[seepage_stencil_reentrant]
+node: The cell itself
+full_a: Head at a neighbour across a full face
+full_b: Head at the other neighbour across a full face
+half_a: Head at a neighbour across a half face
+half_b: Head at the other neighbour across a half face
+omega: Optional. Relaxation factor; default 1; 0 resets to 0
+returns: The relaxed value of (2·full_a + 2·full_b + half_a + half_b)/6, re-entrant corner (Chapter 4-5, Fig. 4d).
+
+[seepage_stencil_interface]
+node: The cell itself
+across_1: Head at the neighbour across the interface, in soil 1
+across_2: Head at the neighbour across the interface, in soil 2
+along_a: Head at one neighbour along the interface
+along_b: Head at the other neighbour along the interface
+permeability_1: Permeability of soil 1
+permeability_2: Permeability of soil 2
+omega: Optional. Relaxation factor; default 1; 0 resets to 0
+returns: The relaxed value of (permeability_1·across_1 + permeability_2·across_2)/(2·(permeability_1 + permeability_2)) + (along_a + along_b)/4, node on a horizontal or vertical interface (Chapter 4-5, Fig. 4h, i).
+
+[seepage_stencil_weighted]
+node: The cell itself
+neighbours: Heads at the neighbours, e.g. HSTACK(C4, D5, C6)
+face_lengths: Lengths of the faces shared with those neighbours (fractions of the spacing), times the permeability for several soils, e.g. {1, 1, 0.5}
+omega: Optional. Relaxation factor; default 1; 0 resets to 0
+returns: The relaxed value of SUM(face_lengths·neighbours)/SUM(face_lengths): water balance of the cell for any node (Chapter 4-5, Eq. 12).
+
+[seepage_permeability_ratio]
+pressure_head: Pressure head p (m), one value or a range
+transition_width: Width w of the transition between saturated and dry soil (m), about half the grid spacing
+residual_ratio: Optional. Ratio r of the permeability of the dry soil to that of the saturated soil; default 0.001
+returns: k/k_s = r + (1 - r)·(1 + tanh(p/w))/2, the permeability ratio of the Darcy-Buckingham law used for unconfined seepage (Chapter 4-6).
+
+[seepage_stencil_unconfined]
+node: Pressure head at the node (the cell itself, m)
+north: Pressure head at the neighbour above (i, j-1)
+west: Pressure head at the neighbour on the left (i-1, j)
+south: Pressure head at the neighbour below (i, j+1)
+east: Pressure head at the neighbour on the right (i+1, j)
+spacing: Grid spacing (m)
+transition_width: Width w of the permeability transition (m)
+residual_ratio: Optional. Residual permeability ratio; default 0.001
+face_lengths: Optional. {north, west, south, east} face lengths as fractions of the spacing (0 impervious, 0.5 half face), times the relative permeability for several soils; default {1, 1, 1, 1}
+omega: Optional. Relaxation factor; default 1; 0 resets to 0; use about 1.2
+returns: The relaxed pressure head given by the water balance of the cell with face conductances face_length·k_r(mean pressure head) (Chapter 4-6, Eq. 9).
+notes: For a seepage face use =MIN(seepage_stencil_unconfined(...), 0) (Signorini condition). For a neighbour across an impervious side, give the face length 0 and the node itself as its value.
+
+[seepage_unconfined_flow]
+left: Pressure heads of a column of nodes (m)
+right: Pressure heads of the next column on the right, same rows
+transition_width: Width w of the permeability transition (m)
+residual_ratio: Optional. Residual permeability ratio; default 0.001
+face_lengths: Optional. Face lengths between the two columns (fractions of the spacing, 0.5 at the top and bottom), times the relative permeability; default 1 where both cells hold numbers
+returns: The quantity of seepage per unit width divided by the saturated permeability (m) through the vertical section between the two columns.
+
+[seepage_free_surface]
+pressure_heads: Grid of pressure heads, rows from the top down
+elevations: Elevations of the rows (m)
+returns: For each column, the elevation where the pressure head is 0, by linear interpolation from the top; #N/A when the column is dry. Empty cells are skipped.
+
 [seepage_stencil]
 old: This cell (the node itself), for over-relaxation. In the old 4-argument form, the first neighbour
 a: Head at a neighbour of the node (the four neighbours may be in any order)

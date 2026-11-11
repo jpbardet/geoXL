@@ -2255,6 +2255,76 @@ LET(kv,IF(ISOMITTED(k),0,k),nv,IF(ISOMITTED(n),0,n),ev,IF(ISOMITTED(edge),0,edge
 seepage_cellok = LAMBDA(xs, ys, H, rw, cl,
 LET(xv,TOCOL(xs),yv,TOCOL(ys),n,ROWS(xv),m,ROWS(yv),IF(OR(rw<1,cl<1,rw>m-1,cl>n-1),FALSE,IF(NOT(AND(ISNUMBER(INDEX(H,rw,cl)),ISNUMBER(INDEX(H,rw,cl+1)),ISNUMBER(INDEX(H,rw+1,cl)),ISNUMBER(INDEX(H,rw+1,cl+1)))),FALSE,LET(tx,0.25*MEDIAN(ABS(DROP(xv,1)-DROP(xv,-1))),ty,0.25*MEDIAN(ABS(DROP(yv,1)-DROP(yv,-1))),hA,INDEX(H,rw,cl),hB,INDEX(H,rw,cl+1),hC,INDEX(H,rw+1,cl),hD,INDEX(H,rw+1,cl+1),wx,AND(ABS(INDEX(xv,cl+1)-INDEX(xv,cl))<tx,hA<>hB,hC<>hD),wy,AND(ABS(INDEX(yv,rw+1)-INDEX(yv,rw))<ty,hA<>hC,hB<>hD),NOT(OR(wx,wy)))))));
 
+/** Relaxation step shared by the seepage_stencil_ functions: node + omega·(average - node). omega = 1 gives the average (Gauss-Seidel), 1 < omega < 2 over-relaxes (SOR), omega = 0 resets the node to 0. */
+seepage_stencil_relax = LAMBDA(node, average, omega,
+    IF(omega = 0, 0, node + omega * (average - node))
+);
+
+/** Finite difference stencil of an interior node: average of its four neighbours, (north + west + south + east)/4, relaxed with the optional omega (default 1; 0 resets to 0). node is the cell itself. */
+seepage_stencil_interior = LAMBDA(node, north, west, south, east, [omega],
+    seepage_stencil_relax(node, (north + west + south + east) / 4, IF(ISOMITTED(omega), 1, omega))
+);
+
+/** Finite difference stencil of a node on a straight impervious boundary: (2·inward + along_a + along_b)/4, where inward is the neighbour inside the soil and along_a, along_b the neighbours along the boundary; optional omega as in seepage_stencil_interior. */
+seepage_stencil_edge = LAMBDA(node, inward, along_a, along_b, [omega],
+    seepage_stencil_relax(node, (2 * inward + along_a + along_b) / 4, IF(ISOMITTED(omega), 1, omega))
+);
+
+/** Finite difference stencil of a node at an outer corner of impervious boundaries: (along_a + along_b)/2, the two neighbours along the boundaries; optional omega as in seepage_stencil_interior. */
+seepage_stencil_outer_corner = LAMBDA(node, along_a, along_b, [omega],
+    seepage_stencil_relax(node, (along_a + along_b) / 2, IF(ISOMITTED(omega), 1, omega))
+);
+
+/** Finite difference stencil of a node at a re-entrant corner of impervious boundaries: (2·full_a + 2·full_b + half_a + half_b)/6, with full_a, full_b the neighbours across full faces and half_a, half_b those across half faces; optional omega as in seepage_stencil_interior. */
+seepage_stencil_reentrant = LAMBDA(node, full_a, full_b, half_a, half_b, [omega],
+    seepage_stencil_relax(node, (2 * full_a + 2 * full_b + half_a + half_b) / 6, IF(ISOMITTED(omega), 1, omega))
+);
+
+/** Finite difference stencil of a node on a horizontal or vertical interface between soils of permeability permeability_1 and permeability_2: (permeability_1·across_1 + permeability_2·across_2)/(2·(permeability_1 + permeability_2)) + (along_a + along_b)/4, where across_1 and across_2 are the neighbours across the interface, in soils 1 and 2, and along_a, along_b the neighbours along it; optional omega as in seepage_stencil_interior. */
+seepage_stencil_interface = LAMBDA(node, across_1, across_2, along_a, along_b, permeability_1, permeability_2, [omega],
+    seepage_stencil_relax(node, (permeability_1 * across_1 + permeability_2 * across_2) / (2 * (permeability_1 + permeability_2)) + (along_a + along_b) / 4, IF(ISOMITTED(omega), 1, omega))
+);
+
+/** General finite difference stencil from the water balance of the cell: sum(face_length·neighbour)/sum(face_length), for any node (inclined boundaries, corners, interfaces with lengths times permeabilities); neighbours and face_lengths are two arrays of the same size, e.g. HSTACK(C10, D11, B11) and {1, 0.5, 0.5}; optional omega as in seepage_stencil_interior. */
+seepage_stencil_weighted = LAMBDA(node, neighbours, face_lengths, [omega],
+    seepage_stencil_relax(node, SUM(face_lengths * neighbours) / SUM(face_lengths), IF(ISOMITTED(omega), 1, omega))
+);
+
+/** Permeability ratio k/k_s of the Darcy-Buckingham law used for unconfined seepage: residual_ratio + (1 - residual_ratio)·(1 + tanh(pressure_head/transition_width))/2; about 1 when the pressure head exceeds twice the transition width, about residual_ratio (default 0.001) below minus twice that width. */
+seepage_permeability_ratio = LAMBDA(pressure_head, transition_width, [residual_ratio],
+    LET(ratio, IF(ISOMITTED(residual_ratio), 0.001, residual_ratio),
+        ratio + (1 - ratio) * (1 + TANH(pressure_head / transition_width)) / 2)
+);
+
+/** Finite difference stencil of unconfined seepage, written for the pressure head p: water balance of the cell with face conductances face_length·seepage_permeability_ratio(mean pressure head of the two nodes); node and its neighbours north, west, south, east are pressure heads, spacing the grid spacing (gravity), face_lengths {north, west, south, east} default {1, 1, 1, 1} (0 for an impervious side, 0.5 for a half face, times the relative permeability for several soils); optional omega as in seepage_stencil_interior. On a seepage face use MIN(seepage_stencil_unconfined(...), 0). */
+seepage_stencil_unconfined = LAMBDA(node, north, west, south, east, spacing, transition_width, [residual_ratio], [face_lengths], [omega],
+    LET(ratio, IF(ISOMITTED(residual_ratio), 0.001, residual_ratio),
+        lengths, IF(ISOMITTED(face_lengths), {1, 1, 1, 1}, face_lengths),
+        neighbours, HSTACK(north, west, south, east),
+        conductance, lengths * seepage_permeability_ratio((node + neighbours) / 2, transition_width, ratio),
+        heads, neighbours + {1, 0, -1, 0} * spacing,
+        seepage_stencil_relax(node, SUM(conductance * heads) / SUM(conductance), IF(ISOMITTED(omega), 1, omega)))
+);
+
+/** Quantity of unconfined seepage per unit width and per unit saturated permeability through a vertical section between two adjacent columns of pressure heads left and right (same elevations): SUM(face_lengths·seepage_permeability_ratio(mean pressure head)·(left - right)). face_lengths defaults to 1 where both cells hold numbers (0 elsewhere); give 0.5 for half faces and multiply by the relative permeability for several soils. */
+seepage_unconfined_flow = LAMBDA(left, right, transition_width, [residual_ratio], [face_lengths],
+    LET(ratio, IF(ISOMITTED(residual_ratio), 0.001, residual_ratio),
+        lengths, IF(ISOMITTED(face_lengths), ISNUMBER(left) * ISNUMBER(right), face_lengths),
+        SUM(lengths * seepage_permeability_ratio((left + right) / 2, transition_width, ratio) * (left - right)))
+);
+
+/** Elevation of the free surface (pressure head 0) in each column of a grid of pressure heads whose rows are ordered from the top down, with elevations the column of the row elevations: linear interpolation between the last dry node (p < 0) and the first wet node (p >= 0) from the top; the top elevation when the first node is wet; #N/A when the column is dry. Empty cells (outside the soil) are skipped. */
+seepage_free_surface = LAMBDA(pressure_heads, elevations,
+    BYCOL(pressure_heads, LAMBDA(heads,
+        LET(wet, ISNUMBER(heads) * (heads >= 0),
+            first, XMATCH(1, wet),
+            IF(ISNA(first), NA(),
+                IF(first = 1, INDEX(elevations, 1),
+                    LET(pa, INDEX(heads, first - 1), pb, INDEX(heads, first),
+                        ya, INDEX(elevations, first - 1), yb, INDEX(elevations, first),
+                        IF(ISNUMBER(pa), yb + (ya - yb) * pb / (pb - pa), yb)))))))
+);
+
 /** Interior node. Five-node form: seepage_stencil(old,a,b,cc,d,[w]) - old = this cell, a..d = its 4 neighbours; w = omega for SOR, 0 resets to 0, omitted = plain average. The 4-argument form seepage_stencil(a,b,c,d) still returns (a+b+c+d)/4. */
 seepage_stencil = LAMBDA(old, a, b, cc, [d], [w],
     LET(
