@@ -2256,53 +2256,53 @@ seepage_cellok = LAMBDA(xs, ys, H, rw, cl,
 LET(xv,TOCOL(xs),yv,TOCOL(ys),n,ROWS(xv),m,ROWS(yv),IF(OR(rw<1,cl<1,rw>m-1,cl>n-1),FALSE,IF(NOT(AND(ISNUMBER(INDEX(H,rw,cl)),ISNUMBER(INDEX(H,rw,cl+1)),ISNUMBER(INDEX(H,rw+1,cl)),ISNUMBER(INDEX(H,rw+1,cl+1)))),FALSE,LET(tx,0.25*MEDIAN(ABS(DROP(xv,1)-DROP(xv,-1))),ty,0.25*MEDIAN(ABS(DROP(yv,1)-DROP(yv,-1))),hA,INDEX(H,rw,cl),hB,INDEX(H,rw,cl+1),hC,INDEX(H,rw+1,cl),hD,INDEX(H,rw+1,cl+1),wx,AND(ABS(INDEX(xv,cl+1)-INDEX(xv,cl))<tx,hA<>hB,hC<>hD),wy,AND(ABS(INDEX(yv,rw+1)-INDEX(yv,rw))<ty,hA<>hC,hB<>hD),NOT(OR(wx,wy)))))));
 
 /** Relaxation step shared by the seepage_stencil_ functions: node + omega·(average - node). omega = 1 gives the average (Gauss-Seidel), 1 < omega < 2 over-relaxes (SOR), omega = 0 resets the node to 0. */
-seepage_stencil_relax = LAMBDA(node, average, omega,
+seepage_relax = LAMBDA(node, average, omega,
     IF(omega = 0, 0, node + omega * (average - node))
 );
 
 /** Finite difference stencil of an interior node: average of its four neighbours, (north + west + south + east)/4, relaxed with the optional omega (default 1; 0 resets to 0). node is the cell itself. */
 seepage_stencil_interior = LAMBDA(node, north, west, south, east, [omega],
-    seepage_stencil_relax(node, (north + west + south + east) / 4, IF(ISOMITTED(omega), 1, omega))
+    seepage_relax(node, (north + west + south + east) / 4, IF(ISOMITTED(omega), 1, omega))
 );
 
 /** Finite difference stencil of a node on a straight impervious boundary: (2·inward + along_a + along_b)/4, where inward is the neighbour inside the soil and along_a, along_b the neighbours along the boundary; optional omega as in seepage_stencil_interior. */
 seepage_stencil_edge = LAMBDA(node, inward, along_a, along_b, [omega],
-    seepage_stencil_relax(node, (2 * inward + along_a + along_b) / 4, IF(ISOMITTED(omega), 1, omega))
+    seepage_relax(node, (2 * inward + along_a + along_b) / 4, IF(ISOMITTED(omega), 1, omega))
 );
 
 /** Finite difference stencil of a node at an outer corner of impervious boundaries: (along_a + along_b)/2, the two neighbours along the boundaries; optional omega as in seepage_stencil_interior. */
 seepage_stencil_outer_corner = LAMBDA(node, along_a, along_b, [omega],
-    seepage_stencil_relax(node, (along_a + along_b) / 2, IF(ISOMITTED(omega), 1, omega))
+    seepage_relax(node, (along_a + along_b) / 2, IF(ISOMITTED(omega), 1, omega))
 );
 
 /** Finite difference stencil of a node at a re-entrant corner of impervious boundaries: (2·full_a + 2·full_b + half_a + half_b)/6, with full_a, full_b the neighbours across full faces and half_a, half_b those across half faces; optional omega as in seepage_stencil_interior. */
 seepage_stencil_reentrant = LAMBDA(node, full_a, full_b, half_a, half_b, [omega],
-    seepage_stencil_relax(node, (2 * full_a + 2 * full_b + half_a + half_b) / 6, IF(ISOMITTED(omega), 1, omega))
+    seepage_relax(node, (2 * full_a + 2 * full_b + half_a + half_b) / 6, IF(ISOMITTED(omega), 1, omega))
 );
 
 /** Finite difference stencil of a node on a horizontal or vertical interface between soils of permeability permeability_1 and permeability_2: (permeability_1·across_1 + permeability_2·across_2)/(2·(permeability_1 + permeability_2)) + (along_a + along_b)/4, where across_1 and across_2 are the neighbours across the interface, in soils 1 and 2, and along_a, along_b the neighbours along it; optional omega as in seepage_stencil_interior. */
 seepage_stencil_interface = LAMBDA(node, across_1, across_2, along_a, along_b, permeability_1, permeability_2, [omega],
-    seepage_stencil_relax(node, (permeability_1 * across_1 + permeability_2 * across_2) / (2 * (permeability_1 + permeability_2)) + (along_a + along_b) / 4, IF(ISOMITTED(omega), 1, omega))
+    seepage_relax(node, (permeability_1 * across_1 + permeability_2 * across_2) / (2 * (permeability_1 + permeability_2)) + (along_a + along_b) / 4, IF(ISOMITTED(omega), 1, omega))
 );
 
 /** General finite difference stencil from the water balance of the cell (Chapter 4-5, Eq. coef): SUM(face_lengths·{north, west, south, east})/SUM(face_lengths). face_lengths {north, west, south, east} are the face lengths as fractions of the spacing (0 across an impervious boundary, 0.5 for a half face), times the permeability of the soil each face crosses; default {1, 1, 1, 1}. A neighbour with a zero face length may be given any value (e.g. the node itself). Optional omega as in seepage_stencil_interior. */
 seepage_stencil_weighted = LAMBDA(node, north, west, south, east, [face_lengths], [omega],
     LET(lengths, IF(ISOMITTED(face_lengths), {1, 1, 1, 1}, face_lengths),
-        seepage_stencil_relax(node, SUM(lengths * HSTACK(north, west, south, east)) / SUM(lengths), IF(ISOMITTED(omega), 1, omega)))
+        seepage_relax(node, SUM(lengths * HSTACK(north, west, south, east)) / SUM(lengths), IF(ISOMITTED(omega), 1, omega)))
 );
 
 /** Finite difference stencil from two 3x3 blocks (Chapter 4-6): block holds the heads of the node (centre) and of its eight neighbours; coefficients is a 3x3 box of the table of stencils, laid out as the stencil is drawn, with the coefficient of each neighbour (north = top middle, west = middle left, south = bottom middle, east = middle right; empty or 0 elsewhere; centre ignored). The coefficients must add up to 1 (conservation of water). Returns the relaxed value of SUMPRODUCT(block, coefficients); #N/A when the coefficients do not add up to 1, or when a non-zero coefficient points to an empty cell or text; omega = 0 resets to 0. The block is a relative reference that moves with the node when the formula is copied; the box is an absolute reference. */
-seepage_stencil_block = LAMBDA(block, coefficients, [omega],
+seepage_confined_block = LAMBDA(block, coefficients, [omega],
     LET(w, IF(ISOMITTED(omega), 1, omega),
         mask, {1, 1, 1; 1, 0, 1; 1, 1, 1},
         coef, IF(ISNUMBER(coefficients), coefficients, 0) * mask,
         IF(w = 0, 0,
             IF(OR(ABS(SUM(coef) - 1) > 1E-9, SUM((coef <> 0) * NOT(ISNUMBER(block))) > 0), NA(),
-                seepage_stencil_relax(INDEX(block, 2, 2), SUMPRODUCT(coef, IF(ISNUMBER(block), block, 0)), w))))
+                seepage_relax(INDEX(block, 2, 2), SUMPRODUCT(coef, IF(ISNUMBER(block), block, 0)), w))))
 );
 
-/** Unconfined stencil from two 3x3 blocks, as seepage_stencil_block, for pressure heads: block holds the pressure heads of the node and its neighbours, weights the 3x3 box of face lengths, and parameters a range of four cells: grid spacing, transition width, residual ratio, control value (0 resets, otherwise omega). Each weight is multiplied by seepage_permeability_ratio of the mean pressure head of the node and the neighbour; the neighbours of the top row are one spacing higher and those of the bottom row one spacing lower (gravity). #N/A when a non-zero weight points to an empty cell or text. On a seepage face use MIN(seepage_stencil_unconfined_block(...), 0). */
-seepage_stencil_unconfined_block = LAMBDA(block, weights, parameters,
+/** Unconfined stencil from two 3x3 blocks, as seepage_confined_block, for pressure heads: block holds the pressure heads of the node and its neighbours, weights the 3x3 box of face lengths, and parameters a range of four cells: grid spacing, transition width, residual ratio, control value (0 resets, otherwise omega). Each weight is multiplied by seepage_permeability_ratio of the mean pressure head of the node and the neighbour; the neighbours of the top row are one spacing higher and those of the bottom row one spacing lower (gravity). #N/A when a non-zero weight points to an empty cell or text. On a seepage face use MIN(seepage_unconfined_block(...), 0). */
+seepage_unconfined_block = LAMBDA(block, weights, parameters,
     LET(spacing, INDEX(parameters, 1), width, INDEX(parameters, 2), ratio, INDEX(parameters, 3), w, INDEX(parameters, 4),
         mask, {1, 1, 1; 1, 0, 1; 1, 1, 1},
         lengths, IF(ISNUMBER(weights), weights, 0) * mask,
@@ -2311,7 +2311,7 @@ seepage_stencil_unconfined_block = LAMBDA(block, weights, parameters,
                 LET(node, INDEX(block, 2, 2), v, IF(ISNUMBER(block), block, 0),
                     conductance, lengths * seepage_permeability_ratio((node + v) / 2, width, ratio),
                     heads, v + {1; 0; -1} * spacing,
-                    seepage_stencil_relax(node, SUM(conductance * heads) / SUM(conductance), w)))))
+                    seepage_relax(node, SUM(conductance * heads) / SUM(conductance), w)))))
 );
 
 /** Permeability ratio k/k_s of the Darcy-Buckingham law used for unconfined seepage: residual_ratio + (1 - residual_ratio)·(1 + tanh(pressure_head/transition_width))/2; about 1 when the pressure head exceeds twice the transition width, about residual_ratio (default 0.001) below minus twice that width. */
@@ -2327,7 +2327,7 @@ seepage_stencil_unconfined = LAMBDA(node, north, west, south, east, spacing, tra
         neighbours, HSTACK(north, west, south, east),
         conductance, lengths * seepage_permeability_ratio((node + neighbours) / 2, transition_width, ratio),
         heads, neighbours + {1, 0, -1, 0} * spacing,
-        seepage_stencil_relax(node, SUM(conductance * heads) / SUM(conductance), IF(ISOMITTED(omega), 1, omega)))
+        seepage_relax(node, SUM(conductance * heads) / SUM(conductance), IF(ISOMITTED(omega), 1, omega)))
 );
 
 /** Quantity of unconfined seepage per unit width and per unit saturated permeability through a vertical section between two adjacent columns of pressure heads left and right (same elevations): SUM(face_lengths·seepage_permeability_ratio(mean pressure head)·(left - right)). face_lengths defaults to 1 where both cells hold numbers (0 elsewhere); give 0.5 for half faces and multiply by the relative permeability for several soils. */

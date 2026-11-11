@@ -304,6 +304,12 @@ function dottedAliases(lib,existing=[]) {
       if(key.replace(/^(?:geoexcel|geoxl)[._]/,'').replace(/\./g,'_')===old)aliases.set(key,target);
     }
   }
+  // 0.28 renames the block stencils (seepage_confined_block, seepage_unconfined_block, seepage_relax).
+  const renamedBlocks={seepage_stencil_block:'seepage_confined_block',seepage_stencil_unconfined_block:'seepage_unconfined_block',seepage_stencil_relax:'seepage_relax'};
+  for(const [old,target] of Object.entries(renamedBlocks)) {
+    if(!lib.defs.has(target)||lib.defs.has(old))continue;
+    aliases.set(old,lib.defs.get(target).name);
+  }
   aliases.libNames=new Map(lib.all.map(d=>[d.name.toLowerCase(),d.name]));
   aliases.argumentRules={};
   for(const [name,rule] of Object.entries(BY_ARGUMENTS)) {
