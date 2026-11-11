@@ -2326,6 +2326,72 @@ seepage_free_surface = LAMBDA(pressure_heads, elevations,
                         IF(ISNUMBER(pa), yb + (ya - yb) * pb / (pb - pa), yb)))))))
 );
 
+/** Stream function q/k of unconfined seepage from a block of pressure heads (x in row 1, y in column 1, rows from the top down, blank = no soil). Face flows are weighted by seepage_permeability_ratio of the mean pressure head, times the optional permeability of each vertical section (a row with one value fewer than the columns, or one value; default 1). psi is summed up from the base, starting from the water already drained through the base (0 on an impervious base, the outflow of a drain otherwise), so that psi = q on the free surface. Returns the same layout as seepage_psi. */
+seepage_unconfined_psi = LAMBDA(block, transition_width, [residual_ratio], [permeability],
+    LET(
+        nr, ROWS(block), nc, COLUMNS(block), m, nr - 1, n, nc - 1,
+        xs, TOCOL(INDEX(block, 1, 2):INDEX(block, 1, nc)),
+        ys, INDEX(block, 2, 1):INDEX(block, nr, 1),
+        pressure, INDEX(block, 2, 2):INDEX(block, nr, nc),
+        ratio, IF(ISOMITTED(residual_ratio), 0.001, residual_ratio),
+        kv, IF(ISOMITTED(permeability), 1, permeability),
+        kgap, IF(COUNT(kv) = 1, SEQUENCE(1, n - 1, INDEX(kv, 1), 0), TOROW(kv)),
+        knode, HSTACK(TAKE(kgap, , 1), (DROP(kgap, , -1) + DROP(kgap, , 1)) / 2, TAKE(kgap, , -1)),
+        inside, --ISNUMBER(pressure), pn, IF(inside, pressure, 0), total, pn + ys,
+        pair, DROP(inside, , -1) * DROP(inside, , 1),
+        flows, kgap * seepage_permeability_ratio((DROP(pn, , -1) + DROP(pn, , 1)) / 2, transition_width, ratio)
+            * (DROP(total, , -1) - DROP(total, , 1)) * pair,
+        bottom, CHOOSEROWS(flows, m),
+        cvert, knode * seepage_permeability_ratio((CHOOSEROWS(pn, m - 1) + CHOOSEROWS(pn, m)) / 2, transition_width, ratio)
+            * CHOOSEROWS(inside, m - 1) * CHOOSEROWS(inside, m),
+        outflow, (HSTACK(0, bottom / 2) - HSTACK(bottom / 2, 0) + cvert * (CHOOSEROWS(total, m - 1) - CHOOSEROWS(total, m)))
+            * CHOOSEROWS(inside, m) * HSTACK(0, SEQUENCE(1, n - 2, 1, 0), 0),
+        base, DROP(SCAN(0, outflow, LAMBDA(acc, v, acc + v)), , -1),
+        psa, base + MMULT(--(SEQUENCE(1, m) >= SEQUENCE(m)), flows) - flows / 2 - bottom / 2,
+        zr, SEQUENCE(1, n) * 0,
+        upper, VSTACK(TAKE(total, 1), DROP(total, -1)), lower, VSTACK(DROP(total, 1), TAKE(total, -1)),
+        ins_up, VSTACK(zr, DROP(inside, -1)), ins_down, VSTACK(DROP(inside, 1), zr),
+        vert, knode * seepage_permeability_ratio(pn, transition_width, ratio)
+            * (IF(ins_up, upper, total) - IF(ins_down, lower, total)) / IF(ins_up * ins_down, 4, 2),
+        psb, IF(pair, psa, ""),
+        left_edge, IF(TAKE(inside, , 1), TAKE(psa, , 1) - TAKE(vert, , 1), ""),
+        right_edge, IF(TAKE(inside, , -1), TAKE(psa, , -1) + TAKE(vert, , -1), ""),
+        VSTACK(HSTACK("", INDEX(xs, 1), TOROW((DROP(xs, 1) + DROP(xs, -1)) / 2), INDEX(xs, n)),
+               HSTACK(ys, left_edge, psb, right_edge))
+    ));
+
+/** Flow net of unconfined seepage for one chart: {x, y equipotentials | x, y flow lines}, #N/A separated. block: x in row 1, y in column 1, pressure heads inside (rows from the top down, blank = no soil). h_levels: total heads of the equipotentials, each cut where it meets the free surface (y = h); psi_levels: flow lines as values of q/k (from seepage_unconfined_psi). Optional residual_ratio and permeability as in seepage_unconfined_psi. */
+seepage_unconfined_flownet = LAMBDA(block, h_levels, psi_levels, transition_width, [residual_ratio], [permeability],
+    LET(
+        nr, ROWS(block), nc, COLUMNS(block),
+        xs, INDEX(block, 1, 2):INDEX(block, 1, nc),
+        ys, INDEX(block, 2, 1):INDEX(block, nr, 1),
+        pressure, INDEX(block, 2, 2):INDEX(block, nr, nc),
+        ratio, IF(ISOMITTED(residual_ratio), 0.001, residual_ratio),
+        kv, IF(ISOMITTED(permeability), 1, permeability),
+        total, IF(ISNUMBER(pressure), pressure + ys, ""),
+        pick, LAMBDA(v, LET(t, TOCOL(v), FILTER(t, ISNUMBER(t), ""))),
+        hlev, pick(h_levels), plev, pick(psi_levels),
+        none, HSTACK(NA(), NA()),
+        big, 1E+300, sep, HSTACK(big, big),
+        cut, LAMBDA(pts, lv, LET(
+            px, TAKE(pts, , 1), py, TAKE(pts, , -1), k, ROWS(py),
+            xp, VSTACK(INDEX(px, 1), DROP(px, -1)), yp, VSTACK(INDEX(py, 1), DROP(py, -1)),
+            xn, VSTACK(DROP(px, 1), INDEX(px, k)), yn, VSTACK(DROP(py, 1), INDEX(py, k)),
+            dry, py > lv,
+            from_prev, dry * (yp <= lv), from_next, dry * (yn <= lv) * (1 - from_prev),
+            HSTACK(IF(from_prev, xp + (lv - yp) / (py - yp) * (px - xp), IF(from_next, xn + (lv - yn) / (py - yn) * (px - xn), IF(dry, NA(), px))),
+                   IF(from_prev + from_next, lv, IF(dry, NA(), py))))),
+        stack, REDUCE(sep, hlev, LAMBDA(acc, lv, LET(pts, seepage_eqline(xs, ys, total, lv, 1),
+            VSTACK(acc, IF(ISERROR(INDEX(pts, 1, 1)), sep, cut(pts, lv)), sep)))),
+        eq_all, DROP(stack, 1),
+        equipotentials, IF(ISNUMBER(INDEX(hlev, 1)), IF(eq_all = big, NA(), eq_all), none),
+        psi, seepage_unconfined_psi(block, transition_width, ratio, kv),
+        flowlines, IF(ISNUMBER(INDEX(plev, 1)), seepage_eqlines(DROP(TAKE(psi, 1), , 1), DROP(TAKE(psi, , 1), 1), DROP(psi, 1, 1), plev), none),
+        rows_out, MAX(ROWS(equipotentials), ROWS(flowlines)),
+        HSTACK(EXPAND(equipotentials, rows_out, 2, NA()), EXPAND(flowlines, rows_out, 2, NA()))
+    ));
+
 /** Interior node. Five-node form: seepage_stencil(old,a,b,cc,d,[w]) - old = this cell, a..d = its 4 neighbours; w = omega for SOR, 0 resets to 0, omitted = plain average. The 4-argument form seepage_stencil(a,b,c,d) still returns (a+b+c+d)/4. */
 seepage_stencil = LAMBDA(old, a, b, cc, [d], [w],
     LET(

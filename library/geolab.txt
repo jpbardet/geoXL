@@ -80,6 +80,8 @@ seepage_permeability_ratio
 seepage_stencil_unconfined
 seepage_unconfined_flow
 seepage_free_surface
+seepage_unconfined_psi
+seepage_unconfined_flownet
 seepage_stencil
 seepage_stencil1
 seepage_stencil2

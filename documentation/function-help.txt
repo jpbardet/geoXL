@@ -1312,6 +1312,24 @@ pressure_heads: Grid of pressure heads, rows from the top down
 elevations: Elevations of the rows (m)
 returns: For each column, the elevation where the pressure head is 0, by linear interpolation from the top; #N/A when the column is dry. Empty cells are skipped.
 
+[seepage_unconfined_psi]
+block: Block of pressure heads: x in row 1, y in column 1, pressure heads inside, rows from the top down; blank cells are outside the soil
+transition_width: Width w of the permeability transition (m), as in seepage_stencil_unconfined
+residual_ratio: Optional. Residual permeability ratio; default 0.001
+permeability: Optional. Relative permeability of each vertical section between two columns (a row with one value fewer than the columns), or one value; default 1
+returns: The stream function q/k at the midpoints between the columns and on the first and last columns, in the layout of seepage_psi (x in row 1, y in column 1). psi = 0 on an impervious base, increases with the water already drained through the base, and equals q on the free surface.
+notes: Face flows are weighted by seepage_permeability_ratio of the mean pressure head, so the dry soil above the free surface carries practically no flow.
+
+[seepage_unconfined_flownet]
+block: Block of pressure heads, as in seepage_unconfined_psi
+h_levels: Total heads of the equipotentials (m); each is cut where it meets the free surface (y = h)
+psi_levels: Values of q/k of the flow lines, e.g. q·{0.2; 0.4; 0.6; 0.8}
+transition_width: Width w of the permeability transition (m)
+residual_ratio: Optional. Residual permeability ratio; default 0.001
+permeability: Optional. As in seepage_unconfined_psi
+returns: Four columns for one chart, #N/A separated: x, y of the equipotentials, then x, y of the flow lines.
+notes: Show #N/A as an empty cell in the chart (Select Data > Hidden and Empty Cells). Calculate the flow net after the pressure heads have converged.
+
 [seepage_stencil]
 old: This cell (the node itself), for over-relaxation. In the old 4-argument form, the first neighbour
 a: Head at a neighbour of the node (the four neighbours may be in any order)
