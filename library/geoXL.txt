@@ -2291,28 +2291,28 @@ seepage_stencil_weighted = LAMBDA(node, north, west, south, east, [face_lengths]
         seepage_stencil_relax(node, SUM(lengths * HSTACK(north, west, south, east)) / SUM(lengths), IF(ISOMITTED(omega), 1, omega)))
 );
 
-/** Finite difference stencil from a 3x3 block of cells centred on the node (Chapter 4-6): the centre is the node, the middle cells of the top row, left column, bottom row and right column are its north, west, south and east neighbours. face_lengths {north, west, south, east} is a row of four cells of the table of kinds of nodes (face lengths times permeabilities; 0 on an impervious side). Returns the value of seepage_stencil_weighted; #N/A when a side with a non-zero face length points to an empty cell or text. omega as in seepage_stencil_interior (0 resets to 0). Copy the formula: the block moves with the node. */
-seepage_stencil_block = LAMBDA(block, face_lengths, [omega],
+/** Finite difference stencil from two 3x3 blocks (Chapters 4-6 and 4-8): block holds the values of the node (centre) and of its eight neighbours; weights is a 3x3 box of the table of stencils, laid out as the stencil is drawn, with the weight of each neighbour (face length times permeability; north = top middle, west = middle left, south = bottom middle, east = middle right; diagonal cells usually empty or 0; centre ignored). Returns the relaxed weighted average SUM(weights * values)/SUM(weights); #N/A when a non-zero weight points to an empty cell or text; omega = 0 resets to 0. The block is a relative reference that moves with the node when the formula is copied; the box is an absolute reference. */
+seepage_stencil_block = LAMBDA(block, weights, [omega],
     LET(w, IF(ISOMITTED(omega), 1, omega),
-        cells, HSTACK(INDEX(block, 1, 2), INDEX(block, 2, 1), INDEX(block, 3, 2), INDEX(block, 2, 3)),
-        lengths, TOROW(face_lengths),
+        mask, {1, 1, 1; 1, 0, 1; 1, 1, 1},
+        lengths, IF(ISNUMBER(weights), weights, 0) * mask,
         IF(w = 0, 0,
-            IF(SUM((lengths <> 0) * NOT(ISNUMBER(cells))) > 0, NA(),
-                LET(v, IF(ISNUMBER(cells), cells, 0),
-                    seepage_stencil_weighted(INDEX(block, 2, 2), INDEX(v, 1), INDEX(v, 2), INDEX(v, 3), INDEX(v, 4), lengths, w)))))
+            IF(SUM((lengths <> 0) * NOT(ISNUMBER(block))) > 0, NA(),
+                seepage_stencil_relax(INDEX(block, 2, 2),
+                    SUM(lengths * IF(ISNUMBER(block), block, 0)) / SUM(lengths), w))))
 );
 
-/** Unconfined stencil from a 3x3 block of pressure heads centred on the node, as seepage_stencil_block: face_lengths is a row of four cells of the table of kinds of nodes; spacing, transition_width and residual_ratio as in seepage_stencil_unconfined. #N/A when a side with a non-zero face length points to an empty cell or text; omega = 0 resets to 0. On a seepage face use MIN(seepage_stencil_unconfined_block(...), 0). */
-seepage_stencil_unconfined_block = LAMBDA(block, face_lengths, spacing, transition_width, [residual_ratio], [omega],
-    LET(w, IF(ISOMITTED(omega), 1, omega),
-        ratio, IF(ISOMITTED(residual_ratio), 0.001, residual_ratio),
-        cells, HSTACK(INDEX(block, 1, 2), INDEX(block, 2, 1), INDEX(block, 3, 2), INDEX(block, 2, 3)),
-        lengths, TOROW(face_lengths),
+/** Unconfined stencil from two 3x3 blocks, as seepage_stencil_block, for pressure heads: block holds the pressure heads of the node and its neighbours, weights the 3x3 box of face lengths, and parameters a range of four cells: grid spacing, transition width, residual ratio, control value (0 resets, otherwise omega). Each weight is multiplied by seepage_permeability_ratio of the mean pressure head of the node and the neighbour; the neighbours of the top row are one spacing higher and those of the bottom row one spacing lower (gravity). #N/A when a non-zero weight points to an empty cell or text. On a seepage face use MIN(seepage_stencil_unconfined_block(...), 0). */
+seepage_stencil_unconfined_block = LAMBDA(block, weights, parameters,
+    LET(spacing, INDEX(parameters, 1), width, INDEX(parameters, 2), ratio, INDEX(parameters, 3), w, INDEX(parameters, 4),
+        mask, {1, 1, 1; 1, 0, 1; 1, 1, 1},
+        lengths, IF(ISNUMBER(weights), weights, 0) * mask,
         IF(w = 0, 0,
-            IF(SUM((lengths <> 0) * NOT(ISNUMBER(cells))) > 0, NA(),
-                LET(v, IF(ISNUMBER(cells), cells, 0),
-                    seepage_stencil_unconfined(INDEX(block, 2, 2), INDEX(v, 1), INDEX(v, 2), INDEX(v, 3), INDEX(v, 4),
-                        spacing, transition_width, ratio, lengths, w)))))
+            IF(SUM((lengths <> 0) * NOT(ISNUMBER(block))) > 0, NA(),
+                LET(node, INDEX(block, 2, 2), v, IF(ISNUMBER(block), block, 0),
+                    conductance, lengths * seepage_permeability_ratio((node + v) / 2, width, ratio),
+                    heads, v + {1; 0; -1} * spacing,
+                    seepage_stencil_relax(node, SUM(conductance * heads) / SUM(conductance), w)))))
 );
 
 /** Permeability ratio k/k_s of the Darcy-Buckingham law used for unconfined seepage: residual_ratio + (1 - residual_ratio)·(1 + tanh(pressure_head/transition_width))/2; about 1 when the pressure head exceeds twice the transition width, about residual_ratio (default 0.001) below minus twice that width. */
