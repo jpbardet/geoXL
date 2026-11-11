@@ -2570,7 +2570,7 @@ saturation_line = LAMBDA(w, Gs, S, [gamma_w],
     )
 );
 
-/** Compaction curve fitted with a wet branch on a saturation line. w water contents (fraction) and gamma_d dry unit weights (kN/m3) of the compaction points, Gs specific gravity, optional gamma_w (default 9.81 kN/m3). S is the largest degree of saturation of the points; the wet branch is the saturation line of S; the dry branch is a cubic tangent to that line at w_t (same value and slope), whose two other coefficients are fitted by least squares to the points drier than w_t; w_t is chosen to minimize the squared errors of all points. Returns {w_opt; gamma_d,max; S; S_opt; w_t; c2; c3}, with the optimum at the maximum of the cubic and S_opt the degree of saturation at the optimum. */
+/** Compaction curve fitted with a wet branch on a saturation line. w water contents (fraction) and gamma_d dry unit weights (kN/m3) of the compaction points, Gs specific gravity, optional gamma_w (default 9.81 kN/m3). S is the degree of saturation of the wettest point; the wet branch is the saturation line of S; the dry branch is a cubic tangent to that line at w_t (same value and slope), whose two other coefficients are fitted by least squares to the points drier than w_t (at least three); w_t is chosen to minimize the squared errors of all points, with the optimum within the measured water contents. Returns a message if S > 1 (check Gs and the water contents) or if no valid curve is found. Returns {w_opt; gamma_d,max; S; S_opt; w_t; c2; c3}, with the optimum at the maximum of the cubic and S_opt the degree of saturation at the optimum. */
 compaction_fit = LAMBDA(w, gamma_d, Gs, [gamma_w],
     LET(
         gw,    IF(ISOMITTED(gamma_w), 9.81, gamma_w),
@@ -2578,7 +2578,7 @@ compaction_fit = LAMBDA(w, gamma_d, Gs, [gamma_w],
         x,     FILTER(TOCOL(w), ok),
         y,     FILTER(TOCOL(gamma_d), ok),
         A,     Gs*gw,
-        S,     MAX(Gs*x/(A/y-1)),
+        S,     XLOOKUP(MAX(x), x, Gs*x/(A/y-1)),
         b,     Gs/S,
         tangent, LAMBDA(tw, LET(
                    c_0, A/(1+b*tw),
@@ -2595,7 +2595,7 @@ compaction_fit = LAMBDA(w, gamma_d, Gs, [gamma_w],
                    den, IF(disc>=0, SQRT(MAX(disc, 0))-c_2, 0),
                    dopt, IF(den>0, c_1/den, 0),
                    fit, IF(d<0, c_0+c_1*d+c_2*d^2+c_3*d^3, A/(1+b*x)),
-                   valid, AND(det>0, den>0, dopt<0, tw+dopt>MIN(x)-(MAX(x)-MIN(x))),
+                   valid, AND(SUM(dry)>=3, det>0, den>0, dopt<0, tw+dopt>=MIN(x), tw+dopt<=MAX(x)),
                    HSTACK(IF(valid, SUM((fit-y)^2), 1E+99), c_0, c_1, c_2, c_3, dopt))),
         lo,    XLOOKUP(MAX(y), y, x),
         st,    (MAX(x)+(MAX(x)-MIN(x))-lo)/200,
@@ -2609,7 +2609,9 @@ compaction_fit = LAMBDA(w, gamma_d, Gs, [gamma_w],
         d_opt, INDEX(best, 6),
         gmax,  INDEX(best, 2)+INDEX(best, 3)*d_opt+INDEX(best, 4)*d_opt^2+INDEX(best, 5)*d_opt^3,
         wopt,  wt+d_opt,
-        VSTACK(wopt, gmax, S, Gs*wopt/(A/gmax-1), wt, INDEX(best, 4), INDEX(best, 5))
+        IFS(S>1, "Error: the wettest point is above full saturation (S > 1); check Gs and the water contents",
+            MIN(errB)>=1E+99, "Error: no valid curve; at least three points are needed on the dry side of the tangent point",
+            TRUE, VSTACK(wopt, gmax, S, Gs*wopt/(A/gmax-1), wt, INDEX(best, 4), INDEX(best, 5)))
     )
 );
 
@@ -2633,8 +2635,9 @@ compaction_curve = LAMBDA(w, gamma_d, Gs, [gamma_w], [step],
         c_0,  A/(1+b*wt),
         c_1,  -A*b/(1+b*wt)^2,
         curve, IF(d<0, c_0+c_1*d+INDEX(fit, 6)*d^2+INDEX(fit, 7)*d^3, A/(1+b*x)),
-        VSTACK(HSTACK("w", "Fitted curve", "S = 100%", "S = "&TEXT(S, "0.000")),
-               HSTACK(x, curve, saturation_line(x, Gs, 1, gw), saturation_line(x, Gs, S, gw)))
+        IF(ISTEXT(INDEX(fit, 1)), INDEX(fit, 1),
+           VSTACK(HSTACK("w", "Fitted curve", "S = 100%", "S = "&TEXT(S, "0.000")),
+                  HSTACK(x, curve, saturation_line(x, Gs, 1, gw), saturation_line(x, Gs, S, gw))))
     )
 );
 
