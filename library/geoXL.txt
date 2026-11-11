@@ -2524,24 +2524,24 @@ specific_gravity = LAMBDA(Ws, Wfw, Wfws, [T],
     )
 );
 
-/** Unit weight of wax (kN/m3) by weighing in water: gamma_w·W2/(W1 + W2 - W3). W1 immersed metal block, W2 wax piece, W3 immersed metal and wax (g); single values, columns or rows (one per test); the results stop at the last test. Optional gamma_w (default 9.81 kN/m3). */
-wax_unit_weight = LAMBDA(W1, W2, W3, [gamma_w],
+/** Unit weight of wax (kN/m3) by weighing in water: gamma_w·W2/(W1 + W2 - W3). metal = W1 immersed metal block, wax = W2 wax piece, both = W3 immersed metal and wax (g); single values, columns or rows (one per test); the results stop at the last test. Optional gamma_w (default 9.81 kN/m3). */
+wax_unit_weight = LAMBDA(metal, wax, both, [gamma_w],
     LET(
         gw,  IF(ISOMITTED(gamma_w), 9.81, gamma_w),
-        out, gw*W2/(W1+W2-W3),
-        IF(ROWS(W2)=1, trim_cols(out, W2), trim_rows(out, W2))
+        out, gw*wax/(metal+wax-both),
+        IF(ROWS(wax)=1, trim_cols(out, wax), trim_rows(out, wax))
     )
 );
 
-/** Unit weight of a cohesive soil by weighing in water (wax coating). W soil, Wp waxed soil, WI immersed waxed soil (g), gamma_p wax unit weight (kN/m3), wet and dry masses for the water content, optional tare and gamma_w (default 9.81 kN/m3). One sample per column: returns {gamma; w; gamma_d} (kN/m3, fraction, kN/m3) for each sample, up to the last sample. */
-unit_weight_wax = LAMBDA(W, Wp, WI, gamma_p, wet, dry, [tare], [gamma_w],
+/** Unit weight of a cohesive soil by weighing in water (wax coating). soil (W), waxed (Wp) and immersed waxed soil (WI) masses (g), gamma_p wax unit weight (kN/m3), wet and dry masses for the water content, optional tare and gamma_w (default 9.81 kN/m3). One sample per column: returns {gamma; w; gamma_d} (kN/m3, fraction, kN/m3) for each sample, up to the last sample. */
+unit_weight_wax = LAMBDA(soil, waxed, immersed, gamma_p, wet, dry, [tare], [gamma_w],
     LET(
         gw,  IF(ISOMITTED(gamma_w), 9.81, gamma_w),
         t,   IF(ISOMITTED(tare), 0, tare),
-        g,   gw*W/(Wp-WI-gw/gamma_p*(Wp-W)),
+        g,   gw*soil/(waxed-immersed-gw/gamma_p*(waxed-soil)),
         wc,  water_content(t, wet, dry),
         gd,  g/(1+wc),
-        trim_cols(VSTACK(g, wc, gd), W)
+        trim_cols(VSTACK(g, wc, gd), soil)
     )
 );
 
