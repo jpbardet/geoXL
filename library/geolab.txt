@@ -19,6 +19,9 @@ unit_weight_wax
 field_unit_weight
 sand_unit_weight
 sand_cone_volume
+saturation_line
+compaction_fit
+compaction_curve
 
 # Grain size: sieve, hydrometer, pipette and buoyancy
 sieve_passing

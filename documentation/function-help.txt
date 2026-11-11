@@ -1508,6 +1508,30 @@ g: Optional. Gravity acceleration (m/s2); default 9.81
 returns: Unit weight of the sand g·(mold_sand - mold)/(pi·D²·H/4) (kN/m3), one value per test.
 notes: Empty tests at the end are ignored.
 
+[saturation_line]
+w: Water content (fraction), a value or a column
+Gs: Specific gravity of the solids
+S: Degree of saturation (fraction); 1 for the zero-air-voids line
+gamma_w: Optional. Unit weight of water (kN/m3); default 9.81
+returns: Dry unit weight on the line of constant saturation S: Gs·gamma_w/(1 + Gs·w/S) (kN/m3).
+
+[compaction_fit]
+w: Water contents of the compaction points (fraction), one per row
+gamma_d: Dry unit weights of the points (kN/m3)
+Gs: Specific gravity of the solids
+gamma_w: Optional. Unit weight of water (kN/m3); default 9.81
+returns: {w_opt; gamma_d,max; S; S_opt; w_t; c2; c3}: optimum water content, maximum dry unit weight, degree of saturation of the wet branch, degree of saturation at the optimum, water content of the tangent point, and the two fitted coefficients of the cubic.
+notes: S is the largest degree of saturation among the points, S_i = Gs·w_i/(Gs·gamma_w/gamma_d,i - 1). The wet branch is the saturation line of S; the dry branch is the cubic gamma_d = c0 + c1·d + c2·d² + c3·d³ with d = w - w_t, tangent to that line at w_t (c0 and c1 are the value and slope of the line there). For each trial w_t, c2 and c3 are the least-squares fit to the points drier than w_t; w_t (scanned beyond the highest point, twice) minimizes the squared errors of all points. The optimum is the maximum of the cubic, d = c1/(sqrt(c2² - 3·c1·c3) - c2). Blank or text rows are ignored.
+
+[compaction_curve]
+fit: The result of compaction_fit
+Gs: Specific gravity of the solids (as in compaction_fit)
+wmin: Smallest water content of the curve (fraction)
+wmax: Largest water content of the curve (fraction)
+gamma_w: Optional. Unit weight of water (kN/m3); default 9.81
+n: Optional. Number of points; default 100
+returns: Two columns, w and gamma_d, of the fitted compaction curve: the cubic below the tangent point and the saturation line above it, for a chart.
+
 [sand_cone_volume]
 jar_before: Mass of the jar and sand before the test (g)
 jar_after: Mass of the jar and sand after the test (g)

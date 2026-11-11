@@ -2562,6 +2562,73 @@ sand_unit_weight = LAMBDA(mold_sand, mold, D, H, [g],
     )
 );
 
+/** Saturation line of the compaction chart: dry unit weight Gs·gamma_w/(1 + Gs·w/S) (kN/m3) for water content w (fraction) and degree of saturation S (fraction, 1 for the zero-air-voids line); optional gamma_w (default 9.81 kN/m3). */
+saturation_line = LAMBDA(w, Gs, S, [gamma_w],
+    LET(
+        gw, IF(ISOMITTED(gamma_w), 9.81, gamma_w),
+        Gs*gw/(1+Gs*w/S)
+    )
+);
+
+/** Compaction curve fitted with a wet branch on a saturation line. w water contents (fraction) and gamma_d dry unit weights (kN/m3) of the compaction points, Gs specific gravity, optional gamma_w (default 9.81 kN/m3). S is the largest degree of saturation of the points; the wet branch is the saturation line of S; the dry branch is a cubic tangent to that line at w_t (same value and slope), whose two other coefficients are fitted by least squares to the points drier than w_t; w_t is chosen to minimize the squared errors of all points. Returns {w_opt; gamma_d,max; S; S_opt; w_t; c2; c3}, with the optimum at the maximum of the cubic and S_opt the degree of saturation at the optimum. */
+compaction_fit = LAMBDA(w, gamma_d, Gs, [gamma_w],
+    LET(
+        gw,    IF(ISOMITTED(gamma_w), 9.81, gamma_w),
+        ok,    ISNUMBER(TOCOL(w))*ISNUMBER(TOCOL(gamma_d)),
+        x,     FILTER(TOCOL(w), ok),
+        y,     FILTER(TOCOL(gamma_d), ok),
+        A,     Gs*gw,
+        S,     MAX(Gs*x/(A/y-1)),
+        b,     Gs/S,
+        tangent, LAMBDA(tw, LET(
+                   c_0, A/(1+b*tw),
+                   c_1, -A*b/(1+b*tw)^2,
+                   d,   x-tw,
+                   dry, --(d<0),
+                   res, y-c_0-c_1*d,
+                   s_4, SUM(dry*d^4), s_5, SUM(dry*d^5), s_6, SUM(dry*d^6),
+                   t_2, SUM(dry*d^2*res), t_3, SUM(dry*d^3*res),
+                   det, s_4*s_6-s_5^2,
+                   c_2, IF(det>0, (t_2*s_6-t_3*s_5)/det, 0),
+                   c_3, IF(det>0, (t_3*s_4-t_2*s_5)/det, 0),
+                   disc, c_2^2-3*c_1*c_3,
+                   den, IF(disc>=0, SQRT(MAX(disc, 0))-c_2, 0),
+                   dopt, IF(den>0, c_1/den, 0),
+                   fit, IF(d<0, c_0+c_1*d+c_2*d^2+c_3*d^3, A/(1+b*x)),
+                   valid, AND(det>0, den>0, dopt<0, tw+dopt>MIN(x)-(MAX(x)-MIN(x))),
+                   HSTACK(IF(valid, SUM((fit-y)^2), 1E+99), c_0, c_1, c_2, c_3, dopt))),
+        lo,    XLOOKUP(MAX(y), y, x),
+        st,    (MAX(x)+(MAX(x)-MIN(x))-lo)/200,
+        gridA, SEQUENCE(201, 1, lo, st),
+        errA,  MAP(gridA, LAMBDA(t, INDEX(tangent(t), 1))),
+        tA,    XLOOKUP(MIN(errA), errA, gridA),
+        gridB, SEQUENCE(201, 1, tA-st, st/100),
+        errB,  MAP(gridB, LAMBDA(t, INDEX(tangent(t), 1))),
+        wt,    XLOOKUP(MIN(errB), errB, gridB),
+        best,  tangent(wt),
+        d_opt, INDEX(best, 6),
+        gmax,  INDEX(best, 2)+INDEX(best, 3)*d_opt+INDEX(best, 4)*d_opt^2+INDEX(best, 5)*d_opt^3,
+        wopt,  wt+d_opt,
+        VSTACK(wopt, gmax, S, Gs*wopt/(A/gmax-1), wt, INDEX(best, 4), INDEX(best, 5))
+    )
+);
+
+/** Points of the fitted compaction curve for a chart: n water contents from wmin to wmax (default 100) and the dry unit weight, the cubic of compaction_fit below the tangent point and the saturation line above it. fit is the result of compaction_fit (same Gs and gamma_w). Returns two columns: w and gamma_d. */
+compaction_curve = LAMBDA(fit, Gs, wmin, wmax, [gamma_w], [n],
+    LET(
+        gw,  IF(ISOMITTED(gamma_w), 9.81, gamma_w),
+        npts, IF(ISOMITTED(n), 100, n),
+        A,   Gs*gw,
+        b,   Gs/INDEX(fit, 3),
+        wt,  INDEX(fit, 5),
+        c_0, A/(1+b*wt),
+        c_1, -A*b/(1+b*wt)^2,
+        x,   SEQUENCE(npts, 1, wmin, (wmax-wmin)/(npts-1)),
+        d,   x-wt,
+        HSTACK(x, IF(d<0, c_0+c_1*d+INDEX(fit, 6)*d^2+INDEX(fit, 7)*d^3, A/(1+b*x)))
+    )
+);
+
 /** Volume of the hole of the sand cone test (cm3): (jar_before - jar_after - Wc)/(gamma_sand/g). jar_before, jar_after masses of jar and sand before and after the test (g); cone_before, cone_after masses of jar and sand before and after filling the cone and base plate (g, one calibration per row; Wc is their average difference); gamma_sand unit weight of the sand (kN/m3); optional g (default 9.81 m/s2). */
 sand_cone_volume = LAMBDA(jar_before, jar_after, cone_before, cone_after, gamma_sand, [g],
     LET(
