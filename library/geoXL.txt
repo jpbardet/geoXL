@@ -2613,19 +2613,27 @@ compaction_fit = LAMBDA(w, gamma_d, Gs, [gamma_w],
     )
 );
 
-/** Points of the fitted compaction curve for a chart: n water contents from wmin to wmax (default 100) and the dry unit weight, the cubic of compaction_fit below the tangent point and the saturation line above it. fit is the result of compaction_fit (same Gs and gamma_w). Returns two columns: w and gamma_d. */
-compaction_curve = LAMBDA(fit, Gs, wmin, wmax, [gamma_w], [n],
+/** Chart data of the compaction test, in one block: a row of headings, then n water contents (default 100) covering the points and the tangent point with a margin of 15% of the range of the points, and for each one the fitted curve of compaction_fit (the cubic below the tangent point, the saturation line above it), the 100% saturation line, and the saturation line of the fitted S. Same arguments as compaction_fit, plus the optional number of points n. */
+compaction_curve = LAMBDA(w, gamma_d, Gs, [gamma_w], [n],
     LET(
-        gw,  IF(ISOMITTED(gamma_w), 9.81, gamma_w),
+        gw,   IF(ISOMITTED(gamma_w), 9.81, gamma_w),
         npts, IF(ISOMITTED(n), 100, n),
-        A,   Gs*gw,
-        b,   Gs/INDEX(fit, 3),
-        wt,  INDEX(fit, 5),
-        c_0, A/(1+b*wt),
-        c_1, -A*b/(1+b*wt)^2,
-        x,   SEQUENCE(npts, 1, wmin, (wmax-wmin)/(npts-1)),
-        d,   x-wt,
-        HSTACK(x, IF(d<0, c_0+c_1*d+INDEX(fit, 6)*d^2+INDEX(fit, 7)*d^3, A/(1+b*x)))
+        fit,  compaction_fit(w, gamma_d, Gs, gw),
+        S,    INDEX(fit, 3),
+        wt,   INDEX(fit, 5),
+        A,    Gs*gw,
+        b,    Gs/S,
+        xs,   FILTER(TOCOL(w), ISNUMBER(TOCOL(w))),
+        m,    0.15*(MAX(xs)-MIN(xs)),
+        lo,   MAX(0.001, MIN(xs)-m),
+        hi,   MAX(MAX(xs), wt)+m,
+        x,    SEQUENCE(npts, 1, lo, (hi-lo)/(npts-1)),
+        d,    x-wt,
+        c_0,  A/(1+b*wt),
+        c_1,  -A*b/(1+b*wt)^2,
+        curve, IF(d<0, c_0+c_1*d+INDEX(fit, 6)*d^2+INDEX(fit, 7)*d^3, A/(1+b*x)),
+        VSTACK(HSTACK("w", "Fitted curve", "S = 100%", "S = "&TEXT(S, "0.000")),
+               HSTACK(x, curve, saturation_line(x, Gs, 1, gw), saturation_line(x, Gs, S, gw)))
     )
 );
 

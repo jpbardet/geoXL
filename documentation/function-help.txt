@@ -1520,17 +1520,17 @@ w: Water contents of the compaction points (fraction), one per row
 gamma_d: Dry unit weights of the points (kN/m3)
 Gs: Specific gravity of the solids
 gamma_w: Optional. Unit weight of water (kN/m3); default 9.81
-returns: {w_opt; gamma_d,max; S; S_opt; w_t; c2; c3}: optimum water content, maximum dry unit weight, degree of saturation of the wet branch, degree of saturation at the optimum, water content of the tangent point, and the two fitted coefficients of the cubic.
+returns: 7 rows: optimum water content w_opt, maximum dry unit weight gamma_d,max, degree of saturation S of the wet branch, degree of saturation S_opt at the optimum, water content w_t of the tangent point, and the two fitted coefficients c2 and c3 of the dry branch.
 notes: S is the largest degree of saturation among the points, S_i = Gs·w_i/(Gs·gamma_w/gamma_d,i - 1). The wet branch is the saturation line of S; the dry branch is the cubic gamma_d = c0 + c1·d + c2·d² + c3·d³ with d = w - w_t, tangent to that line at w_t (c0 and c1 are the value and slope of the line there). For each trial w_t, c2 and c3 are the least-squares fit to the points drier than w_t; w_t (scanned beyond the highest point, twice) minimizes the squared errors of all points. The optimum is the maximum of the cubic, d = c1/(sqrt(c2² - 3·c1·c3) - c2). Blank or text rows are ignored.
 
 [compaction_curve]
-fit: The result of compaction_fit
-Gs: Specific gravity of the solids (as in compaction_fit)
-wmin: Smallest water content of the curve (fraction)
-wmax: Largest water content of the curve (fraction)
+w: Water contents of the compaction points (fraction), as in compaction_fit
+gamma_d: Dry unit weights of the points (kN/m3)
+Gs: Specific gravity of the solids
 gamma_w: Optional. Unit weight of water (kN/m3); default 9.81
-n: Optional. Number of points; default 100
-returns: Two columns, w and gamma_d, of the fitted compaction curve: the cubic below the tangent point and the saturation line above it, for a chart.
+n: Optional. Number of points of the curve; default 100
+returns: A block for the chart: one row of headings, then n rows with the water content, the fitted compaction curve (cubic below the tangent point, saturation line above it), the 100% saturation line and the saturation line of the fitted S.
+notes: The water contents go from the driest point minus a margin to the wettest point or the tangent point (whichever is wetter) plus a margin; the margin is 15% of the range of the points. The fit is that of compaction_fit.
 
 [sand_cone_volume]
 jar_before: Mass of the jar and sand before the test (g)
