@@ -1528,9 +1528,9 @@ w: Water contents of the compaction points (fraction), as in compaction_fit
 gamma_d: Dry unit weights of the points (kN/m3)
 Gs: Specific gravity of the solids
 gamma_w: Optional. Unit weight of water (kN/m3); default 9.81
-n: Optional. Number of points of the curve; default 100
-returns: A block for the chart: one row of headings, then n rows with the water content, the fitted compaction curve (cubic below the tangent point, saturation line above it), the 100% saturation line and the saturation line of the fitted S.
-notes: The water contents go from the driest point minus a margin to the wettest point or the tangent point (whichever is wetter) plus a margin; the margin is 15% of the range of the points. The fit is that of compaction_fit.
+step: Optional. Increment of water content (fraction); default 0.005 (0.5%)
+returns: A block for the chart: one row of headings, then one row per water content with the water content, the fitted compaction curve (cubic below the tangent point, saturation line from it), the 100% saturation line and the saturation line of the fitted S.
+notes: The water contents go every step from the driest point minus a margin to the wettest point or the tangent point (whichever is wetter) plus a margin (15% of the range of the points), and include the tangent point itself, where the two branches of the curve meet. The number of rows depends on the data; a chart can refer to a longer range, as the empty cells below are not plotted.
 
 [sand_cone_volume]
 jar_before: Mass of the jar and sand before the test (g)
