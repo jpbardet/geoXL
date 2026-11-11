@@ -1330,6 +1330,23 @@ permeability: Optional. As in seepage_unconfined_psi
 returns: Four columns for one chart, #N/A separated: x, y of the equipotentials, then x, y of the flow lines.
 notes: Show #N/A as an empty cell in the chart (Select Data > Hidden and Empty Cells). Calculate the flow net after the pressure heads have converged.
 
+[seepage_stencil_block]
+block: 3x3 block of cells centred on the node, e.g. B11:D13 for the node in C12 (relative reference, so that the formula can be copied)
+face_lengths: Row of four cells {north, west, south, east} of the table of kinds of nodes: face lengths as fractions of the spacing, times the permeability; 0 on an impervious side (absolute reference, e.g. $I$5:$L$5)
+omega: Optional. Relaxation factor or control value; default 1; 0 resets to 0
+returns: The relaxed total head given by the water balance of the cell (seepage_stencil_weighted) with the neighbours read from the block: centre = node, top middle = north, left middle = west, bottom middle = south, right middle = east. #N/A if a side with a non-zero face length points to an empty cell or text.
+notes: Example: =seepage_stencil_block(B11:D13, $I$5:$L$5, $B$3) copied over the grid. Use the explicit functions (seepage_stencil_weighted, seepage_stencil_edge) for the nodes of thin walls, whose neighbours are not the adjacent cells.
+
+[seepage_stencil_unconfined_block]
+block: 3x3 block of pressure heads centred on the node (relative reference)
+face_lengths: Row of four cells {north, west, south, east} of the table of kinds of nodes (absolute reference)
+spacing: Grid spacing (m)
+transition_width: Width w of the permeability transition (m)
+residual_ratio: Optional. Residual permeability ratio; default 0.001
+omega: Optional. Relaxation factor or control value; default 1; 0 resets to 0
+returns: The relaxed pressure head of seepage_stencil_unconfined with the neighbours read from the block. #N/A if a side with a non-zero face length points to an empty cell or text.
+notes: Example: =seepage_stencil_unconfined_block(B19:D21, $I$5:$L$5, $B$4, $B$5, $B$6, $B$7). On a seepage face: =MIN(seepage_stencil_unconfined_block(...), 0).
+
 [seepage_stencil]
 old: This cell (the node itself), for over-relaxation. In the old 4-argument form, the first neighbour
 a: Head at a neighbour of the node (the four neighbours may be in any order)
