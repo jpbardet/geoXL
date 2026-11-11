@@ -2699,28 +2699,30 @@ compaction_fit = LAMBDA(w, gamma_d, Gs, [gamma_w],
 );
 
 /** Chart data of the compaction test, in one block: a row of headings, then water contents every step (default 0.005, i.e. 0.5%) covering the points and the tangent point with a margin of 15% of the range of the points, plus the tangent point itself, so that the dry branch ends and the wet branch starts on the same row; for each water content, the fitted curve of compaction_fit (the cubic below the tangent point, the saturation line from it), the 100% saturation line, and the saturation line of the fitted S. Same arguments as compaction_fit, plus the optional step. */
-compaction_curve = LAMBDA(w, gamma_d, Gs, [gamma_w], [step],
+compaction_curve = LAMBDA(w, gamma_d, Gs, [gamma_w], [points],
     LET(
         gw,   IF(ISOMITTED(gamma_w), 9.81, gamma_w),
-        dw,   IF(ISOMITTED(step), 0.005, step),
+        np,   IF(ISOMITTED(points), 60, points),
         fit,  compaction_fit(w, gamma_d, Gs, gw),
         S,    INDEX(fit, 3),
         wt,   INDEX(fit, 5),
         A,    Gs*gw,
         b,    Gs/S,
         xs,   FILTER(TOCOL(w), ISNUMBER(TOCOL(w))),
-        lo,   MIN(xs),
-        hi,   MAX(xs),
-        grid, SEQUENCE(INT((hi-lo)/dw)+1, 1, lo, dw),
-        pts,  VSTACK(grid, hi, wt),
-        x,    SORT(UNIQUE(FILTER(pts, pts<=hi))),
+        wlo,  MIN(xs),
+        whi,  MAX(xs),
+        m,    0.15*(whi-wlo),
+        lo,   MAX(0, wlo-m),
+        hi,   MAX(whi, wt)+m,
+        x,    SORT(VSTACK(SEQUENCE(np-3, 1, lo, (hi-lo)/(np-4)), wlo, whi, wt)),
         d,    x-wt,
         c_0,  A/(1+b*wt),
         c_1,  -A*b/(1+b*wt)^2,
         curve, IF(d<0, c_0+c_1*d+INDEX(fit, 6)*d^2+INDEX(fit, 7)*d^3, A/(1+b*x)),
         IF(ISTEXT(INDEX(fit, 1)), INDEX(fit, 1),
            VSTACK(HSTACK("w", "Fitted curve", "S = 100%", "S = "&TEXT(S, "0.000")),
-                  HSTACK(x, curve, saturation_line(x, Gs, 1, gw), saturation_line(x, Gs, S, gw))))
+                  HSTACK(x, IF((x>=wlo)*(x<=whi), curve, NA()),
+                         saturation_line(x, Gs, 1, gw), saturation_line(x, Gs, S, gw))))
     )
 );
 
