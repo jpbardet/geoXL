@@ -24,15 +24,15 @@ compaction_fit
 compaction_curve
 
 # Permeability
-specimen_dry_state
-viscosity_ratio
-constant_head_permeability
-darcy_permeability
-falling_head_permeability
-falling_head_fit
-falling_head_height
-hazen_permeability
-kozeny_carman_permeability
+permeability_specimen
+permeability_viscosity_ratio
+permeability_constant_head
+permeability_darcy
+permeability_falling_head
+permeability_falling_head_fit
+permeability_falling_head_height
+permeability_hazen
+permeability_kozeny_carman
 
 # Grain size: sieve, hydrometer, pipette and buoyancy
 sieve_passing

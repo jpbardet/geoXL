@@ -2555,7 +2555,7 @@ field_unit_weight = LAMBDA(mass, V, moisture, [g],
 );
 
 /** Dry unit weight and void ratio of a cylindrical specimen: {gamma_d; e} = {g·mass/(pi·D²·H/4); Gs·g/gamma_d - 1}. mass of dry soil (g), H and D (cm), optional g (default 9.81 m/s2); gamma_d in kN/m3. */
-specimen_dry_state = LAMBDA(mass, H, D, Gs, [g],
+permeability_specimen = LAMBDA(mass, H, D, Gs, [g],
     LET(
         gr,  IF(ISOMITTED(g), 9.81, g),
         gd,  gr*mass/(PI()*D^2*H/4),
@@ -2564,12 +2564,12 @@ specimen_dry_state = LAMBDA(mass, H, D, Gs, [g],
 );
 
 /** Ratio of the viscosity of water at the test temperature to that at 20 C, eta(T)/eta(20): multiplies a permeability measured at T to give the permeability at 20 C. */
-viscosity_ratio = LAMBDA(temperature,
+permeability_viscosity_ratio = LAMBDA(temperature,
     water_viscosity(temperature)/water_viscosity(20)
 );
 
 /** Constant head permeability test, one trial per row: hydraulic gradient i = dh/L, discharge velocity v = (full - tare)/duration/(pi·D²/4) and permeability k = v/i at the test temperature. Lengths in cm, masses in g (1 g of water = 1 cm3), duration in s; v and k in cm/s. */
-constant_head_permeability = LAMBDA(dh, L, full, tare, duration, D,
+permeability_constant_head = LAMBDA(dh, L, full, tare, duration, D,
     LET(
         grad,  dh/L,
         v,     (full-tare)/duration/(PI()*D^2/4),
@@ -2578,7 +2578,7 @@ constant_head_permeability = LAMBDA(dh, L, full, tare, duration, D,
 );
 
 /** Permeability from Darcy's law v = k·i, fitted by least squares through the origin: k = sum(i·v)/sum(i²). Blank or text rows are ignored. */
-darcy_permeability = LAMBDA(gradient, velocity,
+permeability_darcy = LAMBDA(gradient, velocity,
     LET(
         ok,  ISNUMBER(TOCOL(gradient))*ISNUMBER(TOCOL(velocity)),
         x,   FILTER(TOCOL(gradient), ok),
@@ -2588,7 +2588,7 @@ darcy_permeability = LAMBDA(gradient, velocity,
 );
 
 /** Falling head permeability test, one reading per row: k = (pipe/D)²·L/elapsed·ln((h_0 - h_c)/(h - h_c)) at the test temperature. elapsed time in s, lengths in cm (pipe and D the diameters of standpipe and specimen, L its length, h_c the optional capillary rise); k in cm/s. */
-falling_head_permeability = LAMBDA(elapsed, h, h_0, pipe, D, L, [h_c],
+permeability_falling_head = LAMBDA(elapsed, h, h_0, pipe, D, L, [h_c],
     LET(
         hcap, IF(ISOMITTED(h_c), 0, h_c),
         trim_rows((pipe/D)^2*L/elapsed*LN((h_0-hcap)/(h-hcap)), h)
@@ -2596,7 +2596,7 @@ falling_head_permeability = LAMBDA(elapsed, h, h_0, pipe, D, L, [h_c],
 );
 
 /** Permeability of a falling head test from all readings: least-squares slope through the origin of ln((h_0 - h_c)/(h - h_c)) versus elapsed time, times (pipe/D)²·L. elapsed in s, lengths in cm; k in cm/s. */
-falling_head_fit = LAMBDA(elapsed, h, h_0, pipe, D, L, [h_c],
+permeability_falling_head_fit = LAMBDA(elapsed, h, h_0, pipe, D, L, [h_c],
     LET(
         hcap, IF(ISOMITTED(h_c), 0, h_c),
         ok,  ISNUMBER(TOCOL(elapsed))*ISNUMBER(TOCOL(h)),
@@ -2607,7 +2607,7 @@ falling_head_fit = LAMBDA(elapsed, h, h_0, pipe, D, L, [h_c],
 );
 
 /** Height of water in the standpipe of a falling head test predicted for a permeability k: h = h_c + (h_0 - h_c)·exp(-k·(D/pipe)²·elapsed/L), one value per elapsed. */
-falling_head_height = LAMBDA(elapsed, k, h_0, pipe, D, L, [h_c],
+permeability_falling_head_height = LAMBDA(elapsed, k, h_0, pipe, D, L, [h_c],
     LET(
         hcap, IF(ISOMITTED(h_c), 0, h_c),
         trim_rows(hcap+(h_0-hcap)*EXP(-k*(D/pipe)^2/L*elapsed), elapsed)
@@ -2615,12 +2615,12 @@ falling_head_height = LAMBDA(elapsed, k, h_0, pipe, D, L, [h_c],
 );
 
 /** Hazen's formula k = coef·D10² (cm/s) with d_10 given in mm (converted to cm); optional coef (default 100, fine uniform sand). */
-hazen_permeability = LAMBDA(d_10, [coef],
+permeability_hazen = LAMBDA(d_10, [coef],
     IF(ISOMITTED(coef), 100, coef)*(d_10/10)^2
 );
 
 /** Kozeny-Carman formula k = gamma_w/(5·eta·sum(f·S²))·e³/(1 + e) (cm/s), with S = 6/sqrt(d_max·d_min) (1/mm) and the fraction between successive sieves; d (mm) and finer (%) from coarse to fine, one angularity factor f per interval; optional temperature (default 20 C). */
-kozeny_carman_permeability = LAMBDA(d, finer, angularity, void_ratio, [temperature],
+permeability_kozeny_carman = LAMBDA(d, finer, angularity, void_ratio, [temperature],
     LET(
         dd,   TOCOL(d),
         pf,   TOCOL(finer),
