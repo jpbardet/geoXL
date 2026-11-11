@@ -1270,10 +1270,14 @@ returns: The relaxed value of (permeability_1·across_1 + permeability_2·across
 
 [seepage_stencil_weighted]
 node: The cell itself
-neighbours: Heads at the neighbours, e.g. HSTACK(C4, D5, C6)
-face_lengths: Lengths of the faces shared with those neighbours (fractions of the spacing), times the permeability for several soils, e.g. {1, 1, 0.5}
+north: Head at the neighbour above (i, j-1)
+west: Head at the neighbour on the left (i-1, j)
+south: Head at the neighbour below (i, j+1)
+east: Head at the neighbour on the right (i+1, j)
+face_lengths: Optional. {north, west, south, east} face lengths (fractions of the spacing; 0 impervious, 0.5 half face), times the permeability for several soils; default {1, 1, 1, 1}
 omega: Optional. Relaxation factor; default 1; 0 resets to 0
-returns: The relaxed value of SUM(face_lengths·neighbours)/SUM(face_lengths): water balance of the cell for any node (Chapter 4-5, Eq. 12).
+returns: The relaxed value of SUM(face_lengths·neighbours)/SUM(face_lengths): water balance of the cell for any node (Chapter 4-5, Table of stencil coefficients).
+notes: Example: =seepage_stencil_weighted(C5, C4, C5, C6, D5, {1, 0, 0.5, 1}) is a node on a 45-degree boundary meeting a vertical boundary.
 
 [seepage_permeability_ratio]
 pressure_head: Pressure head p (m), one value or a range

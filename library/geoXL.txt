@@ -2285,9 +2285,10 @@ seepage_stencil_interface = LAMBDA(node, across_1, across_2, along_a, along_b, p
     seepage_stencil_relax(node, (permeability_1 * across_1 + permeability_2 * across_2) / (2 * (permeability_1 + permeability_2)) + (along_a + along_b) / 4, IF(ISOMITTED(omega), 1, omega))
 );
 
-/** General finite difference stencil from the water balance of the cell: sum(face_length·neighbour)/sum(face_length), for any node (inclined boundaries, corners, interfaces with lengths times permeabilities); neighbours and face_lengths are two arrays of the same size, e.g. HSTACK(C10, D11, B11) and {1, 0.5, 0.5}; optional omega as in seepage_stencil_interior. */
-seepage_stencil_weighted = LAMBDA(node, neighbours, face_lengths, [omega],
-    seepage_stencil_relax(node, SUM(face_lengths * neighbours) / SUM(face_lengths), IF(ISOMITTED(omega), 1, omega))
+/** General finite difference stencil from the water balance of the cell (Chapter 4-5, Eq. coef): SUM(face_lengths·{north, west, south, east})/SUM(face_lengths). face_lengths {north, west, south, east} are the face lengths as fractions of the spacing (0 across an impervious boundary, 0.5 for a half face), times the permeability of the soil each face crosses; default {1, 1, 1, 1}. A neighbour with a zero face length may be given any value (e.g. the node itself). Optional omega as in seepage_stencil_interior. */
+seepage_stencil_weighted = LAMBDA(node, north, west, south, east, [face_lengths], [omega],
+    LET(lengths, IF(ISOMITTED(face_lengths), {1, 1, 1, 1}, face_lengths),
+        seepage_stencil_relax(node, SUM(lengths * HSTACK(north, west, south, east)) / SUM(lengths), IF(ISOMITTED(omega), 1, omega)))
 );
 
 /** Permeability ratio k/k_s of the Darcy-Buckingham law used for unconfined seepage: residual_ratio + (1 - residual_ratio)·(1 + tanh(pressure_head/transition_width))/2; about 1 when the pressure head exceeds twice the transition width, about residual_ratio (default 0.001) below minus twice that width. */
