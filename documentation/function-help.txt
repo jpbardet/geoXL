@@ -1114,9 +1114,9 @@ notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definition
 [seepage_psi]
 block: Worksheet range of the head grid: x coordinates in the first row, y coordinates in the first column, total heads inside; blank cells = no soil
 returns: Table of the stream function psi = q/k with the same layout: x in the first row (the two edges and the mid-points between grid columns), y in the first column, psi inside.
-notes: Direct calculation, no iteration: between two neighbouring columns the flux through each node face is h(left) - h(right); these fluxes are summed upward from the bottom row, where psi = 0, with half weights at the end nodes. Thin walls (a column pair less than a quarter of the usual spacing apart) and the two grid edges add half a cell of vertical flux.
+notes: Direct calculation, no iteration: between two neighbouring columns the flux through each node face is (h(left) - h(right)) times the median spacing divided by the spacing of the two columns (h(left) - h(right) on a square grid); these fluxes are summed upward from the bottom row, where psi = 0, with half weights at the end nodes. Thin walls (a column pair less than a quarter of the usual spacing apart) and the two grid edges add half a cell of vertical flux.
 notes: Exact for heads that satisfy the stencils: psi is then constant along every no-flow boundary (for example both faces of a sheet pile) and equals Q/k on the impervious structure. Unconverged heads give wandering flow lines where gradients are small, so let the grid converge first.
-notes: Assumes a square grid (as the stencils do), an impervious bottom row and flow from left to right; with flow from right to left psi is negative. Added in geoXL 0.25.
+notes: Assumes rows spaced like the median column spacing, an impervious bottom row and flow from left to right; with flow from right to left psi is negative. Added in geoXL 0.25.
 
 [seepage_flownet]
 block: Worksheet range of the head grid: x coordinates in the first row, y coordinates in the first column, total heads inside; blank cells = no soil
