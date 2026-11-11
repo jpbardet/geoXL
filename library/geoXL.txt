@@ -2184,7 +2184,7 @@ LET(smArg,IF(ISOMITTED(smooth),1,smooth),nArg,IF(ISOMITTED(nmax),0,nmax),big,1E+
 seepage_flowlines = LAMBDA(xs, ys, H, levels, [k], [edge],
 LET(kv,IF(ISOMITTED(k),1,k),ev,IF(ISOMITTED(edge),0,edge),PS,seepage_psigrid(xs,ys,H,kv,0,ev),seepage_eqlines(xs,ys,PS,levels)));
 
-/** Stream function q/k from the heads without iteration: face fluxes summed up from the impervious bottom (psi = 0); thin walls and grid edges use half-cell fluxes. Unequal x spacing is allowed: each horizontal flux is divided by its spacing (the vertical spacing is taken equal to the median x spacing). block: x in row 1, y in column 1, heads inside (blank = no soil). */
+/** Stream function q/k from the heads without iteration: face fluxes summed up from the impervious bottom (psi = 0); thin walls and grid edges use half-cell fluxes. block: x in row 1, y in column 1, heads inside (blank = no soil). */
 seepage_psi = LAMBDA(block,
     LET(
         nr, ROWS(block), nc, COLUMNS(block), m, nr - 1, n, nc - 1,
@@ -2193,13 +2193,13 @@ seepage_psi = LAMBDA(block,
         H, INDEX(block, 2, 2):INDEX(block, nr, nc),
         ok, --ISNUMBER(H), Hn, IF(ok, H, 0),
         hl, DROP(Hn, , -1), hr, DROP(Hn, , 1), V, DROP(ok, , -1) * DROP(ok, , 1),
-        dx, ABS(DROP(xs, 1) - DROP(xs, -1)),
-        D, (hl - hr) * V * TOROW(MEDIAN(dx) / dx),
+        D, (hl - hr) * V,
         psa, MMULT(--(SEQUENCE(1, m) >= SEQUENCE(m)), D) - D / 2 - CHOOSEROWS(D, m) / 2,
         zr, SEQUENCE(1, n) * 0,
         hu, VSTACK(TAKE(Hn, 1), DROP(Hn, -1)), hd, VSTACK(DROP(Hn, 1), TAKE(Hn, -1)),
         oku, VSTACK(zr, DROP(ok, -1)), okd, VSTACK(DROP(ok, 1), zr),
         G, (IF(oku, hu, Hn) - IF(okd, hd, Hn)) / IF(oku * okd, 4, 2),
+        dx, ABS(DROP(xs, 1) - DROP(xs, -1)),
         thin, TOROW(dx < 0.25 * MEDIAN(dx)),
         PL, HSTACK(TAKE(psa, , 1), DROP(psa, , -1)), PR, HSTACK(DROP(psa, , 1), TAKE(psa, , -1)),
         psb, IF(thin, IF(DROP(ok, , -1), PL + DROP(G, , -1), IF(DROP(ok, , 1), PR - DROP(G, , 1), "")), IF(V, psa, "")),
