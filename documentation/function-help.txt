@@ -1521,7 +1521,7 @@ gamma_d: Dry unit weights of the points (kN/m3)
 Gs: Specific gravity of the solids
 gamma_w: Optional. Unit weight of water (kN/m3); default 9.81
 returns: 7 rows: optimum water content w_opt, maximum dry unit weight gamma_d,max, degree of saturation S of the wet branch, degree of saturation S_opt at the optimum, water content w_t of the tangent point, and the two fitted coefficients c2 and c3 of the dry branch.
-notes: S is the degree of saturation of the wettest point, S = Gs·w/(Gs·gamma_w/gamma_d - 1); a message is returned if S > 1. The wet branch is the saturation line of S; the dry branch is the cubic gamma_d = c0 + c1·d + c2·d² + c3·d³ with d = w - w_t, tangent to that line at w_t (c0 and c1 are the value and slope of the line there). For each trial w_t, c2 and c3 are the least-squares fit to the points drier than w_t (at least three); w_t (scanned beyond the highest point, twice) minimizes the squared errors of all points, among the curves whose optimum lies within the measured water contents. The optimum is the maximum of the cubic, d = c1/(sqrt(c2² - 3·c1·c3) - c2). Blank or text rows are ignored.
+notes: S is the degree of saturation of the wettest point, S = Gs·w/(Gs·gamma_w/gamma_d - 1); a message is returned if S > 1. The wet branch is the saturation line of S; the dry branch is the cubic gamma_d = c0 + c1·d + c2·d² + c3·d³ with d = w - w_t, tangent to that line at w_t (c0 and c1 are the value and slope of the line there). Each point is weighted by its dry unit weight, linearly from 0.25 for the lowest point to 1 for the highest, so that the points near the optimum count most. For each trial w_t, c2 and c3 are the weighted least-squares fit to the points drier than w_t (at least three); w_t (scanned beyond the highest point, twice) minimizes the weighted squared errors of all points, among the curves whose optimum lies within the measured water contents and which rise steadily from the driest point to the optimum. The optimum is the maximum of the cubic, d = c1/(sqrt(c2² - 3·c1·c3) - c2). Blank or text rows are ignored.
 
 [compaction_curve]
 w: Water contents of the compaction points (fraction), as in compaction_fit
@@ -1530,7 +1530,7 @@ Gs: Specific gravity of the solids
 gamma_w: Optional. Unit weight of water (kN/m3); default 9.81
 step: Optional. Increment of water content (fraction); default 0.005 (0.5%)
 returns: A block for the chart: one row of headings, then one row per water content with the water content, the fitted compaction curve (cubic below the tangent point, saturation line from it), the 100% saturation line and the saturation line of the fitted S.
-notes: The water contents go every step from the driest point minus a margin to the wettest point or the tangent point (whichever is wetter) plus a margin (15% of the range of the points), and include the tangent point itself, where the two branches of the curve meet. The number of rows depends on the data; a chart can refer to a longer range, as the empty cells below are not plotted.
+notes: The water contents go every step from the driest point to the wettest point (the curve has no meaning outside the measured range), and include the wettest point and the tangent point when it lies within the range, where the two branches of the curve meet. The number of rows depends on the data; a chart can refer to a longer range, as the empty cells below are not plotted.
 
 [sand_cone_volume]
 jar_before: Mass of the jar and sand before the test (g)
