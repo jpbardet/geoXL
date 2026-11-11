@@ -1499,6 +1499,80 @@ g: Optional. Gravity acceleration (m/s2); default 9.81
 returns: {gamma; gamma_d}: bulk unit weight g·mass/V and dry unit weight gamma/(1 + moisture), in kN/m3.
 notes: Used for the sand cone and the rubber balloon tests (for the balloon, V is the difference of the volume readings).
 
+[specimen_dry_state]
+mass: Mass of the dry specimen (g)
+H: Height of the specimen (cm)
+D: Diameter of the specimen (cm)
+Gs: Specific gravity of the solids
+g: Optional. Gravity acceleration (m/s2); default 9.81
+returns: 2 rows: dry unit weight gamma_d = g·mass/(pi·D²·H/4) (kN/m3) and void ratio e = Gs·g/gamma_d - 1.
+
+[viscosity_ratio]
+temperature: Water temperature (C), one value or a range
+returns: eta(T)/eta(20), the factor that converts a permeability measured at T to its value at 20 C (water_viscosity).
+
+[constant_head_permeability]
+dh: Head loss between the piezometer taps (cm), one trial per row, e.g. inlet - outlet readings
+L: Distance between the piezometer taps (cm)
+full: Mass of the container with the water collected (g)
+tare: Mass of the empty container (g)
+duration: Duration of the collection (s)
+D: Diameter of the specimen (cm)
+returns: 3 columns per trial: hydraulic gradient i = dh/L, discharge velocity v = (full - tare)/duration/(pi·D²/4) (cm/s), and permeability k = v/i (cm/s) at the test temperature.
+notes: The mass of water is converted to a volume with 1 g/cm3. Multiply by viscosity_ratio(T) for the permeability at 20 C. Empty trials at the end are ignored.
+
+[darcy_permeability]
+gradient: Hydraulic gradients i of the trials
+velocity: Discharge velocities v of the trials (cm/s)
+returns: The permeability k (cm/s) of Darcy's law v = k·i fitted by least squares through the origin, k = sum(i·v)/sum(i²).
+notes: Blank or text rows are ignored.
+
+[falling_head_permeability]
+elapsed: Time since the start of the test (s), one reading per row
+h: Height of water in the standpipe above the outlet (cm)
+h_0: Initial height of water in the standpipe (cm)
+pipe: Inside diameter of the standpipe (cm)
+D: Diameter of the specimen (cm)
+L: Length of the specimen (cm)
+h_c: Optional. Capillary rise in the standpipe (cm); default 0
+returns: The permeability k = (pipe/D)²·L/elapsed·ln((h_0 - h_c)/(h - h_c)) (cm/s) for each reading, at the test temperature.
+notes: Multiply by viscosity_ratio(T) for the permeability at 20 C. Empty readings at the end are ignored.
+
+[falling_head_fit]
+elapsed: Time since the start of the test (s), one reading per row
+h: Height of water in the standpipe (cm)
+h_0: Initial height of water in the standpipe (cm)
+pipe: Inside diameter of the standpipe (cm)
+D: Diameter of the specimen (cm)
+L: Length of the specimen (cm)
+h_c: Optional. Capillary rise in the standpipe (cm); default 0
+returns: The permeability (cm/s) that best fits all the readings: the least-squares slope through the origin of ln((h_0 - h_c)/(h - h_c)) versus time, multiplied by (pipe/D)²·L.
+notes: The line passes through the origin because h = h_0 at time 0. Blank rows are ignored.
+
+[falling_head_height]
+elapsed: Times (s)
+k: Permeability (cm/s)
+h_0: Initial height of water in the standpipe (cm)
+pipe: Inside diameter of the standpipe (cm)
+D: Diameter of the specimen (cm)
+L: Length of the specimen (cm)
+h_c: Optional. Capillary rise in the standpipe (cm); default 0
+returns: The height of water in the standpipe h = h_c + (h_0 - h_c)·exp(-k·(D/pipe)²·elapsed/L) (cm) for each time.
+
+[hazen_permeability]
+d_10: Effective grain size D10 (mm)
+coef: Optional. Hazen's coefficient C1 (1/(cm·s)); default 100 for fine uniform sand
+returns: Hazen's permeability k = C1·D10² (cm/s), with D10 converted to cm.
+
+[kozeny_carman_permeability]
+d: Sieve openings (mm), from coarse to fine
+finer: Percent finer than each opening (%)
+angularity: Angularity factor f of each interval between successive sieves (1.1 rounded, 1.25 subrounded, 1.4 angular); one fewer value than d
+void_ratio: Void ratio e, one value or a range
+temperature: Optional. Water temperature (C); default 20
+returns: The Kozeny-Carman permeability k = gamma_w/(5·eta·sum(p·f·S²))·e³/(1 + e) (cm/s) for each void ratio, where p is the fraction between two successive sieves and S = 6/sqrt(d_max·d_min) its specific surface (1/mm).
+notes: The fraction finer than the smallest opening is not counted, as it has no lower bound d_min.
+
 [sand_unit_weight]
 mold_sand: Mass of the mold filled with sand (g), one test per row
 mold: Mass of the empty mold (g)

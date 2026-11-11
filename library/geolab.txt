@@ -23,6 +23,17 @@ saturation_line
 compaction_fit
 compaction_curve
 
+# Permeability
+specimen_dry_state
+viscosity_ratio
+constant_head_permeability
+darcy_permeability
+falling_head_permeability
+falling_head_fit
+falling_head_height
+hazen_permeability
+kozeny_carman_permeability
+
 # Grain size: sieve, hydrometer, pipette and buoyancy
 sieve_passing
 hydrometer_analysis
