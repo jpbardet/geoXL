@@ -1332,11 +1332,10 @@ notes: Show #N/A as an empty cell in the chart (Select Data > Hidden and Empty C
 
 [seepage_confined_block]
 block: 3x3 block of cells centred on the node, e.g. B11:D13 for the node in C12 (relative reference, so that the formula can be copied)
-coefficients: 3x3 box of the table of stencils, e.g. $I$3:$K$5: the coefficient of each neighbour in the position of the neighbour (they add up to 1; empty on an impervious side and on the diagonals; centre ignored)
+box: 3x3 box of the table of stencils, e.g. $I$3:$K$5: the coefficient of each neighbour in the position of the neighbour (they add up to 1; blank on an impervious side and on the diagonals; "node" in the centre), for instance =seepage_box("Interior node")
 omega: Optional. Relaxation factor or control value; default 1; 0 resets to 0
-returns: The relaxed value of SUMPRODUCT(block, coefficients), the head given by the water balance of the cell. #N/A if the coefficients do not add up to 1, or if a non-zero coefficient points to an empty cell or text.
-notes: Example: =seepage_confined_block(B11:D13, $I$3:$K$5, $B$3) copied over the grid; interior box: 1/4 in the four middle cells of the sides.
-
+returns: The relaxed value of SUMPRODUCT(block, box), the head given by the water balance of the cell. Blanks and text count as zero.
+notes: Example: =seepage_confined_block(B11:D13, $I$3:$K$5, $B$3) copied over the grid. No check is made at each iteration: a box that does not add up to 1, or a non-zero coefficient pointing to a blank cell (which counts as a head of 0), gives a wrong answer without error. Check the boxes where they are made (seepage_box, or a conditional format on their sum), the colours of the nodes, and the quantity of seepage on two sections.
 [seepage_unconfined_block]
 block: 3x3 block of pressure heads centred on the node (relative reference)
 weights: 3x3 box of face lengths of the table of stencils (absolute reference)

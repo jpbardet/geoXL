@@ -2345,14 +2345,10 @@ seepage_box = LAMBDA(kind, [permeability_1], [permeability_2],
                HSTACK("", shown(INDEX(coef, 3)), "")))
 );
 
-/** Finite difference stencil from two 3x3 blocks (Chapter 4-6): block holds the heads of the node (centre) and of its eight neighbours; coefficients is a 3x3 box of the table of stencils, laid out as the stencil is drawn, with the coefficient of each neighbour (north = top middle, west = middle left, south = bottom middle, east = middle right; empty or 0 elsewhere; centre ignored). The coefficients must add up to 1 (conservation of water). Returns the relaxed value of SUMPRODUCT(block, coefficients); #N/A when the coefficients do not add up to 1, or when a non-zero coefficient points to an empty cell or text; omega = 0 resets to 0. The block is a relative reference that moves with the node when the formula is copied; the box is an absolute reference. */
-seepage_confined_block = LAMBDA(block, coefficients, [omega],
-    LET(w, IF(ISOMITTED(omega), 1, omega),
-        mask, {1, 1, 1; 1, 0, 1; 1, 1, 1},
-        coef, IF(ISNUMBER(coefficients), coefficients, 0) * mask,
-        IF(w = 0, 0,
-            IF(OR(ABS(SUM(coef) - 1) > 1E-9, SUM((coef <> 0) * NOT(ISNUMBER(block))) > 0), NA(),
-                seepage_relax(INDEX(block, 2, 2), SUMPRODUCT(coef, IF(ISNUMBER(block), block, 0)), w))))
+/** Finite difference stencil from two 3x3 blocks (Chapter 4-6): block holds the heads of the node (centre) and of its eight neighbours; box is a 3x3 box of the table of stencils, laid out as the stencil is drawn, with the coefficient of each neighbour (north = top middle, west = middle left, south = bottom middle, east = middle right; blank elsewhere, "node" in the centre), adding up to 1 (see seepage_box). Returns the relaxed value of SUMPRODUCT(block, box): blanks and text count as zero; omega = 0 resets to 0. Kept lean because it runs in every node at every iteration: the box is checked where it is made (seepage_box, or a conditional format on its sum), not here. The block is a relative reference that moves with the node when the formula is copied; the box is an absolute reference. */
+seepage_confined_block = LAMBDA(block, box, [omega],
+    LET(w, IF(ISOMITTED(omega), 1, omega), node, INDEX(block, 2, 2),
+        IF(w = 0, 0, node + w * (SUMPRODUCT(block, box) - node)))
 );
 
 /** Unconfined stencil from two 3x3 blocks, as seepage_confined_block, for pressure heads: block holds the pressure heads of the node and its neighbours, weights the 3x3 box of face lengths, and parameters a range of four cells: grid spacing, transition width, residual ratio, control value (0 resets, otherwise omega). Each weight is multiplied by seepage_permeability_ratio of the mean pressure head of the node and the neighbour; the neighbours of the top row are one spacing higher and those of the bottom row one spacing lower (gravity). #N/A when a non-zero weight points to an empty cell or text. On a seepage face use MIN(seepage_unconfined_block(...), 0). */
