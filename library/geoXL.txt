@@ -2314,7 +2314,7 @@ seepage_box_kinds = LAMBDA(
         "Vertical interface, k1 west, k2 east"}
 );
 
-/** Standard 3x3 box of coefficients for seepage_confined_block and seepage_unconfined_block (Chapter 4-6, Table of stencils): kind is one of the names of seepage_box_kinds (interior node, impervious boundaries, outer and re-entrant corners, 45-degree boundaries, horizontal and vertical interfaces); optional permeability_1, permeability_2 = permeabilities k1, k2 of the two soils of an interface (default 1). Returns the 3x3 box (spills): the coefficient of each neighbour in its place (north top, west left, south bottom, east right), "node" in the centre, blank corners and blank for a zero coefficient; the coefficients add up to 1. #N/A for an unknown kind. Other boxes (for instance 45-degree boundaries meeting a vertical face) are entered by hand. */
+/** Standard 3x3 box of coefficients for seepage_confined_block and seepage_unconfined_block (Chapter 4-6, Table of stencils): kind is one of the names of seepage_box_kinds (interior node, impervious boundaries, outer and re-entrant corners, 45-degree boundaries, horizontal and vertical interfaces); optional permeability_1, permeability_2 = permeabilities k1, k2 of the two soils of an interface (default 1). Returns the 3x3 box of numbers (spills): the coefficient of each neighbour in its place (north top, west left, south bottom, east right), 0 in the centre, in the corners and across an impervious side; the coefficients add up to 1. #N/A for an unknown kind. Other boxes (for instance 45-degree boundaries meeting a vertical face) are entered by hand. */
 seepage_box = LAMBDA(kind, [permeability_1], [permeability_2],
     LET(soil_1, IF(ISOMITTED(permeability_1), 1, permeability_1), soil_2, IF(ISOMITTED(permeability_2), 1, permeability_2),
         lengths, SWITCH(kind,
@@ -2339,10 +2339,9 @@ seepage_box = LAMBDA(kind, [permeability_1], [permeability_2],
             "Vertical interface, k1 west, k2 east", HSTACK(soil_1 + soil_2, 2 * soil_1, soil_1 + soil_2, 2 * soil_2),
             NA()),
         coef, lengths / SUM(lengths),
-        shown, LAMBDA(x, IF(x = 0, "", x)),
-        VSTACK(HSTACK("", shown(INDEX(coef, 1)), ""),
-               HSTACK(shown(INDEX(coef, 2)), "node", shown(INDEX(coef, 4))),
-               HSTACK("", shown(INDEX(coef, 3)), "")))
+        VSTACK(HSTACK(0, INDEX(coef, 1), 0),
+               HSTACK(INDEX(coef, 2), 0, INDEX(coef, 4)),
+               HSTACK(0, INDEX(coef, 3), 0)))
 );
 
 /** Finite difference stencil from two 3x3 blocks (Chapter 4-6): block holds the heads of the node (centre) and of its eight neighbours; box is a 3x3 box of the table of stencils, laid out as the stencil is drawn, with the coefficient of each neighbour (north = top middle, west = middle left, south = bottom middle, east = middle right; blank elsewhere, "node" in the centre), adding up to 1 (see seepage_box). Returns the relaxed value of SUMPRODUCT(block, box): blanks and text count as zero; omega = 0 resets to 0. Kept lean because it runs in every node at every iteration: the box is checked where it is made (seepage_box, or a conditional format on its sum), not here. The block is a relative reference that moves with the node when the formula is copied; the box is an absolute reference. */
