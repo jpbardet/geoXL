@@ -77,6 +77,8 @@ seepage_stencil_reentrant
 seepage_stencil_interface
 seepage_stencil_weighted
 seepage_confined_block
+seepage_box
+seepage_box_kinds
 seepage_permeability_ratio
 seepage_stencil_unconfined
 seepage_unconfined_block
