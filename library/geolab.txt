@@ -71,8 +71,6 @@ tand
 # Seepage: finite-difference solutions (Chapters 4-4 and 4-5)
 seepage_relax
 seepage_confined_block
-seepage_box
-seepage_box_kinds
 seepage_permeability_ratio
 seepage_unconfined_block
 seepage_unconfined_flow

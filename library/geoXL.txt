@@ -2291,64 +2291,21 @@ seepage_stencil_weighted = LAMBDA(node, north, west, south, east, [face_lengths]
         seepage_relax(node, SUM(lengths * HSTACK(north, west, south, east)) / SUM(lengths), IF(ISOMITTED(omega), 1, omega)))
 );
 
-/** Names of the standard boxes of seepage_box (Chapter 4-6, Table of stencils), one per row: a list for a data validation (Data > Data Validation > List, source =the spill range of =seepage_box_kinds()). */
-seepage_box_kinds = LAMBDA(
-    {"Interior node";
-        "Impervious boundary, north side";
-        "Impervious boundary, west side";
-        "Impervious boundary, south side";
-        "Impervious boundary, east side";
-        "Outer corner, north and west sides";
-        "Outer corner, north and east sides";
-        "Outer corner, south and west sides";
-        "Outer corner, south and east sides";
-        "Re-entrant corner, solid to the north-west";
-        "Re-entrant corner, solid to the north-east";
-        "Re-entrant corner, solid to the south-west";
-        "Re-entrant corner, solid to the south-east";
-        "45-degree boundary, soil to the north-east";
-        "45-degree boundary, soil to the north-west";
-        "45-degree boundary, soil to the south-east";
-        "45-degree boundary, soil to the south-west";
-        "Horizontal interface, k1 above, k2 below";
-        "Vertical interface, k1 west, k2 east"}
-);
-
-/** Standard 3x3 box of coefficients for seepage_confined_block and seepage_unconfined_block (Chapter 4-6, Table of stencils): kind is the number of the box (1 to 19, the row of seepage_box_kinds, as drawn in the figure of the standard boxes) or its name in seepage_box_kinds (interior node, impervious boundaries, outer and re-entrant corners, 45-degree boundaries, horizontal and vertical interfaces); optional permeability_1, permeability_2 = permeabilities k1, k2 of the two soils of an interface (default 1). Returns the 3x3 box of numbers (spills): the coefficient of each neighbour in its place (north top, west left, south bottom, east right), 0 in the centre, in the corners and across an impervious side; the coefficients add up to 1. #N/A for an unknown kind. Other boxes (for instance 45-degree boundaries meeting a vertical face) are entered by hand. */
-seepage_box = LAMBDA(kind, [permeability_1], [permeability_2],
-    LET(soil_1, IF(ISOMITTED(permeability_1), 1, permeability_1), soil_2, IF(ISOMITTED(permeability_2), 1, permeability_2),
-        name, IF(ISNUMBER(kind), INDEX(seepage_box_kinds(), kind), kind),
-        lengths, SWITCH(name,
-            "Interior node", {1, 1, 1, 1},
-            "Impervious boundary, north side", {0, 1, 2, 1},
-            "Impervious boundary, west side", {1, 0, 1, 2},
-            "Impervious boundary, south side", {2, 1, 0, 1},
-            "Impervious boundary, east side", {1, 2, 1, 0},
-            "Outer corner, north and west sides", {0, 0, 1, 1},
-            "Outer corner, north and east sides", {0, 1, 1, 0},
-            "Outer corner, south and west sides", {1, 0, 0, 1},
-            "Outer corner, south and east sides", {1, 1, 0, 0},
-            "Re-entrant corner, solid to the north-west", {1, 1, 2, 2},
-            "Re-entrant corner, solid to the north-east", {1, 2, 2, 1},
-            "Re-entrant corner, solid to the south-west", {2, 1, 1, 2},
-            "Re-entrant corner, solid to the south-east", {2, 2, 1, 1},
-            "45-degree boundary, soil to the north-east", {1, 0, 0, 1},
-            "45-degree boundary, soil to the north-west", {1, 1, 0, 0},
-            "45-degree boundary, soil to the south-east", {0, 0, 1, 1},
-            "45-degree boundary, soil to the south-west", {0, 1, 1, 0},
-            "Horizontal interface, k1 above, k2 below", HSTACK(2 * soil_1, soil_1 + soil_2, 2 * soil_2, soil_1 + soil_2),
-            "Vertical interface, k1 west, k2 east", HSTACK(soil_1 + soil_2, 2 * soil_1, soil_1 + soil_2, 2 * soil_2),
-            NA()),
-        coef, lengths / SUM(lengths),
-        VSTACK(HSTACK(0, INDEX(coef, 1), 0),
-               HSTACK(INDEX(coef, 2), 0, INDEX(coef, 4)),
-               HSTACK(0, INDEX(coef, 3), 0)))
-);
-
-/** Finite difference stencil from two 3x3 blocks (Chapter 4-6): block holds the heads of the node (centre) and of its eight neighbours; box is a 3x3 box of the table of stencils, laid out as the stencil is drawn, with the coefficient of each neighbour (north = top middle, west = middle left, south = bottom middle, east = middle right; blank elsewhere, "node" in the centre), adding up to 1 (see seepage_box). Returns the relaxed value of SUMPRODUCT(block, box): blanks and text count as zero; omega = 0 resets to 0. Kept lean because it runs in every node at every iteration: the box is checked where it is made (seepage_box, or a conditional format on its sum), not here. The block is a relative reference that moves with the node when the formula is copied; the box is an absolute reference. */
-seepage_confined_block = LAMBDA(block, box, [omega],
+/** Finite difference stencil of confined seepage for a node of kind 1 to 19 (Chapter 4-6, figure of the 19 kinds of nodes): block is the 3x3 range centred on the node (heads of the node and of its neighbours north, west, south, east; corners unused), kind the number of the stencil, read from the map of the kinds of nodes: 1 interior; 2 to 5 impervious wall above, on the left, below, on the right; 6 to 9 outer corner, walls above and left, above and right, below and left, below and right; 10 to 13 re-entrant corner, solid upper left, upper right, lower left, lower right; 14 to 17 45-degree boundary, solid lower left, lower right, upper left, upper right; 18 horizontal interface (permeability_1 above, permeability_2 below); 19 vertical interface (permeability_1 left, permeability_2 right). The face lengths of each kind (Chapter 4-5, Table of coefficients) are built in; the head is their weighted average of the four neighbours, relaxed by omega (default 1; 0 resets to 0). Text and blanks count as zero. Copy one formula over the grid: =seepage_confined_block(B11:D13, C62, $B$3), with the map shifted by a fixed number of rows. */
+seepage_confined_block = LAMBDA(block, kind, [omega], [permeability_1], [permeability_2],
     LET(w, IF(ISOMITTED(omega), 1, omega), node, INDEX(block, 2, 2),
-        IF(w = 0, 0, node + w * (SUMPRODUCT(block, box) - node)))
+        k_1, IF(ISOMITTED(permeability_1), 1, permeability_1), k_2, IF(ISOMITTED(permeability_2), 1, permeability_2),
+        arms, INDEX(block, {1, 2, 3, 2}, {2, 1, 2, 3}),
+        heads, IF(ISNUMBER(arms), arms, 0),
+        lengths, CHOOSE(kind,
+            {1, 1, 1, 1},
+            {0, 1, 2, 1}, {1, 0, 1, 2}, {2, 1, 0, 1}, {1, 2, 1, 0},
+            {0, 0, 1, 1}, {0, 1, 1, 0}, {1, 0, 0, 1}, {1, 1, 0, 0},
+            {1, 1, 2, 2}, {1, 2, 2, 1}, {2, 1, 1, 2}, {2, 2, 1, 1},
+            {1, 0, 0, 1}, {1, 1, 0, 0}, {0, 0, 1, 1}, {0, 1, 1, 0},
+            HSTACK(2 * k_1, k_1 + k_2, 2 * k_2, k_1 + k_2),
+            HSTACK(k_1 + k_2, 2 * k_1, k_1 + k_2, 2 * k_2)),
+        IF(w = 0, 0, node + w * (SUM(lengths * heads) / SUM(lengths) - node)))
 );
 
 /** Unconfined stencil from two 3x3 blocks, as seepage_confined_block, for pressure heads: block holds the pressure heads of the node and its neighbours, weights the 3x3 box of face lengths, and parameters a range of four cells: grid spacing, transition width, residual ratio, control value (0 resets, otherwise omega). Each weight is multiplied by seepage_permeability_ratio of the mean pressure head of the node and the neighbour; the neighbours of the top row are one spacing higher and those of the bottom row one spacing lower (gravity). #N/A when a non-zero weight points to an empty cell or text. On a seepage face use MIN(seepage_unconfined_block(...), 0). */
