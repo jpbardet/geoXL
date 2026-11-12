@@ -70,6 +70,7 @@ tand
 
 # Seepage: finite-difference solutions (Chapters 4-4 and 4-5)
 seepage_relax
+seepage_face_weights
 seepage_confined_block
 seepage_permeability_ratio
 seepage_unconfined_block

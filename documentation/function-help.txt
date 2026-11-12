@@ -1330,20 +1330,29 @@ permeability: Optional. As in seepage_unconfined_psi
 returns: Four columns for one chart, #N/A separated: x, y of the equipotentials, then x, y of the flow lines.
 notes: Show #N/A as an empty cell in the chart (Select Data > Hidden and Empty Cells). Calculate the flow net after the pressure heads have converged.
 
+[seepage_face_weights]
+kind: Kind of node, 1 to 24 (negative on a seepage face): 1 interior; 2-5 wall above, left, below, right; 6-9 outer corner (walls above and left, above and right, below and left, below and right); 10-13 re-entrant corner (solid upper left, upper right, lower left, lower right); 14-17 45-degree boundary (solid lower left, lower right, upper left, upper right); 18 horizontal interface; 19 vertical interface; 21-22 vertical interface with a wall above or below; 23-24 horizontal interface with a wall on the left or on the right
+permeability_1: Optional, interfaces only: permeability k1 of the soil above (18, 23, 24) or on the left (19, 21, 22); default 1
+permeability_2: Optional, interfaces only: permeability k2 of the soil below or on the right; default 1
+returns: Four face weights (face lengths times 2, times the permeabilities at an interface), in the order of the neighbours above, left, below, right.
+notes: Used by seepage_confined_block and seepage_unconfined_block.
+
 [seepage_confined_block]
-block: 3x3 block of cells centred on the node, e.g. B11:D13 for the node in C12 (relative reference, so that the formula can be copied)
-kind: Kind of node, 1 to 19, read from the map of the kinds of nodes (relative reference to the cell of the map at the same place as the node, e.g. C62 when the map is 50 rows below the grid): 1 interior; 2-5 wall above, left, below, right; 6-9 outer corner (walls above and left, above and right, below and left, below and right); 10-13 re-entrant corner (solid upper left, upper right, lower left, lower right); 14-17 45-degree boundary (solid lower left, lower right, upper left, upper right); 18 horizontal interface; 19 vertical interface
+block: 3x3 block of cells centred on the node, e.g. B23:D25 for the node in C24 (relative reference, so that the formula can be copied)
+kind: Kind of node, 1 to 24, read from the map of the kinds of nodes (relative reference to the cell of the map at the same place as the node, e.g. C12 when the map is 12 rows above the grid); see seepage_face_weights
 omega: Optional. Relaxation factor or control value; default 1; 0 resets to 0
-permeability_1: Optional, kinds 18 and 19 only: permeability k1 of the soil above (18) or on the left (19); default 1
-permeability_2: Optional, kinds 18 and 19 only: permeability k2 of the soil below (18) or on the right (19); default 1
-returns: The relaxed head given by the water balance of the cell: the weighted average of the heads of the four neighbours, with the face lengths of the kind (built in; Chapter 4-5, Table of coefficients).
-notes: Example: =seepage_confined_block(B11:D13, C62, $B$3) copied over the grid. A blank kind (no soil) returns an empty text, so the formula can be pasted over the whole rectangle of the grid; the prescribed heads (kind 0) are then overwritten by their own formulas. A node that is none of the 19 kinds (for instance the node below the tip of a thin wall) keeps its own formula, written with seepage_relax. Text and blanks count as zero.
+permeability_1: Optional, interfaces only: permeability k1 (see seepage_face_weights); default 1
+permeability_2: Optional, interfaces only: permeability k2; default 1
+returns: The relaxed head given by the water balance of the cell: the weighted average of the heads of the four neighbours, with the face weights of the kind.
+notes: Example: =seepage_confined_block(B23:D25, C12, $B$3) copied over the grid. A blank kind (no soil) returns an empty text, so the formula can be pasted over the whole rectangle of the grid; the prescribed heads (kind 0) are then overwritten by their own formulas. A node that is none of the kinds (for instance the node below the tip of a thin wall) keeps its own formula, written with seepage_relax. Text and blanks count as zero.
 [seepage_unconfined_block]
 block: 3x3 block of pressure heads centred on the node (relative reference)
-weights: 3x3 box of face lengths of the table of stencils (absolute reference)
+kind: Kind of node, 1 to 24, read from the map (relative reference); negative on a seepage face, where the pressure head cannot exceed 0
 parameters: Four cells: grid spacing (m), transition width (m), residual ratio, control value (0 resets, otherwise omega), e.g. $B$4:$B$7
-returns: The relaxed pressure head given by the water balance of the cell, with the weights multiplied by the permeability ratio of the mean pressure heads and gravity on the top and bottom rows. #N/A if a non-zero weight points to an empty cell or text.
-notes: Example: =seepage_unconfined_block(B20:D22, $I$4:$K$6, $B$4:$B$7). On a seepage face: =MIN(seepage_unconfined_block(...), 0).
+permeability_1: Optional, interfaces only: permeability k1 (see seepage_face_weights); default 1
+permeability_2: Optional, interfaces only: permeability k2; default 1
+returns: The relaxed pressure head given by the water balance of the cell, with the face weights multiplied by the permeability ratio of the mean pressure heads and gravity for the neighbours above and below; at most 0 when the kind is negative.
+notes: Example: =seepage_unconfined_block(B40:D42, C20, $B$4:$B$7) copied over the grid. A blank kind (no soil) returns an empty text.
 
 [seepage_stencil]
 old: This cell (the node itself), for over-relaxation. In the old 4-argument form, the first neighbour
