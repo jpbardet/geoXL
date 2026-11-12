@@ -1337,7 +1337,7 @@ omega: Optional. Relaxation factor or control value; default 1; 0 resets to 0
 permeability_1: Optional, kinds 18 and 19 only: permeability k1 of the soil above (18) or on the left (19); default 1
 permeability_2: Optional, kinds 18 and 19 only: permeability k2 of the soil below (18) or on the right (19); default 1
 returns: The relaxed head given by the water balance of the cell: the weighted average of the heads of the four neighbours, with the face lengths of the kind (built in; Chapter 4-5, Table of coefficients).
-notes: Example: =seepage_confined_block(B11:D13, C62, $B$3) copied over the grid. A node that is none of the 19 kinds (for instance the node below the tip of a thin wall) keeps its own formula, written with seepage_relax. Text and blanks count as zero.
+notes: Example: =seepage_confined_block(B11:D13, C62, $B$3) copied over the grid. A blank kind (no soil) returns an empty text, so the formula can be pasted over the whole rectangle of the grid; the prescribed heads (kind 0) are then overwritten by their own formulas. A node that is none of the 19 kinds (for instance the node below the tip of a thin wall) keeps its own formula, written with seepage_relax. Text and blanks count as zero.
 [seepage_unconfined_block]
 block: 3x3 block of pressure heads centred on the node (relative reference)
 weights: 3x3 box of face lengths of the table of stencils (absolute reference)
