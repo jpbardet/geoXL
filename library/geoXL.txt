@@ -2255,9 +2255,15 @@ LET(kv,IF(ISOMITTED(k),0,k),nv,IF(ISOMITTED(n),0,n),ev,IF(ISOMITTED(edge),0,edge
 seepage_cellok = LAMBDA(xs, ys, H, rw, cl,
 LET(xv,TOCOL(xs),yv,TOCOL(ys),n,ROWS(xv),m,ROWS(yv),IF(OR(rw<1,cl<1,rw>m-1,cl>n-1),FALSE,IF(NOT(AND(ISNUMBER(INDEX(H,rw,cl)),ISNUMBER(INDEX(H,rw,cl+1)),ISNUMBER(INDEX(H,rw+1,cl)),ISNUMBER(INDEX(H,rw+1,cl+1)))),FALSE,LET(tx,0.25*MEDIAN(ABS(DROP(xv,1)-DROP(xv,-1))),ty,0.25*MEDIAN(ABS(DROP(yv,1)-DROP(yv,-1))),hA,INDEX(H,rw,cl),hB,INDEX(H,rw,cl+1),hC,INDEX(H,rw+1,cl),hD,INDEX(H,rw+1,cl+1),wx,AND(ABS(INDEX(xv,cl+1)-INDEX(xv,cl))<tx,hA<>hB,hC<>hD),wy,AND(ABS(INDEX(yv,rw+1)-INDEX(yv,rw))<ty,hA<>hC,hB<>hD),NOT(OR(wx,wy)))))));
 
-/** Relaxation step shared by the seepage_stencil_ functions: node + omega·(average - node). omega = 1 gives the average (Gauss-Seidel), 1 < omega < 2 over-relaxes (SOR), omega = 0 resets the node to 0. */
+/** Control value of an iterated seepage sheet, from its Calculate / Reset / Hold switch: omega to iterate, 0 to reset, -1 to hold (every node keeps its value). other_switches lists the switches of the other sheets of the workbook, e.g. HSTACK(Example2!B1, Example3!B1): a sheet set to Calculate holds while another one is on Calculate, so that only one sheet iterates at a time. */
+seepage_switch = LAMBDA(switch, omega, [other_switches],
+    LET(busy, IF(ISOMITTED(other_switches), FALSE, OR(other_switches = "Calculate")),
+        IF(switch = "Reset", 0, IF(AND(switch = "Calculate", NOT(busy)), omega, -1)))
+);
+
+/** Relaxation step shared by the seepage_stencil_ functions: node + omega·(average - node). omega = 1 gives the average (Gauss-Seidel), 1 < omega < 2 over-relaxes (SOR), omega = 0 resets the node to 0, a negative omega holds the node (returns it unchanged; seepage_switch). */
 seepage_relax = LAMBDA(node, average, omega,
-    IF(omega = 0, 0, node + omega * (average - node))
+    IF(omega < 0, node, IF(omega = 0, 0, node + omega * (average - node)))
 );
 
 /** Finite difference stencil of an interior node: average of its four neighbours, (north + west + south + east)/4, relaxed with the optional omega (default 1; 0 resets to 0). node is the cell itself. */
@@ -2303,29 +2309,29 @@ seepage_face_weights = LAMBDA(kind, [permeability_1], [permeability_2],
             HSTACK(k_1, 0, k_2, k_1 + k_2), HSTACK(k_1, k_1 + k_2, k_2, 0))))
 );
 
-/** Finite difference stencil of confined seepage for a node of kind 1 to 24 (Chapter 4-6, figure of the kinds of nodes): block is the 3x3 range centred on the node (heads of the node i,j and of its neighbours i,j-1, i-1,j, i,j+1, i+1,j; corners unused), kind the number of the stencil, read from the map of the kinds of nodes (seepage_face_weights). The head is the weighted average of the four neighbours, relaxed by omega (default 1; 0 resets to 0). Text and blanks count as zero. A blank kind (no soil) returns an empty text, so that the formula can be pasted over the whole rectangle of the grid. Copy one formula over the grid: =seepage_confined_block(B23:D25, C12, $B$3), with the map a fixed number of rows above. */
+/** Finite difference stencil of confined seepage for a node of kind 1 to 24 (Chapter 4-6, figure of the kinds of nodes): block is the 3x3 range centred on the node (heads of the node i,j and of its neighbours i,j-1, i-1,j, i,j+1, i+1,j; corners unused), kind the number of the stencil, read from the map of the kinds of nodes (seepage_face_weights). The head is the weighted average of the four neighbours, relaxed by omega (default 1; 0 resets to 0; negative holds the node, seepage_switch). Text and blanks count as zero. A blank kind (no soil) returns an empty text, so that the formula can be pasted over the whole rectangle of the grid. Copy one formula over the grid: =seepage_confined_block(B23:D25, C12, $B$3), with the map a fixed number of rows above. */
 seepage_confined_block = LAMBDA(block, kind, [omega], [permeability_1], [permeability_2],
     LET(w, IF(ISOMITTED(omega), 1, omega), node, INDEX(block, 2, 2),
-        k_1, IF(ISOMITTED(permeability_1), 1, permeability_1), k_2, IF(ISOMITTED(permeability_2), 1, permeability_2),
+        IF(COUNTA(kind) = 0, "", IF(w < 0, node,
+        LET(k_1, IF(ISOMITTED(permeability_1), 1, permeability_1), k_2, IF(ISOMITTED(permeability_2), 1, permeability_2),
         arms, INDEX(block, {1, 2, 3, 2}, {2, 1, 2, 3}),
         heads, IF(ISNUMBER(arms), arms, 0),
-        IF(COUNTA(kind) = 0, "",
             LET(lengths, seepage_face_weights(kind, k_1, k_2),
-                IF(w = 0, 0, node + w * (SUM(lengths * heads) / SUM(lengths) - node)))))
+                IF(w = 0, 0, node + w * (SUM(lengths * heads) / SUM(lengths) - node)))))))
 );
 
-/** Finite difference stencil of unconfined seepage for a node of kind 1 to 24, written for the pressure head p (Chapter 4-8): block is the 3x3 range of pressure heads centred on the node, kind the number of the stencil read from the map (seepage_face_weights), negative on a seepage face, where the pressure head cannot exceed 0; parameters a range of four cells: grid spacing (m), transition width (m), residual ratio, control value (0 resets, otherwise omega). Each face weight is multiplied by seepage_permeability_ratio of the mean pressure head of the node and the neighbour, and the neighbour above is one spacing higher, the neighbour below one spacing lower (gravity). kind may also be a row of four weights (seepage_face_weights). Text and blanks count as zero; a blank kind (no soil) returns an empty text. */
+/** Finite difference stencil of unconfined seepage for a node of kind 1 to 24, written for the pressure head p (Chapter 4-8): block is the 3x3 range of pressure heads centred on the node, kind the number of the stencil read from the map (seepage_face_weights), negative on a seepage face, where the pressure head cannot exceed 0; parameters a range of four cells: grid spacing (m), transition width (m), residual ratio, control value (0 resets, negative holds, otherwise omega; seepage_switch). Each face weight is multiplied by seepage_permeability_ratio of the mean pressure head of the node and the neighbour, and the neighbour above is one spacing higher, the neighbour below one spacing lower (gravity). kind may also be a row of four weights (seepage_face_weights). Text and blanks count as zero; a blank kind (no soil) returns an empty text. */
 seepage_unconfined_block = LAMBDA(block, kind, parameters, [permeability_1], [permeability_2],
     LET(spacing, INDEX(parameters, 1), width, INDEX(parameters, 2), ratio, INDEX(parameters, 3), w, INDEX(parameters, 4),
         node, INDEX(block, 2, 2),
-        k_1, IF(ISOMITTED(permeability_1), 1, permeability_1), k_2, IF(ISOMITTED(permeability_2), 1, permeability_2),
+        IF(COUNTA(kind) = 0, "", IF(w < 0, node,
+        LET(k_1, IF(ISOMITTED(permeability_1), 1, permeability_1), k_2, IF(ISOMITTED(permeability_2), 1, permeability_2),
         arms, INDEX(block, {1, 2, 3, 2}, {2, 1, 2, 3}),
         p, IF(ISNUMBER(arms), arms, 0),
-        IF(COUNTA(kind) = 0, "",
             LET(conductance, seepage_face_weights(kind, k_1, k_2) * seepage_permeability_ratio((node + p) / 2, width, ratio),
                 heads, p + {1, 0, -1, 0} * spacing,
                 new, IF(w = 0, 0, node + w * (SUM(conductance * heads) / SUM(conductance) - node)),
-                IF(SUM(kind) < 0, MIN(new, 0), new))))
+                IF(SUM(kind) < 0, MIN(new, 0), new))))))
 );
 
 /** Permeability ratio k/k_s of the Darcy-Buckingham law used for unconfined seepage: residual_ratio + (1 - residual_ratio)·(1 + tanh(pressure_head/transition_width))/2; about 1 when the pressure head exceeds twice the transition width, about residual_ratio (default 0.001) below minus twice that width. */

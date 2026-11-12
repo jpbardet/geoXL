@@ -1330,6 +1330,13 @@ permeability: Optional. As in seepage_unconfined_psi
 returns: Four columns for one chart, #N/A separated: x, y of the equipotentials, then x, y of the flow lines.
 notes: Show #N/A as an empty cell in the chart (Select Data > Hidden and Empty Cells). Calculate the flow net after the pressure heads have converged.
 
+[seepage_switch]
+switch: The Calculate / Reset / Hold switch of the sheet, e.g. B1
+omega: Relaxation factor, e.g. B2
+other_switches: Optional. The switches of the other iterated sheets of the workbook, e.g. HSTACK(Example2!B1, Example3!B1)
+returns: omega when the switch is on Calculate and no other sheet is on Calculate; 0 on Reset; -1 (hold) otherwise. Used as the control value of every node of the sheet.
+notes: Only one sheet iterates at a time: a sheet set to Calculate holds while another one is on Calculate. A held sheet keeps its values (each node returns itself), so it costs almost nothing in the iterations; draw its flow net only when it is on Hold.
+
 [seepage_face_weights]
 kind: Kind of node, 1 to 24 (negative on a seepage face): 1 interior; 2-5 wall above, left, below, right; 6-9 outer corner (walls above and left, above and right, below and left, below and right); 10-13 re-entrant corner (solid upper left, upper right, lower left, lower right); 14-17 45-degree boundary (solid lower left, lower right, upper left, upper right); 18 horizontal interface; 19 vertical interface; 21-22 vertical interface with a wall above or below; 23-24 horizontal interface with a wall on the left or on the right
 permeability_1: Optional, interfaces only: permeability k1 of the soil above (18, 23, 24) or on the left (19, 21, 22); default 1

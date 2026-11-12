@@ -69,6 +69,7 @@ cosd
 tand
 
 # Seepage: finite-difference solutions (Chapters 4-4 and 4-5)
+seepage_switch
 seepage_relax
 seepage_face_weights
 seepage_confined_block
