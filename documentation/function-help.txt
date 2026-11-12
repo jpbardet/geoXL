@@ -1955,7 +1955,7 @@ returns: Column of the names of the standard boxes of seepage_box (19 names), fo
 notes: In the worksheet, enter =seepage_box_kinds() in a free column and give the cell above each box a data validation (List) whose source is the spill range of that cell (for instance =$Z$2#). Added in geoXL 0.28.
 
 [seepage_box]
-kind: Name of a standard box, as listed by seepage_box_kinds (for instance "Impervious boundary, south side")
+kind: Number of a standard box, 1 to 19 (the row of seepage_box_kinds; the figure of the standard boxes shows each number), or its name (for instance "Impervious boundary, south side")
 permeability_1: Permeability k1 of soil 1 for an interface (above a horizontal interface, west of a vertical one); default 1
 permeability_2: Permeability k2 of soil 2 for an interface (below a horizontal interface, east of a vertical one); default 1
 returns: 3x3 box of numbers (spills): the coefficient of each neighbour in its place around the node, 0 in the centre, in the corners and across an impervious side; the coefficients add up to 1.

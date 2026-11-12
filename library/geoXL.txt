@@ -2314,10 +2314,11 @@ seepage_box_kinds = LAMBDA(
         "Vertical interface, k1 west, k2 east"}
 );
 
-/** Standard 3x3 box of coefficients for seepage_confined_block and seepage_unconfined_block (Chapter 4-6, Table of stencils): kind is one of the names of seepage_box_kinds (interior node, impervious boundaries, outer and re-entrant corners, 45-degree boundaries, horizontal and vertical interfaces); optional permeability_1, permeability_2 = permeabilities k1, k2 of the two soils of an interface (default 1). Returns the 3x3 box of numbers (spills): the coefficient of each neighbour in its place (north top, west left, south bottom, east right), 0 in the centre, in the corners and across an impervious side; the coefficients add up to 1. #N/A for an unknown kind. Other boxes (for instance 45-degree boundaries meeting a vertical face) are entered by hand. */
+/** Standard 3x3 box of coefficients for seepage_confined_block and seepage_unconfined_block (Chapter 4-6, Table of stencils): kind is the number of the box (1 to 19, the row of seepage_box_kinds, as drawn in the figure of the standard boxes) or its name in seepage_box_kinds (interior node, impervious boundaries, outer and re-entrant corners, 45-degree boundaries, horizontal and vertical interfaces); optional permeability_1, permeability_2 = permeabilities k1, k2 of the two soils of an interface (default 1). Returns the 3x3 box of numbers (spills): the coefficient of each neighbour in its place (north top, west left, south bottom, east right), 0 in the centre, in the corners and across an impervious side; the coefficients add up to 1. #N/A for an unknown kind. Other boxes (for instance 45-degree boundaries meeting a vertical face) are entered by hand. */
 seepage_box = LAMBDA(kind, [permeability_1], [permeability_2],
     LET(soil_1, IF(ISOMITTED(permeability_1), 1, permeability_1), soil_2, IF(ISOMITTED(permeability_2), 1, permeability_2),
-        lengths, SWITCH(kind,
+        name, IF(ISNUMBER(kind), INDEX(seepage_box_kinds(), kind), kind),
+        lengths, SWITCH(name,
             "Interior node", {1, 1, 1, 1},
             "Impervious boundary, north side", {0, 1, 2, 1},
             "Impervious boundary, west side", {1, 0, 1, 2},
