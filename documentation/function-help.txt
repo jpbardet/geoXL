@@ -1965,19 +1965,19 @@ notes: A method that fails on a load shows its own Excel error (#N/A, #DIV/0!, #
 notes: Time and dial values stored as text are converted to numbers.
 
 [consolidation_specimen]
-h_0: Initial height of the specimen, i.e. height of the ring (cm)
+height_initial: Initial height of the specimen, i.e. height of the ring (cm)
 diameter: Diameter of the ring (cm)
-mass_0: Mass of the wet specimen at the start of the test (g)
-mass_f: Mass of the wet specimen at the end of the test (g)
+mass_initial: Mass of the wet specimen at the start of the test (g)
+mass_final: Mass of the wet specimen at the end of the test (g)
 mass_dry: Mass of the dry specimen after oven drying (g)
-dial_0: First dial reading of the test (cm)
-dial_f: Last dial reading of the test (cm); the final height is h_0 - (dial_0 - dial_f)
-S_f: Optional. Degree of saturation at the end of the test (fraction); default 1
+dial_initial: First dial reading of the test (cm)
+dial_final: Last dial reading of the test (cm); the final height is height_initial - (dial_initial - dial_final)
+Sr_final: Optional. Degree of saturation at the end of the test (fraction); default 1
 g: Optional. Gravity acceleration (m/s2); default 9.81
-returns: 8 rows: initial water content w_0, initial dry unit weight gamma_d0 (kN/m3), initial void ratio e_0, initial degree of saturation S_0, specific gravity G_s, final water content w_f, final dry unit weight gamma_df (kN/m3), final void ratio e_f.
-notes: Densities in g/cm3 (masses in g, lengths in cm, rho_w = 1 g/cm3): rho_d0 = mass_dry/(A·h_0), rho_df = mass_dry/(A·h_f), unit weights gamma_d = g·rho_d.
-notes: G_s follows from the final state, e_f = G_s·w_f/S_f and rho_df = G_s/(1 + e_f): G_s = rho_df/(1 - w_f·rho_df/S_f). Then e_0 = G_s/rho_d0 - 1 and S_0 = G_s·w_0/e_0.
-notes: S_0 is a check of the data: a value above 1, or an unusual G_s, points to an error in a mass or a dial reading.
+returns: 8 rows: initial water content, initial dry unit weight (kN/m3), initial void ratio, initial degree of saturation, specific gravity Gs, final water content, final dry unit weight (kN/m3), final void ratio.
+notes: Densities in g/cm3 (masses in g, lengths in cm, rho_w = 1 g/cm3): rho_d = mass_dry/(area·height); unit weights gamma_d = g·rho_d.
+notes: Gs follows from the final state, e_final = Gs·w_final/Sr_final and rho_d_final = Gs/(1 + e_final): Gs = rho_d_final/(1 - w_final·rho_d_final/Sr_final). Then e_initial = Gs/rho_d_initial - 1 and Sr_initial = Gs·w_initial/e_initial.
+notes: Sr_initial is a check of the data: a value above 1, or an unusual Gs, points to an error in a mass or a dial reading.
 
 [geolab_version]
 returns: Text with the GeoLabXL version and release date, for example "GeoLabXL 0.1 (2026-11-05)".

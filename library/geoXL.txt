@@ -3253,21 +3253,22 @@ consolidation_table = LAMBDA(loads, load_no, t_all, d_all, D_ini, D_fin, h_0, di
     )
 );
 
-/** State of a consolidation specimen at the start and at the end of the test. h_0 initial height and diameter of the ring (cm); mass_0, mass_f and mass_dry the masses of the specimen at the start, at the end, and after drying (g); dial_0 and dial_f the first and last dial readings (cm, decreasing as the specimen settles); optional S_f degree of saturation at the end (default 1) and g (default 9.81 m/s2). Returns {w_0; gamma_d0; e_0; S_0; G_s; w_f; gamma_df; e_f}. */
-consolidation_specimen = LAMBDA(h_0, diameter, mass_0, mass_f, mass_dry, dial_0, dial_f, [S_f], [g],
+/** State of a consolidation specimen at the start and at the end of the test. height_initial and diameter of the ring (cm); mass_initial, mass_final and mass_dry the masses of the specimen at the start, at the end, and after drying (g); dial_initial and dial_final the first and last dial readings (cm, decreasing as the specimen settles); optional Sr_final degree of saturation at the end (default 1) and g (default 9.81 m/s2). Returns {w_initial; gamma_d_initial; e_initial; Sr_initial; Gs; w_final; gamma_d_final; e_final}. */
+consolidation_specimen = LAMBDA(height_initial, diameter, mass_initial, mass_final, mass_dry, dial_initial, dial_final, [Sr_final], [g],
     LET(
-        S_end,      IF(ISOMITTED(S_f), 1, S_f),
-        gravity,    IF(ISOMITTED(g), 9.81, g),
-        area,       PI()*diameter^2/4,
-        h_end,      h_0 - (dial_0 - dial_f),
-        w_start,    (mass_0 - mass_dry)/mass_dry,
-        w_end,      (mass_f - mass_dry)/mass_dry,
-        rho_start,  mass_dry/(area*h_0),
-        rho_end,    mass_dry/(area*h_end),
-        G_solid,    rho_end/(1 - w_end*rho_end/S_end),
-        e_start,    G_solid/rho_start - 1,
-        e_end,      G_solid*w_end/S_end,
-        S_start,    G_solid*w_start/e_start,
-        VSTACK(w_start, gravity*rho_start, e_start, S_start, G_solid, w_end, gravity*rho_end, e_end)
+        Sr_end,           IF(ISOMITTED(Sr_final), 1, Sr_final),
+        gravity,          IF(ISOMITTED(g), 9.81, g),
+        area,             PI()*diameter^2/4,
+        height_final,     height_initial - (dial_initial - dial_final),
+        w_initial,        (mass_initial - mass_dry)/mass_dry,
+        w_final,          (mass_final - mass_dry)/mass_dry,
+        rho_d_initial,    mass_dry/(area*height_initial),
+        rho_d_final,      mass_dry/(area*height_final),
+        Gs,               rho_d_final/(1 - w_final*rho_d_final/Sr_end),
+        e_initial,        Gs/rho_d_initial - 1,
+        e_final,          Gs*w_final/Sr_end,
+        Sr_initial,       Gs*w_initial/e_initial,
+        VSTACK(w_initial, gravity*rho_d_initial, e_initial, Sr_initial, Gs,
+               w_final, gravity*rho_d_final, e_final)
     )
 );
