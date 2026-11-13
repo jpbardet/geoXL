@@ -95,7 +95,7 @@ consolidation_sqrt_time
 consolidation_fitting
 consolidation_creep
 consolidation_table
-consolidation_specimen
+consolidation_weight_volume
 consolidation_U
 consolidation_Tv
 consolidation_Ux

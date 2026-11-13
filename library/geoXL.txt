@@ -3254,7 +3254,7 @@ consolidation_table = LAMBDA(loads, load_no, t_all, d_all, D_ini, D_fin, h_0, di
 );
 
 /** State of a consolidation specimen at the start and at the end of the test. height_initial and diameter of the ring (cm); mass_initial, mass_final and mass_dry the masses of the specimen at the start, at the end, and after drying (g); dial_initial and dial_final the first and last dial readings (cm, decreasing as the specimen settles); optional Sr_final degree of saturation at the end (default 1) and g (default 9.81 m/s2). Returns {w_initial; gamma_d_initial; e_initial; Sr_initial; Gs; w_final; gamma_d_final; e_final}. */
-consolidation_specimen = LAMBDA(height_initial, diameter, mass_initial, mass_final, mass_dry, dial_initial, dial_final, [Sr_final], [g],
+consolidation_weight_volume = LAMBDA(height_initial, diameter, mass_initial, mass_final, mass_dry, dial_initial, dial_final, [Sr_final], [g],
     LET(
         Sr_end,           IF(ISOMITTED(Sr_final), 1, Sr_final),
         gravity,          IF(ISOMITTED(g), 9.81, g),

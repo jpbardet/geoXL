@@ -1964,7 +1964,7 @@ notes: Each increment is zeroed at its first reading. H_dr is half (n_drain = 2)
 notes: A method that fails on a load shows its own Excel error (#N/A, #DIV/0!, #NUM!) in that load's cells only; loads with fewer than 8 readings are left blank.
 notes: Time and dial values stored as text are converted to numbers.
 
-[consolidation_specimen]
+[consolidation_weight_volume]
 height_initial: Initial height of the specimen, i.e. height of the ring (cm)
 diameter: Diameter of the ring (cm)
 mass_initial: Mass of the wet specimen at the start of the test (g)
