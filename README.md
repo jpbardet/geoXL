@@ -37,6 +37,8 @@ Version 0.24 adds nine mse_ functions for mechanically stabilized earth walls: e
 
 Version 0.25 adds 13 soil-laboratory functions and the separate laboratory page geolabXL 0.1. No existing function changed.
 
+Version 0.28 (geolabXL 0.4) brings the laboratory functions to the masters used in *Experimental Soil Mechanics*, 2nd edition: 30 functions replaced (consolidation, seepage, classification, grain size, water properties, interpolate) and 66 added (compaction, consolidation ruler and creep, seepage blocks and profiles, permeability, triaxial, direct shear, error analysis, utilities). Argument help for the new functions is still to be written.
+
 ## Maintaining the two pages
 
 There is one library and two separate student sites: geoXL (this repository, `docs/`, jpbardet.github.io/geoXL/) and geolabXL (repository `jpbardet/geolabXL`, `docs/`, jpbardet.github.io/geolabXL/). Both are built from this repository; `tools/build.py` writes the geolabXL site into a sibling checkout `../geolabXL` (or `GEOLABXL_DOCS`). Commit and push that repository separately.

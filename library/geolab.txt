@@ -2,77 +2,125 @@
 # One name per line, exactly as in library/geoXL.txt. Functions they call are added automatically.
 # Raise the version whenever this list changes or a listed function (or one it calls) changes;
 # the build refuses to overwrite a published geolabXL snapshot with different content.
-version: 0.3
-date: 2026-11-07
+version: 0.4
+date: 2026-11-16
 
-# Water content and specific gravity
+# Water content, specific gravity and water properties
 water_content
 specific_gravity
+water_density
+water_viscosity
 
-# Grain size: sieve, hydrometer, pipette and buoyancy
+# Grain size: sieve, hydrometer, pipette, buoyancy and combined (Part 1)
 sieve_passing
-hydrometer_analysis
-hydrometer_correction
-hydrometer_hfall
-hydrometer_grainSize
-hydrometer_percentFiner
+grainsizeanalysis
+sedimentation_diameter
+hydrometer_grain_size
+hydrometer_percent_finer
+pipette_percent_finer
 buoyancy_grain_size
 buoyancy_percent_finer
-pipette_grain_size
-pipette_percent_finer
-grainsizeanalysis
-Step_table
+combined_percent_finer
 
-# Soil classification
+# Consistency limits and classification (Part 2)
+liquid_limit
+cone_penetration
+liquid_limit_cone
+shrinkage_limit
 classify_ASTM2487
-classify_ASTM
+ASTM_tree_chart
 classify_USC
 classify_AASHTO
 classify_Plasticity
 
-# Stress and Mohr circle (Chapter 5-1, shear tests of Chapter 7)
+# Unit weight and compaction (Part 3)
+soil_weight_volume
+unit_weight_wax
+wax_unit_weight
+compaction_fit
+compaction_curve
+saturation_line
+sand_cone_volume
+sand_unit_weight
+field_unit_weight
+
+# Permeability and seepage (Part 4)
+permeability_constant_head
+permeability_darcy
+permeability_falling_head
+permeability_falling_head_fit
+permeability_falling_head_height
+permeability_hazen
+permeability_kozeny_carman
+permeability_specimen
+permeability_viscosity_ratio
+seepage_cellok
+seepage_confined_block
+seepage_eqline
+seepage_eqlines
+seepage_face_weights
+seepage_flownet
+seepage_free_surface
+seepage_gradgrid
+seepage_hfield
+seepage_hxy
+seepage_permeability_ratio
+seepage_psi
+seepage_psigrid
+seepage_relax
+seepage_segprofile
+seepage_segstats
+seepage_switch
+seepage_unconfined_block
+seepage_unconfined_flow
+seepage_unconfined_flownet
+seepage_unconfined_psi
+
+# Consolidation (Part 6)
+consolidation_Tv
+consolidation_U
+consolidation_U_approximate
+consolidation_chord
+consolidation_creep
+consolidation_creep_steps
+consolidation_fitting
+consolidation_log_time
+consolidation_ratios
+consolidation_sqrt_time
+consolidation_step
+consolidation_steps
+consolidation_weight_volume
+
+# Stress, shear strength and triaxial tests (Parts 5 and 7)
 Stress_Mohr
 stress_Mohr_pole
 stress_Mohrcircle
 stress_Mohr_failure
-sind
-cosd
-tand
+direct_shear_area
+direct_shear_results
+triaxial_cd_chain
+triaxial_consolidation
+triaxial_drained
+triaxial_drained_results
+triaxial_undrained
+triaxial_undrained_results
 
-# Seepage: finite-difference solutions (Chapters 4-4 and 4-5)
-seepage_stencil
-seepage_stencil1
-seepage_stencil2
-seepage_stencil3
-seepage_hxy
-seepage_hfield
-seepage_gradgrid
-seepage_psigrid
-seepage_eqline
-seepage_eqlines
-seepage_flowlines
-seepage_psi
-seepage_flownet
-seepage_segprofile
-seepage_segstats
-seepage_cellok
-
-# Permeability and hydrometer: water properties
-water_density
-water_viscosity
-
-# Consolidation
-consolidation_log_time
-consolidation_sqrt_time
-consolidation_fitting
-consolidation_creep
-consolidation_table
-consolidation_U
-consolidation_Tv
-consolidation_Ux
-consolidation_U_approximate
-consolidation_U_variable
+# Errors and uncertainty (Part 9)
+error_propagation
+uncertainty_budget
+monte_carlo
+model_water_content
+model_specimen
+model_phi
 
 # Utilities
 interpolate
-interpolate_table
+first_crossing
+trim_rows
+trim_cols
+numeric_rows
+polynomial_fit
+average_by_row
+filter_by_row
+series_direction
+chord_profile
