@@ -1,4 +1,4 @@
-// GeoEXCEL version 0.35 — complete consolidated named-LAMBDA library (documented)
+// GeoEXCEL version 0.36 — complete consolidated named-LAMBDA library (documented)
 // Module name: GeoEXCEL
 // Paste this entire file into the GeoEXCEL module in Excel Labs.
 // Local names use underscores. Worksheet example: =GeoEXCEL.water_pressure(3, 2)
@@ -88,9 +88,11 @@
 // 0.34 (2026-11-17): curve_stiffness: the tangent can only decrease, so the steepest window (rise of 25% of the peak)
 //                    gives the initial slope and the end of seating; #N/A if the secant at half peak is steeper.
 // 0.35 (2026-11-17): triaxial_*_results measure the axial strain at the peak from the end of seating.
+// 0.36 (2026-11-17): triaxial_drained_results and triaxial_undrained_results replaced by triaxial_stiffness
+//                    {reset; Ei; E50; strain to q/2; nu; G} and triaxial_strength {peak t; strain; residual t; strain; phi'p; phi'r}.
 
 /** Library version and release date, as text. Use =GeoEXCEL.version() to check which version is installed. */
-version = LAMBDA("GeoEXCEL 0.35 (2026-11-17)");
+version = LAMBDA("GeoEXCEL 0.36 (2026-11-17)");
 
 /** q_ult (kPa) for vertical loads: (author, phi, coh, q, gam, B, [L], [D], [eB], [eL], [use], [out]). Omitted/0 = off. use: "sdi" default, "s" = no depth factors. out 1 = table, 2 = 3 terms. Inclined loads: bearing_capacity_inclined. */
 bearing_capacity = LAMBDA(author,phi,coh,q,gam,B,[L],[D],[eB],[eL],[use],[out],LET(L_,IF(ISOMITTED(L),0,L),D_,IF(ISOMITTED(D),0,D),eB_,IF(ISOMITTED(eB),0,eB),eL_,IF(ISOMITTED(eL),0,eL),u,IF(ISOMITTED(use),"sdi",IF(use=0,"sdi",LOWER(use))),o,IF(ISOMITTED(out),0,out),g,bearing_effective(B,L_,eB_,eL_),Bp,INDEX(g,1),BL,INDEX(g,4),one,{1;1;1},N,bearing_factors(phi,author),s,IF(ISNUMBER(SEARCH("s",u)),bearing_shapeFactors(BL,phi,author),one),d,IF(ISNUMBER(SEARCH("d",u)),bearing_depthFactors(D_/B,phi,author),one),ld,VSTACK(coh,q,gam*Bp/2),t,N*s*d*ld,SWITCH(o,0,SUM(t),2,t,VSTACK(HSTACK("term","N","s","d","load","q_i"),HSTACK({"c";"q";"γ"},N,s,d,ld,t),HSTACK("q_ult","","","","",SUM(t))))));
@@ -2525,7 +2527,7 @@ liquid_limit = LAMBDA(blows,moisture,LET(N,trim_rows(blows,blows),w,trim_rows(mo
 liquid_limit_cone = LAMBDA(penetration,moisture,[d_ref],LET(d,trim_rows(penetration,penetration),w,trim_rows(moisture,penetration),dr,IF(ISOMITTED(d_ref),20,d_ref),A,SLOPE(w,d),B,INTERCEPT(w,d),VSTACK(A*dr+B,A)));
 
 /** Peak friction angle (deg) of the CD test. */
-model_phi = LAMBDA(x,INDEX(triaxial_cd_chain(x),4));
+model_phi = LAMBDA(x,INDEX(triaxial_cd_chain(x),11));
 
 /** Specimen of the unconfined compression test: {w; gamma; gamma_d; e0; S; gamma_sat} from x = {h0 (cm); d0 (cm); tare + wet (g); tare + dry (g); tare (g); Gs}. */
 model_specimen = LAMBDA(x,LET(h0,INDEX(x,1),d0,INDEX(x,2),wet,INDEX(x,3),dry,INDEX(x,4),tare,INDEX(x,5),gs,INDEX(x,6),w,water_content(tare,wet,dry),VSTACK(w,soil_weight_volume(wet-tare,PI()*d0^2/4*h0,gs,w))));
@@ -2630,8 +2632,8 @@ shrinkage_limit = LAMBDA(dish,wet,dry,V,mass_waxed,buoyant_waxed,rho_wax,LET(M0,
 /** Returns {bulk unit weight; dry unit weight; void ratio; degree of saturation; saturated unit weight} (kN/m3). mass (g), volume (cm3), water_content (decimal, 0 if omitted), unit_weight_water (9.81 kN/m3 if omitted). */
 soil_weight_volume = LAMBDA(mass,volume,specific_gravity,[water_content],[unit_weight_water],LET(wc,IF(ISOMITTED(water_content),0,water_content),gw,IF(ISOMITTED(unit_weight_water),9.81,unit_weight_water),gamma,mass/volume*gw,gamma_d,gamma/(1+wc),e,specific_gravity*gw/gamma_d-1,S,specific_gravity*wc/e,gamma_sat,(specific_gravity+e)*gw/(1+e),VSTACK(gamma,gamma_d,e,S,gamma_sat)));
 
-/** Results of triaxial_drained_results for the readings of sheet Triaxial and the inputs x = {W; H0; D0; Gs; dVc; s3; force factor; displacement factor; volume factor}. */
-triaxial_cd_chain = LAMBDA(x,LET(cons,triaxial_consolidation(INDEX(x,2),INDEX(x,3),INDEX(x,5)),curves,triaxial_drained(Triaxial!$A$34:$A$55*INDEX(x,8),Triaxial!$B$34:$B$55*INDEX(x,7),Triaxial!$C$34:$C$55*INDEX(x,9),INDEX(cons,1),INDEX(cons,2),INDEX(x,6)),triaxial_drained_results(curves)));
+/** Stiffness (6 rows) then strength (6 rows) of the CD test of sheet Triaxial, and the inputs x = {W; H0; D0; Gs; dVc; s3; force factor; displacement factor; volume factor}. */
+triaxial_cd_chain = LAMBDA(x,LET(cons,triaxial_consolidation(INDEX(x,2),INDEX(x,3),INDEX(x,5)),curves,triaxial_drained(Triaxial!$A$34:$A$55*INDEX(x,8),Triaxial!$B$34:$B$55*INDEX(x,7),Triaxial!$C$34:$C$55*INDEX(x,9),INDEX(cons,1),INDEX(cons,2),INDEX(x,6)),st,triaxial_stiffness(curves,TRUE),VSTACK(st,triaxial_strength(curves,INDEX(st,1)))));
 
 /** Returns {height; volume; area} after isotropic consolidation. Lengths in cm; volume_change = decrease of volume (cm3). */
 triaxial_consolidation = LAMBDA(initial_height,initial_diameter,volume_change,LET(initial_volume,PI()*initial_diameter^2/4*initial_height,cons_volume,initial_volume-volume_change,cons_height,initial_height*(1-volume_change/initial_volume/3),VSTACK(cons_height,cons_volume,cons_volume/cons_height)));
@@ -2639,14 +2641,14 @@ triaxial_consolidation = LAMBDA(initial_height,initial_diameter,volume_change,LE
 /** Columns {axial strain %; volumetric strain %; q kPa; t = q/2 kPa; s' kPa; t/s'}. Displacement and height in the same unit; force kN; volume change cm3 (negative = contraction). */
 triaxial_drained = LAMBDA(axial_displacement,axial_force,volume_change,height,volume,cell_pressure,[back_pressure],LET(sb,IF(ISOMITTED(back_pressure),0,back_pressure),strain_a,axial_displacement/height*100,strain_v,-volume_change/volume*100,area,volume/height*(1-strain_v/100)/(1-strain_a/100),q_dev,axial_force/area*10000,t_dev,q_dev/2,s_eff,cell_pressure-sb+t_dev,trim_rows(HSTACK(strain_a,strain_v,q_dev,t_dev,s_eff,t_dev/s_eff),axial_displacement)));
 
-/** Drained triaxial test: {E_50 (MPa); Poisson's ratio; G (MPa); phi'_p; axial strain at peak, from the end of seating; phi'_r}. */
-triaxial_drained_results = LAMBDA(curves,[res_fraction],LET(fr,IF(ISOMITTED(res_fraction),0.1,res_fraction),pts,loading_branch(numeric_rows(curves),1),strain_a,CHOOSECOLS(pts,1),strain_v,CHOOSECOLS(pts,2),q_dev,CHOOSECOLS(pts,3),ratio,CHOOSECOLS(pts,6),half,INDEX(peak(q_dev,strain_a),1)/2,st,curve_stiffness(q_dev,strain_a),young,INDEX(st,3)/10,strain_half,INDEX(st,4),seating,IFERROR(INDEX(st,2),0),poisson,(1-first_crossing(half,q_dev,strain_v)/strain_half)/2,pk,peak(ratio,strain_a),VSTACK(young,poisson,young/2/(1+poisson),DEGREES(ASIN(INDEX(pk,1))),INDEX(pk,2)-seating,DEGREES(ASIN(INDEX(residual(ratio,strain_a,fr),1))))));
+/** Stiffness of a triaxial test: {reset strain (end of seating, %); initial modulus E_i (MPa); secant modulus E_50 (MPa); axial strain from the reset to q/2 (%); Poisson's ratio (0.5 if undrained); G (MPa)}. */
+triaxial_stiffness = LAMBDA(curves,[drained],LET(dr,IF(ISOMITTED(drained),FALSE,drained),pts,loading_branch(numeric_rows(curves),1),strain_a,CHOOSECOLS(pts,1),strain_v,CHOOSECOLS(pts,2),q_dev,CHOOSECOLS(pts,3),st,curve_stiffness(q_dev,strain_a),young,INDEX(st,3)/10,strain_50,INDEX(st,4),poisson,IF(dr,(1-first_crossing(INDEX(peak(q_dev,strain_a),1)/2,q_dev,strain_v)/strain_50)/2,0.5),VSTACK(INDEX(st,2),INDEX(st,1)/10,young,strain_50,poisson,young/2/(1+poisson))));
+
+/** Strength of a triaxial test: {peak t (kPa, S_u if undrained); axial strain at the peak from the reset (%); residual t (kPa); axial strain where the residual starts, from the reset (%); phi'_p; phi'_r}. */
+triaxial_strength = LAMBDA(curves,[reset],[res_fraction],LET(r_0,IF(ISOMITTED(reset),0,reset),fr,IF(ISOMITTED(res_fraction),0.1,res_fraction),pts,loading_branch(numeric_rows(curves),1),strain_a,CHOOSECOLS(pts,1),t_dev,CHOOSECOLS(pts,4),ratio,CHOOSECOLS(pts,6),pk,peak(t_dev,strain_a),rs,residual(t_dev,strain_a,fr),VSTACK(INDEX(pk,1),INDEX(pk,2)-r_0,INDEX(rs,1),INDEX(rs,2)-r_0,DEGREES(ASIN(INDEX(peak(ratio,strain_a),1))),DEGREES(ASIN(INDEX(residual(ratio,strain_a,fr),1))))));
 
 /** Columns {axial strain %; excess pore pressure kPa; q kPa; t = q/2 kPa; s' kPa; t/s'}. Displacement and height in the same unit; force kN; area cm2; pore_pressure may be 0 (UU test). */
 triaxial_undrained = LAMBDA(axial_displacement,axial_force,pore_pressure,height,area,cell_pressure,[back_pressure],LET(sb,IF(ISOMITTED(back_pressure),0,back_pressure),strain_a,axial_displacement/height*100,q_dev,axial_force*(1-strain_a/100)/area*10000,t_dev,q_dev/2,s_eff,cell_pressure-sb-pore_pressure+t_dev,trim_rows(HSTACK(strain_a,pore_pressure+0*strain_a,q_dev,t_dev,s_eff,t_dev/s_eff),axial_displacement)));
-
-/** Undrained triaxial test: {S_u; axial strain at S_u, from the end of seating; phi'_p; phi'_r; E_u,50 (MPa); G_u (MPa)}. */
-triaxial_undrained_results = LAMBDA(curves,[res_fraction],LET(fr,IF(ISOMITTED(res_fraction),0.1,res_fraction),pts,loading_branch(numeric_rows(curves),1),strain_a,CHOOSECOLS(pts,1),q_dev,CHOOSECOLS(pts,3),t_dev,CHOOSECOLS(pts,4),ratio,CHOOSECOLS(pts,6),st,curve_stiffness(q_dev,strain_a),young,INDEX(st,3)/10,seating,IFERROR(INDEX(st,2),0),su,peak(t_dev,strain_a),VSTACK(INDEX(su,1),INDEX(su,2)-seating,DEGREES(ASIN(INDEX(peak(ratio,strain_a),1))),DEGREES(ASIN(INDEX(residual(ratio,strain_a,fr),1))),young,young/3)));
 
 /** Results that fit the data, for one sample per column: the columns of out up to the last filled cell of the input row ref. */
 trim_cols = LAMBDA(out,ref,TAKE(out,,XMATCH(TRUE,TOROW(ref)<>"",0,-1)));

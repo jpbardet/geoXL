@@ -2006,7 +2006,7 @@ returns: Column {γ; γd; e; Sr; γsat}.
 
 [triaxial_cd_chain]
 x: Column of the measurements of a drained triaxial test
-returns: Intermediate results of the test and φ′, for model_phi.
+returns: Column of the 6 stiffness then 6 strength results of the test, for model_phi.
 
 [triaxial_consolidation]
 initial_height: Initial height of the specimen (cm)
@@ -2024,10 +2024,16 @@ cell_pressure: Cell pressure (kPa)
 back_pressure: Back pressure (kPa), default 0
 returns: Columns {ε1; εv; q; t; s′; t/s′}, one row per reading.
 
-[triaxial_drained_results]
-curves: Output of triaxial_drained
+[triaxial_stiffness]
+curves: Output of triaxial_drained or triaxial_undrained
+drained: TRUE for a drained test (Poisson's ratio from the volumetric strain); FALSE by default (ν = 0.5)
+returns: Column {reset strain at the end of seating (%); initial modulus Ei (MPa); secant modulus E50 (MPa); axial strain from the reset to q/2 (%); Poisson's ratio; G (MPa)}.
+
+[triaxial_strength]
+curves: Output of triaxial_drained or triaxial_undrained
+reset: Reset strain (%) from triaxial_stiffness; 0 by default
 res_fraction: Last part of the axial strain averaged for the residual (0.1 by default)
-returns: Peak and final values of the test, including φ′ at the peak, the strain at the peak and the residual φ′r.
+returns: Column {peak t (kPa), Su if undrained; axial strain at the peak from the reset (%); residual t (kPa); axial strain where the residual starts, from the reset (%); φ′p; φ′r}.
 
 [triaxial_undrained]
 axial_displacement: Axial displacements (cm)
@@ -2038,11 +2044,6 @@ area: Area after consolidation (cm²)
 cell_pressure: Cell pressure (kPa)
 back_pressure: Back pressure (kPa), default 0
 returns: Columns {ε1; u; q; t; s′; t/s′}, one row per reading.
-
-[triaxial_undrained_results]
-curves: Output of triaxial_undrained
-res_fraction: Last part of the axial strain averaged for the residual (0.1 by default)
-returns: Peak and final states of the undrained test.
 
 [trim_cols]
 out: Result to trim
