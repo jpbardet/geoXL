@@ -1,4 +1,4 @@
-// GeoEXCEL version 0.28 — complete consolidated named-LAMBDA library (documented)
+// GeoEXCEL version 0.29 — complete consolidated named-LAMBDA library (documented)
 // Module name: GeoEXCEL
 // Paste this entire file into the GeoEXCEL module in Excel Labs.
 // Local names use underscores. Worksheet example: =GeoEXCEL.water_pressure(3, 2)
@@ -77,9 +77,11 @@
 //                    workbook masters: 29 functions replaced (consolidation, seepage, classification, grain size,
 //                    water properties, interpolate), 66 added (compaction, consolidation chord and creep, seepage blocks
 //                    and profiles, permeability, triaxial, direct shear, error analysis, utilities). geolabXL 0.4.
+// 0.29 (2026-11-17): compaction_fit: the wet branch is the saturation line of the most saturated point, which lies on it;
+//                    two dry points suffice; a small dip at the driest point is accepted when no rising curve exists.
 
 /** Library version and release date, as text. Use =GeoEXCEL.version() to check which version is installed. */
-version = LAMBDA("GeoEXCEL 0.28 (2026-11-16)");
+version = LAMBDA("GeoEXCEL 0.29 (2026-11-17)");
 
 /** q_ult (kPa) for vertical loads: (author, phi, coh, q, gam, B, [L], [D], [eB], [eL], [use], [out]). Omitted/0 = off. use: "sdi" default, "s" = no depth factors. out 1 = table, 2 = 3 terms. Inclined loads: bearing_capacity_inclined. */
 bearing_capacity = LAMBDA(author,phi,coh,q,gam,B,[L],[D],[eB],[eL],[use],[out],LET(L_,IF(ISOMITTED(L),0,L),D_,IF(ISOMITTED(D),0,D),eB_,IF(ISOMITTED(eB),0,eB),eL_,IF(ISOMITTED(eL),0,eL),u,IF(ISOMITTED(use),"sdi",IF(use=0,"sdi",LOWER(use))),o,IF(ISOMITTED(out),0,out),g,bearing_effective(B,L_,eB_,eL_),Bp,INDEX(g,1),BL,INDEX(g,4),one,{1;1;1},N,bearing_factors(phi,author),s,IF(ISNUMBER(SEARCH("s",u)),bearing_shapeFactors(BL,phi,author),one),d,IF(ISNUMBER(SEARCH("d",u)),bearing_depthFactors(D_/B,phi,author),one),ld,VSTACK(coh,q,gam*Bp/2),t,N*s*d*ld,SWITCH(o,0,SUM(t),2,t,VSTACK(HSTACK("term","N","s","d","load","q_i"),HSTACK({"c";"q";"γ"},N,s,d,ld,t),HSTACK("q_ult","","","","",SUM(t))))));
@@ -2388,54 +2390,55 @@ combined_percent_finer = LAMBDA(method,percent_finer,mass_passing_200,mass_total
 /** Compaction test: points of the fitted compaction curve for a chart (water content, dry unit weight), from compaction_fit. */
 compaction_curve = LAMBDA(w,gamma_d,Gs,[gamma_w],[points], LET( gw, IF(ISOMITTED(gamma_w), 9.81, gamma_w), np, IF(ISOMITTED(points), 60, points), fit, compaction_fit(w, gamma_d, Gs, gw), S, INDEX(fit, 3), wt, INDEX(fit, 5), A, Gs*gw, b, Gs/S, xs, FILTER(TOCOL(w), ISNUMBER(TOCOL(w))), wlo, MIN(xs), whi, MAX(xs), m, 0.15*(whi-wlo), lo, MAX(0, wlo-m), hi, MAX(whi, wt)+m, x, SORT(VSTACK(SEQUENCE(np-3, 1, lo, (hi-lo)/(np-4)), wlo, whi, wt)), d, x-wt, c_0, A/(1+b*wt), c_1, -A*b/(1+b*wt)^2, curve, IF(d<0, c_0+c_1*d+INDEX(fit, 6)*d^2+INDEX(fit, 7)*d^3, A/(1+b*x)), IF(ISTEXT(INDEX(fit, 1)), INDEX(fit, 1), VSTACK(HSTACK("w", "Fitted curve", "S = 100%", "S = "&TEXT(S, "0.000")), HSTACK(x, IF((x>=wlo)*(x<=whi), curve, NA()), saturation_line(x, Gs, 1, gw), saturation_line(x, Gs, S, gw)))) ) );
 
-/** Compaction test: fit of the compaction curve through the points (w, gamma_d) with the tangent to the saturation line of the optimum; returns the optimum water content, maximum dry unit weight and fit parameters. */
-compaction_fit = LAMBDA(w,gamma_d,Gs,[gamma_w],
-    LET(
-        gw,    IF(ISOMITTED(gamma_w), 9.81, gamma_w),
-        ok,    ISNUMBER(TOCOL(w))*ISNUMBER(TOCOL(gamma_d)),
-        x,     FILTER(TOCOL(w), ok),
-        y,     FILTER(TOCOL(gamma_d), ok),
-        A,     Gs*gw,
-        S,     XLOOKUP(MAX(x), x, Gs*x/(A/y-1)),
-        b,     Gs/S,
-        w_0,   0.25,
-        wgt,   w_0+(1-w_0)*(y-MIN(y))/(MAX(y)-MIN(y)),
-        tangent, LAMBDA(tw, LET(
-                   c_0, A/(1+b*tw),
-                   c_1, -A*b/(1+b*tw)^2,
-                   d,   x-tw,
-                   dry, (d<0)*wgt,
-                   res, y-c_0-c_1*d,
-                   s_4, SUM(dry*d^4), s_5, SUM(dry*d^5), s_6, SUM(dry*d^6),
-                   t_2, SUM(dry*d^2*res), t_3, SUM(dry*d^3*res),
-                   det, s_4*s_6-s_5^2,
-                   c_2, IF(det>0, (t_2*s_6-t_3*s_5)/det, 0),
-                   c_3, IF(det>0, (t_3*s_4-t_2*s_5)/det, 0),
-                   disc, c_2^2-3*c_1*c_3,
-                   den, IF(disc>=0, SQRT(MAX(disc, 0))-c_2, 0),
-                   dopt, IF(den>0, c_1/den, 0),
-                   fit, IF(d<0, c_0+c_1*d+c_2*d^2+c_3*d^3, A/(1+b*x)),
-                   d_1, MIN(x)-tw,
-                   rising, c_1+2*c_2*d_1+3*c_3*d_1^2>=0,
-                   valid, AND(SUM(--(d<0))>=3, det>0, den>0, dopt<0, rising, tw+dopt>=MIN(x), tw+dopt<=MAX(x)),
-                   HSTACK(IF(valid, SUM(wgt*(fit-y)^2), 1E+99), c_0, c_1, c_2, c_3, dopt))),
-        lo,    XLOOKUP(MAX(y), y, x),
-        st,    (MAX(x)+(MAX(x)-MIN(x))-lo)/200,
-        gridA, SEQUENCE(201, 1, lo, st),
-        errA,  MAP(gridA, LAMBDA(t, INDEX(tangent(t), 1))),
-        tA,    XLOOKUP(MIN(errA), errA, gridA),
+/** Composite compaction curve: wet branch on the saturation line of the most saturated point, dry branch a cubic tangent to it. Returns {w_opt; gamma_d,max; S; S_opt; w_t; c2; c3}; w as decimals, gamma_d in kN/m3. Chapters 3-4, 3-5. */
+compaction_fit = LAMBDA(w, gamma_d, Gs, [gamma_w],
+      LET(
+        gw, IF(ISOMITTED(gamma_w), 9.81, gamma_w),
+        ok, ISNUMBER(TOCOL(w))*ISNUMBER(TOCOL(gamma_d)),
+        x, FILTER(TOCOL(w), ok),
+        y, FILTER(TOCOL(gamma_d), ok),
+        A, Gs*gw,
+        Si, Gs*x/(A/y-1),
+        S, MAX(Si),
+        ws, XLOOKUP(S, Si, x),
+        b, Gs/S,
+        w_0, 0.25,
+        wgt, w_0+(1-w_0)*(y-MIN(y))/(MAX(y)-MIN(y)),
+        tangent, LAMBDA(tw, mono, LET(
+          c_0, A/(1+b*tw),
+          c_1, -A*b/(1+b*tw)^2,
+          d, x-tw,
+          dry, (d<0)*wgt,
+          res, y-c_0-c_1*d,
+          s_4, SUM(dry*d^4), s_5, SUM(dry*d^5), s_6, SUM(dry*d^6),
+          t_2, SUM(dry*d^2*res), t_3, SUM(dry*d^3*res),
+          det, s_4*s_6-s_5^2,
+          c_2, IF(det>0, (t_2*s_6-t_3*s_5)/det, 0),
+          c_3, IF(det>0, (t_3*s_4-t_2*s_5)/det, 0),
+          disc, c_2^2-3*c_1*c_3,
+          den, IF(disc>=0, SQRT(MAX(disc, 0))-c_2, 0),
+          dopt, IF(den>0, c_1/den, 0),
+          fit, IF(d<0, c_0+c_1*d+c_2*d^2+c_3*d^3, A/(1+b*x)),
+          d_1, MIN(x)-tw,
+          rising, c_1+2*c_2*d_1+3*c_3*d_1^2>=0,
+          valid, AND(SUM(--(d<0))>=2, det>0, den>0, dopt<0, OR(rising, NOT(mono)),
+                     tw<=ws, tw+dopt>=MIN(x), tw+dopt<=MAX(x)),
+          HSTACK(IF(valid, SUM(wgt*(fit-y)^2), 1E+99), c_0, c_1, c_2, c_3, dopt))),
+        st, (ws-MIN(x))/200,
+        gridA, SEQUENCE(201, 1, MIN(x), st),
+        mono, MIN(MAP(gridA, LAMBDA(t, INDEX(tangent(t, TRUE), 1))))<1E+99,
+        errA, MAP(gridA, LAMBDA(t, INDEX(tangent(t, mono), 1))),
+        tA, XLOOKUP(MIN(errA), errA, gridA),
         gridB, SEQUENCE(201, 1, tA-st, st/100),
-        errB,  MAP(gridB, LAMBDA(t, INDEX(tangent(t), 1))),
-        wt,    XLOOKUP(MIN(errB), errB, gridB),
-        best,  tangent(wt),
+        errB, MAP(gridB, LAMBDA(t, INDEX(tangent(t, mono), 1))),
+        wt, XLOOKUP(MIN(errB), errB, gridB),
+        best, tangent(wt, mono),
         d_opt, INDEX(best, 6),
-        gmax,  INDEX(best, 2)+INDEX(best, 3)*d_opt+INDEX(best, 4)*d_opt^2+INDEX(best, 5)*d_opt^3,
-        wopt,  wt+d_opt,
-        IFS(S>1, "Error: the wettest point is above full saturation (S > 1); check Gs and the water contents",
-            MIN(errB)>=1E+99, "Error: no valid curve; at least three points are needed on the dry side of the tangent point",
-            TRUE, VSTACK(wopt, gmax, S, Gs*wopt/(A/gmax-1), wt, INDEX(best, 4), INDEX(best, 5)))
-    )
-);
+        gmax, INDEX(best, 2)+INDEX(best, 3)*d_opt+INDEX(best, 4)*d_opt^2+INDEX(best, 5)*d_opt^3,
+        wopt, wt+d_opt,
+        IFS(S>1, "Error: the most saturated point is above full saturation (S > 1); check Gs and the water contents",
+            MIN(errB)>=1E+99, "Error: no valid curve; at least two points are needed on the dry side of the most saturated point",
+            TRUE, VSTACK(wopt, gmax, S, Gs*wopt/(A/gmax-1), wt, INDEX(best, 4), INDEX(best, 5)))));
 
 /** Fall cone: penetration d (mm) = |final - initial| dial reading, one value per specimen. */
 cone_penetration = LAMBDA(initial,final,trim_rows(ABS(final-initial),final));

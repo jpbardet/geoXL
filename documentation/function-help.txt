@@ -1631,8 +1631,8 @@ w: Water contents of the compaction points (fraction, 0.12 for 12 %)
 gamma_d: Dry unit weights of the points (kN/m³)
 Gs: Specific gravity of solids
 gamma_w: Unit weight of water (kN/m³), default 9.81
-returns: Column {w_opt; γd,max; S of the wettest point; S at the optimum; w at the tangent point; c2; c3}, or an error message.
-notes: The dry branch is a cubic tangent to the saturation line of the wettest point (Chapter 3-4).
+returns: Column {w_opt; γd,max; S of the wet branch; S at the optimum; w at the tangent point; c2; c3}, or an error message.
+notes: The wet branch is the saturation line of the most saturated point, which lies on it; the dry branch is a cubic tangent to it (Chapter 3-4).
 
 [compaction_curve]
 w: Water contents of the compaction points (fraction)
