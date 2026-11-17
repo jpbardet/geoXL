@@ -1448,10 +1448,10 @@ returns: Weight of each reading: half the scaled length of the curve to its two 
 
 [specific_gravity]
 mass_dry_soil: Mass of oven-dried soil (g)
-mass_pycnometer_water: Mass of pycnometer filled with water at the test temperature (g)
-mass_pycnometer_water_soil: Mass of pycnometer filled with water and soil at the test temperature (g)
+mass_flask_water: Mass of the volumetric flask filled with water at the test temperature (g)
+mass_flask_water_soil: Mass of the volumetric flask filled with water and soil at the test temperature (g)
 temperature: Test temperature (°C), optional; Gs is then referred to 20 °C
-returns: Specific gravity of solids Gs = Ms/(Ms + Mpw − Mpws), at the test temperature or referred to 20 °C.
+returns: Specific gravity of solids Gs = Ms/(Ms + Mfw − Mfws), at the test temperature or referred to 20 °C.
 notes: Returns "" when the inputs are missing or inconsistent.
 
 [sieve_passing]
