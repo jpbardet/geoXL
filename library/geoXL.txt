@@ -1,4 +1,4 @@
-// GeoEXCEL version 0.40 — complete consolidated named-LAMBDA library (documented)
+// GeoEXCEL version 0.41 — complete consolidated named-LAMBDA library (documented)
 // Module name: GeoEXCEL
 // Paste this entire file into the GeoEXCEL module in Excel Labs.
 // Local names use underscores. Worksheet example: =GeoEXCEL.water_pressure(3, 2)
@@ -96,9 +96,11 @@
 // 0.39 (2026-11-17): explicit argument names for the geolabXL worksheet functions (e.g. water_content(mass_container,
 //                    mass_container_wet_soil, mass_container_dry_soil)); calculations unchanged.
 // 0.40 (2026-11-17): specific_gravity arguments name the volumetric flask used in the test (mass_flask_water, mass_flask_water_soil).
+// 0.41 (2026-11-17): compression_stiffness and compression_strength (stress, strain) for the unconfined compression test;
+//                    triaxial_stiffness and triaxial_strength call them.
 
 /** Library version and release date, as text. Use =GeoEXCEL.version() to check which version is installed. */
-version = LAMBDA("GeoEXCEL 0.40 (2026-11-17)");
+version = LAMBDA("GeoEXCEL 0.41 (2026-11-17)");
 
 /** q_ult (kPa) for vertical loads: (author, phi, coh, q, gam, B, [L], [D], [eB], [eL], [use], [out]). Omitted/0 = off. use: "sdi" default, "s" = no depth factors. out 1 = table, 2 = 3 terms. Inclined loads: bearing_capacity_inclined. */
 bearing_capacity = LAMBDA(author,phi,coh,q,gam,B,[L],[D],[eB],[eL],[use],[out],LET(L_,IF(ISOMITTED(L),0,L),D_,IF(ISOMITTED(D),0,D),eB_,IF(ISOMITTED(eB),0,eB),eL_,IF(ISOMITTED(eL),0,eL),u,IF(ISOMITTED(use),"sdi",IF(use=0,"sdi",LOWER(use))),o,IF(ISOMITTED(out),0,out),g,bearing_effective(B,L_,eB_,eL_),Bp,INDEX(g,1),BL,INDEX(g,4),one,{1;1;1},N,bearing_factors(phi,author),s,IF(ISNUMBER(SEARCH("s",u)),bearing_shapeFactors(BL,phi,author),one),d,IF(ISNUMBER(SEARCH("d",u)),bearing_depthFactors(D_/B,phi,author),one),ld,VSTACK(coh,q,gam*Bp/2),t,N*s*d*ld,SWITCH(o,0,SUM(t),2,t,VSTACK(HSTACK("term","N","s","d","load","q_i"),HSTACK({"c";"q";"γ"},N,s,d,ld,t),HSTACK("q_ult","","","","",SUM(t))))));
@@ -2647,11 +2649,17 @@ triaxial_consolidation = LAMBDA(initial_height,initial_diameter,volume_change,LE
 /** Columns {axial strain %; volumetric strain %; q kPa; t = q/2 kPa; s' kPa; t/s'}. Displacement and height in the same unit; force kN; volume change cm3 (negative = contraction). */
 triaxial_drained = LAMBDA(axial_displacement,axial_force,volume_change,height,volume,cell_pressure,[back_pressure],LET(sb,IF(ISOMITTED(back_pressure),0,back_pressure),strain_a,axial_displacement/height*100,strain_v,-volume_change/volume*100,area,volume/height*(1-strain_v/100)/(1-strain_a/100),q_dev,axial_force/area*10000,t_dev,q_dev/2,s_eff,cell_pressure-sb+t_dev,trim_rows(HSTACK(strain_a,strain_v,q_dev,t_dev,s_eff,t_dev/s_eff),axial_displacement)));
 
-/** Stiffness of a triaxial test: {reset strain (end of seating, %); initial modulus E_i (MPa); secant modulus E_50 (MPa); axial strain from the reset to q/2 (%)}. */
-triaxial_stiffness = LAMBDA(curves,LET(pts,loading_branch(numeric_rows(curves),1),strain_a,CHOOSECOLS(pts,1),q_dev,CHOOSECOLS(pts,3),st,curve_stiffness(q_dev,strain_a),VSTACK(INDEX(st,2),INDEX(st,1)/10,INDEX(st,3)/10,INDEX(st,4))));
+/** Stiffness of a compression curve, stress (kPa) against axial strain (%): {reset strain at the end of seating (%); initial modulus E_i (MPa); secant modulus E_50 (MPa); axial strain from the reset to half the peak (%)}. */
+compression_stiffness = LAMBDA(stress,strain,LET(pts,loading_branch(numeric_rows(HSTACK(strain,stress)),1),st,curve_stiffness(CHOOSECOLS(pts,2),CHOOSECOLS(pts,1)),VSTACK(INDEX(st,2),INDEX(st,1)/10,INDEX(st,3)/10,INDEX(st,4))));
 
-/** Strength of a triaxial test: {peak t (kPa, S_u if undrained); axial strain at the peak from the reset (%); residual t (kPa); axial strain where the residual starts, from the reset (%); phi'_p; phi'_r}. */
-triaxial_strength = LAMBDA(curves,[reset_strain],[residual_fraction],LET(r_0,IF(ISOMITTED(reset_strain),0,reset_strain),fr,IF(ISOMITTED(residual_fraction),0.1,residual_fraction),pts,loading_branch(numeric_rows(curves),1),strain_a,CHOOSECOLS(pts,1),t_dev,CHOOSECOLS(pts,4),ratio,CHOOSECOLS(pts,6),pk,peak(t_dev,strain_a),rs,residual(t_dev,strain_a,fr),VSTACK(INDEX(pk,1),INDEX(pk,2)-r_0,INDEX(rs,1),INDEX(rs,2)-r_0,DEGREES(ASIN(INDEX(peak(ratio,strain_a),1))),DEGREES(ASIN(INDEX(residual(ratio,strain_a,fr),1))))));
+/** Strength of a compression curve: {peak stress; axial strain at the peak from the reset strain (%); residual stress, mean over the last part of the strain range; axial strain where the residual starts, from the reset strain (%)}. */
+compression_strength = LAMBDA(stress,strain,[reset_strain],[residual_fraction],LET(r_0,IF(ISOMITTED(reset_strain),0,reset_strain),fr,IF(ISOMITTED(residual_fraction),0.1,residual_fraction),pts,loading_branch(numeric_rows(HSTACK(strain,stress)),1),x,CHOOSECOLS(pts,1),y,CHOOSECOLS(pts,2),pk,peak(y,x),rs,residual(y,x,fr),VSTACK(INDEX(pk,1),INDEX(pk,2)-r_0,INDEX(rs,1),INDEX(rs,2)-r_0)));
+
+/** Stiffness of a triaxial test: compression_stiffness of q against the axial strain: {reset strain (%); E_i (MPa); E_50 (MPa); axial strain from the reset to q/2 (%)}. */
+triaxial_stiffness = LAMBDA(curves,compression_stiffness(CHOOSECOLS(curves,3),CHOOSECOLS(curves,1)));
+
+/** Strength of a triaxial test: compression_strength of t, then the friction angles: {peak t (kPa, S_u if undrained); axial strain at the peak from the reset (%); residual t (kPa); axial strain where the residual starts, from the reset (%); phi'_p; phi'_r}. */
+triaxial_strength = LAMBDA(curves,[reset_strain],[residual_fraction],LET(r_0,IF(ISOMITTED(reset_strain),0,reset_strain),fr,IF(ISOMITTED(residual_fraction),0.1,residual_fraction),pts,loading_branch(numeric_rows(curves),1),strain_a,CHOOSECOLS(pts,1),t_dev,CHOOSECOLS(pts,4),ratio,CHOOSECOLS(pts,6),VSTACK(compression_strength(t_dev,strain_a,r_0,fr),DEGREES(ASIN(INDEX(peak(ratio,strain_a),1))),DEGREES(ASIN(INDEX(residual(ratio,strain_a,fr),1))))));
 
 /** Columns {axial strain %; excess pore pressure kPa; q kPa; t = q/2 kPa; s' kPa; t/s'}. Displacement and height in the same unit; force kN; area cm2; pore_pressure may be 0 (UU test). */
 triaxial_undrained = LAMBDA(axial_displacement,axial_force,pore_pressure,height,area,cell_pressure,[back_pressure],LET(sb,IF(ISOMITTED(back_pressure),0,back_pressure),strain_a,axial_displacement/height*100,q_dev,axial_force*(1-strain_a/100)/area*10000,t_dev,q_dev/2,s_eff,cell_pressure-sb-pore_pressure+t_dev,trim_rows(HSTACK(strain_a,pore_pressure+0*strain_a,q_dev,t_dev,s_eff,t_dev/s_eff),axial_displacement)));

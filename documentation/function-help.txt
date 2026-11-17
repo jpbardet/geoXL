@@ -1638,6 +1638,19 @@ water_unit_weight: Unit weight of water (kN/m³), default 9.81
 points: Number of points of the curve (default 60)
 returns: Table with headers {w, fitted curve, S = 100 % line, saturation line of S} for a chart.
 
+[compression_strength]
+stress: Axial stresses of the readings (kPa)
+strain: Axial strains of the readings (%)
+reset_strain: Reset strain at the end of seating (%), from compression_stiffness; 0 by default
+residual_fraction: Last part of the strain range averaged for the residual (0.1 by default)
+returns: Column {peak stress; axial strain at the peak from the reset (%); residual stress; axial strain where the residual starts, from the reset (%)}.
+
+[compression_stiffness]
+stress: Axial stresses of the readings (kPa)
+strain: Axial strains of the readings (%)
+returns: Column {reset strain at the end of seating (%); initial modulus Ei (MPa); secant modulus E50 (MPa); axial strain from the reset to half the peak (%)}.
+notes: The initial modulus is the steepest weighted line over a rise of 25% of the peak (the tangent modulus can only decrease); readings before it are seating.
+
 [cone_penetration]
 dial_before: Dial readings before the cone is released (mm)
 dial_after: Dial readings after 5 s (mm)

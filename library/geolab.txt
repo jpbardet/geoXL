@@ -2,7 +2,7 @@
 # One name per line, exactly as in library/geoXL.txt. Functions they call are added automatically.
 # Raise the version whenever this list changes or a listed function (or one it calls) changes;
 # the build refuses to overwrite a published geolabXL snapshot with different content.
-version: 0.16
+version: 0.17
 date: 2026-11-16
 
 # Water content, specific gravity and water properties
@@ -101,6 +101,8 @@ direct_shear_results
 triaxial_cd_chain
 triaxial_consolidation
 triaxial_drained
+compression_stiffness
+compression_strength
 triaxial_stiffness
 triaxial_undrained
 triaxial_strength
