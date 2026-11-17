@@ -7,6 +7,13 @@
 # Units: use one consistent system (e.g. m, kN, kPa) unless an argument says otherwise. Angles in degrees unless stated.
 # One help file serves both pages: geoXL (all functions) and geolabXL (the lab list).
 
+[grain_size_analysis]
+grain_sizes: Column of grain sizes (sieve openings or sedimentation diameters, mm), any order
+percent_finer: Column of percents finer (%), same order
+fraction_limits: Grain sizes (mm) separating clay, silt, sand, gravel and cobbles; {0.005; 0.075; 4.75; 75} by default
+out_of_range: "error" (#N/A where the curve was not measured, default), "clamp" or "extrapolate", as in interpolate
+returns: Column {D10; D30; D60 (mm); Cu; Cc; % clay; % silt; % sand; % gravel}.
+
 [version]
 returns: Text with the add-in version and release date.
 
@@ -875,11 +882,6 @@ polyline: Closed polygon (two columns x, y)
 M: Point {x, y} on the line
 t: Line angle (radians)
 returns: Intersections {x, y}; {0, 0} if none.
-
-[grainsizeanalysis]
-d: Column of particle diameters (mm)
-p: Column of percent passing (%), any order
-returns: Column {D10; D30; D60; Cu; Cc; % clay; % silt; % sand; % gravel}.
 
 [pile_capacity_alpha]
 zSu: Two-column table {depth (m), Su (kPa)}

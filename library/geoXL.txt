@@ -1,4 +1,4 @@
-// GeoEXCEL version 0.37 — complete consolidated named-LAMBDA library (documented)
+// GeoEXCEL version 0.38 — complete consolidated named-LAMBDA library (documented)
 // Module name: GeoEXCEL
 // Paste this entire file into the GeoEXCEL module in Excel Labs.
 // Local names use underscores. Worksheet example: =GeoEXCEL.water_pressure(3, 2)
@@ -91,9 +91,11 @@
 // 0.36 (2026-11-17): triaxial_drained_results and triaxial_undrained_results replaced by triaxial_stiffness
 //                    {reset; Ei; E50; strain to q/2; nu; G} and triaxial_strength {peak t; strain; residual t; strain; phi'p; phi'r}.
 // 0.37 (2026-11-17): triaxial_stiffness returns only what it measures: {reset; Ei; E50; strain to q/2} (no assumed nu, no G).
+// 0.38 (2026-11-17): grain_size_analysis(grain_sizes, percent_finer, [fraction_limits], [out_of_range]) replaces grainsizeanalysis:
+//                    #N/A where the curve was not measured (no 0 or 100% assumed); limits and out-of-range rule are arguments.
 
 /** Library version and release date, as text. Use =GeoEXCEL.version() to check which version is installed. */
-version = LAMBDA("GeoEXCEL 0.37 (2026-11-17)");
+version = LAMBDA("GeoEXCEL 0.38 (2026-11-17)");
 
 /** q_ult (kPa) for vertical loads: (author, phi, coh, q, gam, B, [L], [D], [eB], [eL], [use], [out]). Omitted/0 = off. use: "sdi" default, "s" = no depth factors. out 1 = table, 2 = 3 terms. Inclined loads: bearing_capacity_inclined. */
 bearing_capacity = LAMBDA(author,phi,coh,q,gam,B,[L],[D],[eB],[eL],[use],[out],LET(L_,IF(ISOMITTED(L),0,L),D_,IF(ISOMITTED(D),0,D),eB_,IF(ISOMITTED(eB),0,eB),eL_,IF(ISOMITTED(eL),0,eL),u,IF(ISOMITTED(use),"sdi",IF(use=0,"sdi",LOWER(use))),o,IF(ISOMITTED(out),0,out),g,bearing_effective(B,L_,eB_,eL_),Bp,INDEX(g,1),BL,INDEX(g,4),one,{1;1;1},N,bearing_factors(phi,author),s,IF(ISNUMBER(SEARCH("s",u)),bearing_shapeFactors(BL,phi,author),one),d,IF(ISNUMBER(SEARCH("d",u)),bearing_depthFactors(D_/B,phi,author),one),ld,VSTACK(coh,q,gam*Bp/2),t,N*s*d*ld,SWITCH(o,0,SUM(t),2,t,VSTACK(HSTACK("term","N","s","d","load","q_i"),HSTACK({"c";"q";"γ"},N,s,d,ld,t),HSTACK("q_ult","","","","",SUM(t))))));
@@ -1688,8 +1690,8 @@ intersection_polygon_line_slope = LAMBDA(polyline, M, t,
     ));
 
 // Sources: Axial_Piles_2024.xlsx, Bearing_CPT_2024.xlsx, Bearing_PMT_2024.xlsx, Bearing_SPT_2024.xlsx, CPT_settlement_2024.xlsx, PMT_settlement_2025.xlsx, Sieve_Examples_2024.xlsx
-/** Grain-size analysis: {D10; D30; D60; Cu; Cc; % clay; % silt; % sand; % gravel}. Inputs: d diameters (mm), p percent passing (any order). */
-grainsizeanalysis = LAMBDA(d,p,LET(Pmin,MIN(p),Pmax,MAX(p),D10_,IF(AND(Pmin<10,10<Pmax),interpolate(10,p,d,"logy"),0),D30_,IF(AND(Pmin<30,30<Pmax),interpolate(30,p,d,"logy"),0),D60_,IF(AND(Pmin<60,60<Pmax),interpolate(60,p,d,"logy"),0),Dmin,MIN(d),Dmax,MAX(d),clay,IF(Dmin<=0.005,interpolate(0.005,d,p,"logx"),0),silt,IF(Dmin<=0.075,interpolate(0.075,d,p,"logx"),0),sand,IF(Dmax>=4.75,interpolate(4.75,d,p,"logx"),100),gravel,IF(Dmax>=75,interpolate(75,d,p,"logx"),100),VSTACK(D10_,D30_,D60_,IF(D10_>0,D60_/D10_,0),IF(AND(D10_>0,D60_>0),D30_^2/D10_/D60_,0),clay,silt-clay,sand-silt,gravel-sand)));
+/** Grain-size analysis: {D10; D30; D60 (mm); Cu; Cc; % clay; % silt; % sand; % gravel}. fraction_limits: grain sizes (mm) separating clay, silt, sand, gravel and cobbles, {0.005; 0.075; 4.75; 75} by default. out_of_range: "error" (#N/A where the curve was not measured, default), "clamp" or "extrapolate", as in interpolate. */
+grain_size_analysis = LAMBDA(grain_sizes,percent_finer,[fraction_limits],[out_of_range],LET(limits,IF(ISOMITTED(fraction_limits),{0.005;0.075;4.75;75},fraction_limits),mode,IF(ISOMITTED(out_of_range),"error",out_of_range),grain_size_at,LAMBDA(percent,interpolate(percent,percent_finer,grain_sizes,"logy",mode)),finer_at,LAMBDA(grain_size,interpolate(grain_size,grain_sizes,percent_finer,"logx",mode)),d_10,grain_size_at(10),d_30,grain_size_at(30),d_60,grain_size_at(60),finer,MAP(limits,finer_at),VSTACK(d_10,d_30,d_60,d_60/d_10,d_30^2/(d_10*d_60),INDEX(finer,1),DROP(finer,1)-DROP(finer,-1))));
 
 // Sources: Axial_Piles_2024.xlsx
 /** Pile capacity in clay by the α method with tip 9·Su·A: {ultimate; shaft; tip}. Inputs: zSu (depth, Su), pa, a tip area, p perimeter, L, author (terzaghi, reese), optional D_ top depth. */

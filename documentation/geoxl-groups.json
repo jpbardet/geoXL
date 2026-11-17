@@ -43,7 +43,7 @@
   "classify_plasticity": "Soil classification",
   "classify_pmt_lcpc": "Soil classification",
   "classify_usc": "Soil classification",
-  "grainsizeanalysis": "Soil classification",
+  "grain_size_analysis": "Soil classification",
   "consolidation_test": "Consolidation",
   "consolidation_tv": "Consolidation",
   "consolidation_u": "Consolidation",
