@@ -1439,6 +1439,11 @@ returns: Water content w as a fraction, (wet - dry)/(dry - tare), one value per 
 notes: Returns "" where a mass is missing or dry = tare, so partly filled data sheets stay clean.
 notes: Argument order is tare, wet, dry. Check the order of the columns you select.
 
+[spacing_weights]
+x: Abscissas of the readings
+y: Ordinates of the readings
+returns: Weight of each reading: half the scaled length of the curve to its two neighbors.
+
 [specific_gravity]
 Ws: Mass of oven-dried soil (g)
 Wfw: Mass of pycnometer filled with water at the test temperature (g)
@@ -1698,6 +1703,12 @@ dial_final: Final dial reading (cm)
 Sr_final: Final degree of saturation, default 1
 g: Gravity (m/s²), default 9.81
 returns: Column {w0; γd0; e0; Sr0; Gs; wf; γdf; ef}.
+
+[curve_stiffness]
+y: Values of the curve (stress or force)
+x: Values at which y is measured (strain or displacement)
+fraction: Window of the initial slope, as a fraction of the peak (0.25 by default)
+returns: Column {initial slope; x where the initial line crosses y = 0; secant slope at half the peak from that x; x increment to half the peak}; #N/A with fewer than 2 readings in the window.
 
 [direct_shear_area]
 lateral_displacement: Horizontal displacements (mm)
@@ -2059,6 +2070,12 @@ dry: Mass of the container with dry soil (g)
 tare: Mass of the container (g), default 0
 gamma_w: Unit weight of water (kN/m³), default 9.81
 returns: Rows {γ; w; γd}, one column per specimen.
+
+[weighted_slope]
+y: Values
+x: Abscissas of the values
+weights: Weight of each value
+returns: Column {slope; intercept} of the weighted least-squares line.
 
 [wax_unit_weight]
 metal: Mass of the metal piece (g)
