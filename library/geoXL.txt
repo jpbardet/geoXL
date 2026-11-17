@@ -1,4 +1,4 @@
-// GeoEXCEL version 0.34 — complete consolidated named-LAMBDA library (documented)
+// GeoEXCEL version 0.35 — complete consolidated named-LAMBDA library (documented)
 // Module name: GeoEXCEL
 // Paste this entire file into the GeoEXCEL module in Excel Labs.
 // Local names use underscores. Worksheet example: =GeoEXCEL.water_pressure(3, 2)
@@ -87,9 +87,10 @@
 //                    the peak, secant at half peak measured from its crossing of y = 0; triaxial_*_results use it.
 // 0.34 (2026-11-17): curve_stiffness: the tangent can only decrease, so the steepest window (rise of 25% of the peak)
 //                    gives the initial slope and the end of seating; #N/A if the secant at half peak is steeper.
+// 0.35 (2026-11-17): triaxial_*_results measure the axial strain at the peak from the end of seating.
 
 /** Library version and release date, as text. Use =GeoEXCEL.version() to check which version is installed. */
-version = LAMBDA("GeoEXCEL 0.34 (2026-11-17)");
+version = LAMBDA("GeoEXCEL 0.35 (2026-11-17)");
 
 /** q_ult (kPa) for vertical loads: (author, phi, coh, q, gam, B, [L], [D], [eB], [eL], [use], [out]). Omitted/0 = off. use: "sdi" default, "s" = no depth factors. out 1 = table, 2 = 3 terms. Inclined loads: bearing_capacity_inclined. */
 bearing_capacity = LAMBDA(author,phi,coh,q,gam,B,[L],[D],[eB],[eL],[use],[out],LET(L_,IF(ISOMITTED(L),0,L),D_,IF(ISOMITTED(D),0,D),eB_,IF(ISOMITTED(eB),0,eB),eL_,IF(ISOMITTED(eL),0,eL),u,IF(ISOMITTED(use),"sdi",IF(use=0,"sdi",LOWER(use))),o,IF(ISOMITTED(out),0,out),g,bearing_effective(B,L_,eB_,eL_),Bp,INDEX(g,1),BL,INDEX(g,4),one,{1;1;1},N,bearing_factors(phi,author),s,IF(ISNUMBER(SEARCH("s",u)),bearing_shapeFactors(BL,phi,author),one),d,IF(ISNUMBER(SEARCH("d",u)),bearing_depthFactors(D_/B,phi,author),one),ld,VSTACK(coh,q,gam*Bp/2),t,N*s*d*ld,SWITCH(o,0,SUM(t),2,t,VSTACK(HSTACK("term","N","s","d","load","q_i"),HSTACK({"c";"q";"γ"},N,s,d,ld,t),HSTACK("q_ult","","","","",SUM(t))))));
@@ -2638,14 +2639,14 @@ triaxial_consolidation = LAMBDA(initial_height,initial_diameter,volume_change,LE
 /** Columns {axial strain %; volumetric strain %; q kPa; t = q/2 kPa; s' kPa; t/s'}. Displacement and height in the same unit; force kN; volume change cm3 (negative = contraction). */
 triaxial_drained = LAMBDA(axial_displacement,axial_force,volume_change,height,volume,cell_pressure,[back_pressure],LET(sb,IF(ISOMITTED(back_pressure),0,back_pressure),strain_a,axial_displacement/height*100,strain_v,-volume_change/volume*100,area,volume/height*(1-strain_v/100)/(1-strain_a/100),q_dev,axial_force/area*10000,t_dev,q_dev/2,s_eff,cell_pressure-sb+t_dev,trim_rows(HSTACK(strain_a,strain_v,q_dev,t_dev,s_eff,t_dev/s_eff),axial_displacement)));
 
-/** Drained triaxial test: {E_50 (MPa); Poisson's ratio; G (MPa); phi'_p; axial strain at peak; phi'_r}. */
-triaxial_drained_results = LAMBDA(curves,[res_fraction],LET(fr,IF(ISOMITTED(res_fraction),0.1,res_fraction),pts,loading_branch(numeric_rows(curves),1),strain_a,CHOOSECOLS(pts,1),strain_v,CHOOSECOLS(pts,2),q_dev,CHOOSECOLS(pts,3),ratio,CHOOSECOLS(pts,6),half,INDEX(peak(q_dev,strain_a),1)/2,st,curve_stiffness(q_dev,strain_a),young,INDEX(st,3)/10,strain_half,INDEX(st,4),poisson,(1-first_crossing(half,q_dev,strain_v)/strain_half)/2,pk,peak(ratio,strain_a),VSTACK(young,poisson,young/2/(1+poisson),DEGREES(ASIN(INDEX(pk,1))),INDEX(pk,2),DEGREES(ASIN(INDEX(residual(ratio,strain_a,fr),1))))));
+/** Drained triaxial test: {E_50 (MPa); Poisson's ratio; G (MPa); phi'_p; axial strain at peak, from the end of seating; phi'_r}. */
+triaxial_drained_results = LAMBDA(curves,[res_fraction],LET(fr,IF(ISOMITTED(res_fraction),0.1,res_fraction),pts,loading_branch(numeric_rows(curves),1),strain_a,CHOOSECOLS(pts,1),strain_v,CHOOSECOLS(pts,2),q_dev,CHOOSECOLS(pts,3),ratio,CHOOSECOLS(pts,6),half,INDEX(peak(q_dev,strain_a),1)/2,st,curve_stiffness(q_dev,strain_a),young,INDEX(st,3)/10,strain_half,INDEX(st,4),seating,IFERROR(INDEX(st,2),0),poisson,(1-first_crossing(half,q_dev,strain_v)/strain_half)/2,pk,peak(ratio,strain_a),VSTACK(young,poisson,young/2/(1+poisson),DEGREES(ASIN(INDEX(pk,1))),INDEX(pk,2)-seating,DEGREES(ASIN(INDEX(residual(ratio,strain_a,fr),1))))));
 
 /** Columns {axial strain %; excess pore pressure kPa; q kPa; t = q/2 kPa; s' kPa; t/s'}. Displacement and height in the same unit; force kN; area cm2; pore_pressure may be 0 (UU test). */
 triaxial_undrained = LAMBDA(axial_displacement,axial_force,pore_pressure,height,area,cell_pressure,[back_pressure],LET(sb,IF(ISOMITTED(back_pressure),0,back_pressure),strain_a,axial_displacement/height*100,q_dev,axial_force*(1-strain_a/100)/area*10000,t_dev,q_dev/2,s_eff,cell_pressure-sb-pore_pressure+t_dev,trim_rows(HSTACK(strain_a,pore_pressure+0*strain_a,q_dev,t_dev,s_eff,t_dev/s_eff),axial_displacement)));
 
-/** Undrained triaxial test: {S_u; axial strain at S_u; phi'_p; phi'_r; E_u,50 (MPa); G_u (MPa)}. */
-triaxial_undrained_results = LAMBDA(curves,[res_fraction],LET(fr,IF(ISOMITTED(res_fraction),0.1,res_fraction),pts,loading_branch(numeric_rows(curves),1),strain_a,CHOOSECOLS(pts,1),q_dev,CHOOSECOLS(pts,3),t_dev,CHOOSECOLS(pts,4),ratio,CHOOSECOLS(pts,6),young,INDEX(curve_stiffness(q_dev,strain_a),3)/10,su,peak(t_dev,strain_a),VSTACK(INDEX(su,1),INDEX(su,2),DEGREES(ASIN(INDEX(peak(ratio,strain_a),1))),DEGREES(ASIN(INDEX(residual(ratio,strain_a,fr),1))),young,young/3)));
+/** Undrained triaxial test: {S_u; axial strain at S_u, from the end of seating; phi'_p; phi'_r; E_u,50 (MPa); G_u (MPa)}. */
+triaxial_undrained_results = LAMBDA(curves,[res_fraction],LET(fr,IF(ISOMITTED(res_fraction),0.1,res_fraction),pts,loading_branch(numeric_rows(curves),1),strain_a,CHOOSECOLS(pts,1),q_dev,CHOOSECOLS(pts,3),t_dev,CHOOSECOLS(pts,4),ratio,CHOOSECOLS(pts,6),st,curve_stiffness(q_dev,strain_a),young,INDEX(st,3)/10,seating,IFERROR(INDEX(st,2),0),su,peak(t_dev,strain_a),VSTACK(INDEX(su,1),INDEX(su,2)-seating,DEGREES(ASIN(INDEX(peak(ratio,strain_a),1))),DEGREES(ASIN(INDEX(residual(ratio,strain_a,fr),1))),young,young/3)));
 
 /** Results that fit the data, for one sample per column: the columns of out up to the last filled cell of the input row ref. */
 trim_cols = LAMBDA(out,ref,TAKE(out,,XMATCH(TRUE,TOROW(ref)<>"",0,-1)));
