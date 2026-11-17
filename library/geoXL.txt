@@ -1,4 +1,4 @@
-// GeoEXCEL version 0.30 — complete consolidated named-LAMBDA library (documented)
+// GeoEXCEL version 0.31 — complete consolidated named-LAMBDA library (documented)
 // Module name: GeoEXCEL
 // Paste this entire file into the GeoEXCEL module in Excel Labs.
 // Local names use underscores. Worksheet example: =GeoEXCEL.water_pressure(3, 2)
@@ -81,9 +81,10 @@
 //                    two dry points suffice; a small dip at the driest point is accepted when no rising curve exists.
 // 0.30 (2026-11-17): utilities peak, tail_mean, local_slope; direct_shear_results and triaxial_*_results use them
 //                    (peak search on |y|, complete readings only).
+// 0.31 (2026-11-17): main_direction and loading_branch; direct shear and triaxial results read the loading branch only.
 
 /** Library version and release date, as text. Use =GeoEXCEL.version() to check which version is installed. */
-version = LAMBDA("GeoEXCEL 0.30 (2026-11-17)");
+version = LAMBDA("GeoEXCEL 0.31 (2026-11-17)");
 
 /** q_ult (kPa) for vertical loads: (author, phi, coh, q, gam, B, [L], [D], [eB], [eL], [use], [out]). Omitted/0 = off. use: "sdi" default, "s" = no depth factors. out 1 = table, 2 = 3 terms. Inclined loads: bearing_capacity_inclined. */
 bearing_capacity = LAMBDA(author,phi,coh,q,gam,B,[L],[D],[eB],[eL],[use],[out],LET(L_,IF(ISOMITTED(L),0,L),D_,IF(ISOMITTED(D),0,D),eB_,IF(ISOMITTED(eB),0,eB),eL_,IF(ISOMITTED(eL),0,eL),u,IF(ISOMITTED(use),"sdi",IF(use=0,"sdi",LOWER(use))),o,IF(ISOMITTED(out),0,out),g,bearing_effective(B,L_,eB_,eL_),Bp,INDEX(g,1),BL,INDEX(g,4),one,{1;1;1},N,bearing_factors(phi,author),s,IF(ISNUMBER(SEARCH("s",u)),bearing_shapeFactors(BL,phi,author),one),d,IF(ISNUMBER(SEARCH("d",u)),bearing_depthFactors(D_/B,phi,author),one),ld,VSTACK(coh,q,gam*Bp/2),t,N*s*d*ld,SWITCH(o,0,SUM(t),2,t,VSTACK(HSTACK("term","N","s","d","load","q_i"),HSTACK({"c";"q";"γ"},N,s,d,ld,t),HSTACK("q_ult","","","","",SUM(t))))));
@@ -515,8 +516,14 @@ intersection_polygon_ray = LAMBDA(polygon, pt, t,
         SORT(UNIQUE(FILTER(rValue, rValue<>0)))
     ));
 
+/** Rows of the table on the loading branch: each reading goes further, in the main direction of the controlling column, than all the readings before it (unloading and reloading removed). */
+loading_branch = LAMBDA(table,[column],LET(c,IF(ISOMITTED(column),1,column),x,CHOOSECOLS(table,c),u,x*main_direction(x),reached,SCAN(-1E+99,u,LAMBDA(a,v,MAX(a,v))),before,VSTACK(-1E+99,DROP(reached,-1)),FILTER(table,u>before)));
+
 /** Slope of the straight line fitted to the readings row-half_width to row+half_width. */
 local_slope = LAMBDA(y,x,row,half_width,LET(a,MAX(1,row-half_width),b,MIN(ROWS(x),row+half_width),k,SEQUENCE(b-a+1,1,a),SLOPE(CHOOSEROWS(y,k),CHOOSEROWS(x,k))));
+
+/** Direction of a series: 1 when more steps increase than decrease, -1 otherwise. */
+main_direction = LAMBDA(values,LET(x,TOCOL(values),d,DROP(x,1)-DROP(x,-1),IF(SUM(--(d<0))>SUM(--(d>0)),-1,1)));
 
 /** Teaching example of golden-section minimization of x³ + 5x² − 10x on [A, B]. */
 minimum = LAMBDA(A, B, [iter_],
@@ -2476,7 +2483,7 @@ consolidation_weight_volume = LAMBDA(height_initial,diameter,mass_initial,mass_f
 direct_shear_area = LAMBDA(lateral_displacement,size,area,LET(q,area/size^2,circ,ABS(q/(PI()/4)-1)<0.02,sq,ABS(q-1)<0.02,d,lateral_displacement/10,IF(circ,size^2/2*(ACOS(d/size)-d/size*SIN(ACOS(d/size))),IF(sq,size*(size-d),NA()))));
 
 /** Direct shear test: {phi_p; displacement at peak; phi_r; displacement where the residual readings start; sigma (kPa); dilation angle at peak}. Forces in N, displacements in mm, size and area in cm. */
-direct_shear_results = LAMBDA(lateral_displacement,vertical_displacement,shear_force,normal_force,size,area,[n_res],LET(nr,IF(ISOMITTED(n_res),5,n_res),data,numeric_rows(HSTACK(lateral_displacement,vertical_displacement,shear_force)),d_h,CHOOSECOLS(data,1),d_v,CHOOSECOLS(data,2),force,CHOOSECOLS(data,3),pk,peak(force,d_h),T_max,INDEX(pk,1),T_r,tail_mean(force,nr),p,XMATCH(INDEX(pk,2),d_h),sigma,10*normal_force/direct_shear_area(0,size,area),VSTACK(DEGREES(ATAN(T_max/normal_force)),INDEX(pk,2),DEGREES(ATAN(T_r/normal_force)),INDEX(d_h,ROWS(d_h)-nr+1),sigma,DEGREES(ATAN(local_slope(d_v,d_h,p,2))))));
+direct_shear_results = LAMBDA(lateral_displacement,vertical_displacement,shear_force,normal_force,size,area,[n_res],LET(nr,IF(ISOMITTED(n_res),5,n_res),data,loading_branch(numeric_rows(HSTACK(lateral_displacement,vertical_displacement,shear_force)),1),d_h,CHOOSECOLS(data,1),d_v,CHOOSECOLS(data,2),force,CHOOSECOLS(data,3),pk,peak(force,d_h),T_max,INDEX(pk,1),T_r,tail_mean(force,nr),p,XMATCH(INDEX(pk,2),d_h),sigma,10*normal_force/direct_shear_area(0,size,area),VSTACK(DEGREES(ATAN(T_max/normal_force)),INDEX(pk,2),DEGREES(ATAN(T_r/normal_force)),INDEX(d_h,ROWS(d_h)-nr+1),sigma,DEGREES(ATAN(local_slope(d_v,d_h,p,2))))));
 
 /** First row: results of model(values). Then one row per input: change of the results when that input is changed by its error. Last row: change when all the inputs are changed together. */
 error_propagation = LAMBDA(model,values,errors,LET(n,ROWS(values),base,TRANSPOSE(model(values)),one,MAKEARRAY(n,COLUMNS(base),LAMBDA(i,j,INDEX(model(values+errors*(SEQUENCE(n)=i)),j))),all,TRANSPOSE(model(values+errors)),VSTACK(base,one-base,all-base)));
@@ -2618,13 +2625,13 @@ triaxial_consolidation = LAMBDA(initial_height,initial_diameter,volume_change,LE
 triaxial_drained = LAMBDA(axial_displacement,axial_force,volume_change,height,volume,cell_pressure,[back_pressure],LET(sb,IF(ISOMITTED(back_pressure),0,back_pressure),strain_a,axial_displacement/height*100,strain_v,-volume_change/volume*100,area,volume/height*(1-strain_v/100)/(1-strain_a/100),q_dev,axial_force/area*10000,t_dev,q_dev/2,s_eff,cell_pressure-sb+t_dev,trim_rows(HSTACK(strain_a,strain_v,q_dev,t_dev,s_eff,t_dev/s_eff),axial_displacement)));
 
 /** Drained triaxial test: {E_50 (MPa); Poisson's ratio; G (MPa); phi'_p; axial strain at peak; phi'_r}. */
-triaxial_drained_results = LAMBDA(curves,[n_res],LET(nr,IF(ISOMITTED(n_res),5,n_res),strain_a,CHOOSECOLS(curves,1),strain_v,CHOOSECOLS(curves,2),q_dev,CHOOSECOLS(curves,3),ratio,CHOOSECOLS(curves,6),half,INDEX(peak(q_dev,strain_a),1)/2,strain_half,first_crossing(half,q_dev,strain_a),young,half/strain_half/10,poisson,(1-first_crossing(half,q_dev,strain_v)/strain_half)/2,pk,peak(ratio,strain_a),VSTACK(young,poisson,young/2/(1+poisson),DEGREES(ASIN(INDEX(pk,1))),INDEX(pk,2),DEGREES(ASIN(tail_mean(ratio,nr))))));
+triaxial_drained_results = LAMBDA(curves,[n_res],LET(nr,IF(ISOMITTED(n_res),5,n_res),pts,loading_branch(numeric_rows(curves),1),strain_a,CHOOSECOLS(pts,1),strain_v,CHOOSECOLS(pts,2),q_dev,CHOOSECOLS(pts,3),ratio,CHOOSECOLS(pts,6),half,INDEX(peak(q_dev,strain_a),1)/2,strain_half,first_crossing(half,q_dev,strain_a),young,half/strain_half/10,poisson,(1-first_crossing(half,q_dev,strain_v)/strain_half)/2,pk,peak(ratio,strain_a),VSTACK(young,poisson,young/2/(1+poisson),DEGREES(ASIN(INDEX(pk,1))),INDEX(pk,2),DEGREES(ASIN(tail_mean(ratio,nr))))));
 
 /** Columns {axial strain %; excess pore pressure kPa; q kPa; t = q/2 kPa; s' kPa; t/s'}. Displacement and height in the same unit; force kN; area cm2; pore_pressure may be 0 (UU test). */
 triaxial_undrained = LAMBDA(axial_displacement,axial_force,pore_pressure,height,area,cell_pressure,[back_pressure],LET(sb,IF(ISOMITTED(back_pressure),0,back_pressure),strain_a,axial_displacement/height*100,q_dev,axial_force*(1-strain_a/100)/area*10000,t_dev,q_dev/2,s_eff,cell_pressure-sb-pore_pressure+t_dev,trim_rows(HSTACK(strain_a,pore_pressure+0*strain_a,q_dev,t_dev,s_eff,t_dev/s_eff),axial_displacement)));
 
 /** Undrained triaxial test: {S_u; axial strain at S_u; phi'_p; phi'_r; E_u,50 (MPa); G_u (MPa)}. */
-triaxial_undrained_results = LAMBDA(curves,[n_res],LET(nr,IF(ISOMITTED(n_res),5,n_res),strain_a,CHOOSECOLS(curves,1),q_dev,CHOOSECOLS(curves,3),t_dev,CHOOSECOLS(curves,4),ratio,CHOOSECOLS(curves,6),half,INDEX(peak(q_dev,strain_a),1)/2,young,half/first_crossing(half,q_dev,strain_a)/10,su,peak(t_dev,strain_a),VSTACK(INDEX(su,1),INDEX(su,2),DEGREES(ASIN(INDEX(peak(ratio,strain_a),1))),DEGREES(ASIN(tail_mean(ratio,nr))),young,young/3)));
+triaxial_undrained_results = LAMBDA(curves,[n_res],LET(nr,IF(ISOMITTED(n_res),5,n_res),pts,loading_branch(numeric_rows(curves),1),strain_a,CHOOSECOLS(pts,1),q_dev,CHOOSECOLS(pts,3),t_dev,CHOOSECOLS(pts,4),ratio,CHOOSECOLS(pts,6),half,INDEX(peak(q_dev,strain_a),1)/2,young,half/first_crossing(half,q_dev,strain_a)/10,su,peak(t_dev,strain_a),VSTACK(INDEX(su,1),INDEX(su,2),DEGREES(ASIN(INDEX(peak(ratio,strain_a),1))),DEGREES(ASIN(tail_mean(ratio,nr))),young,young/3)));
 
 /** Results that fit the data, for one sample per column: the columns of out up to the last filled cell of the input row ref. */
 trim_cols = LAMBDA(out,ref,TAKE(out,,XMATCH(TRUE,TOROW(ref)<>"",0,-1)));

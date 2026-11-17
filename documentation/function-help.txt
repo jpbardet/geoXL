@@ -2083,3 +2083,12 @@ x: Abscissas of the values
 row: Row at the centre of the window
 half_width: Number of readings on each side
 returns: Least-squares slope of y against x over the window.
+
+[main_direction]
+values: Series of values
+returns: 1 when more steps increase than decrease, -1 otherwise.
+
+[loading_branch]
+table: Readings, one row per reading
+column: Column of the controlling variable (1 by default)
+returns: The rows on the loading branch (unloading and reloading removed).
