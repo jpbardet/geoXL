@@ -2,7 +2,7 @@
 # One name per line, exactly as in library/geoXL.txt. Functions they call are added automatically.
 # Raise the version whenever this list changes or a listed function (or one it calls) changes;
 # the build refuses to overwrite a published geolabXL snapshot with different content.
-version: 0.7
+version: 0.8
 date: 2026-11-16
 
 # Water content, specific gravity and water properties
@@ -125,7 +125,7 @@ filter_by_row
 series_direction
 chord_profile
 peak
-tail_mean
+residual
 local_slope
 main_direction
 loading_branch

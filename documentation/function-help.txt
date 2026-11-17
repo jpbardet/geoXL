@@ -1712,7 +1712,7 @@ shear_force: Shear forces (N)
 normal_force: Normal force (N)
 size: Side or diameter of the box (mm)
 area: "square" or "round"
-n_res: Number of final readings averaged for the residual strength (optional)
+res_fraction: Last part of the lateral displacement averaged for the residual (0.1 by default)
 returns: Normal stress, peak and residual shear stresses, the displacement at the peak, and the dilatancy angle (degrees).
 
 [error_propagation]
@@ -2015,7 +2015,7 @@ returns: Columns {ε1; εv; q; t; s′; t/s′}, one row per reading.
 
 [triaxial_drained_results]
 curves: Output of triaxial_drained
-n_res: Number of final readings averaged (optional)
+res_fraction: Last part of the axial strain averaged for the residual (0.1 by default)
 returns: Peak and final values of the test, including φ′ at the peak, the strain at the peak and the residual φ′r.
 
 [triaxial_undrained]
@@ -2030,7 +2030,7 @@ returns: Columns {ε1; u; q; t; s′; t/s′}, one row per reading.
 
 [triaxial_undrained_results]
 curves: Output of triaxial_undrained
-n_res: Number of final readings averaged (optional)
+res_fraction: Last part of the axial strain averaged for the residual (0.1 by default)
 returns: Peak and final states of the undrained test.
 
 [trim_cols]
@@ -2072,10 +2072,11 @@ y: Values in which the peak is searched (the largest magnitude)
 x: Values at which y is measured (same length)
 returns: Column {y at the peak; x at the peak}; first occurrence; incomplete pairs ignored.
 
-[tail_mean]
-values: Series of values
-n: Number of last values averaged
-returns: Mean of the last n values.
+[residual]
+y: Values whose residual is wanted
+x: Controlling variable (displacement, strain)
+fraction: Last part of the range of x averaged (0.1 by default)
+returns: Column {mean of y over that part; x where it starts}.
 
 [local_slope]
 y: Values
