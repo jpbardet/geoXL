@@ -1707,8 +1707,8 @@ returns: Column {w0; γd0; e0; Sr0; Gs; wf; γdf; ef}.
 [curve_stiffness]
 y: Values of the curve (stress or force)
 x: Values at which y is measured (strain or displacement)
-fraction: Window of the initial slope, as a fraction of the peak (0.25 by default)
-returns: Column {initial slope; x where the initial line crosses y = 0; secant slope at half the peak from that x; x increment to half the peak}; #N/A with fewer than 2 readings in the window.
+fraction: Rise of each window of the initial slope, as a fraction of the peak (0.25 by default)
+returns: Column {initial slope (steepest window); x where it crosses y = 0, the end of seating; secant slope at half the peak from that x; x increment to half the peak}; #N/A if no window has 2 readings or the secant is steeper than the initial slope.
 
 [direct_shear_area]
 lateral_displacement: Horizontal displacements (mm)

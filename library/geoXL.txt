@@ -1,4 +1,4 @@
-// GeoEXCEL version 0.33 — complete consolidated named-LAMBDA library (documented)
+// GeoEXCEL version 0.34 — complete consolidated named-LAMBDA library (documented)
 // Module name: GeoEXCEL
 // Paste this entire file into the GeoEXCEL module in Excel Labs.
 // Local names use underscores. Worksheet example: =GeoEXCEL.water_pressure(3, 2)
@@ -85,9 +85,11 @@
 // 0.32 (2026-11-17): residual (mean over the last 10% of the range of x) replaces tail_mean; results functions take [res_fraction].
 // 0.33 (2026-11-17): curve_stiffness, spacing_weights, weighted_slope: initial slope by weighted regression from 0 to 25% of
 //                    the peak, secant at half peak measured from its crossing of y = 0; triaxial_*_results use it.
+// 0.34 (2026-11-17): curve_stiffness: the tangent can only decrease, so the steepest window (rise of 25% of the peak)
+//                    gives the initial slope and the end of seating; #N/A if the secant at half peak is steeper.
 
 /** Library version and release date, as text. Use =GeoEXCEL.version() to check which version is installed. */
-version = LAMBDA("GeoEXCEL 0.33 (2026-11-17)");
+version = LAMBDA("GeoEXCEL 0.34 (2026-11-17)");
 
 /** q_ult (kPa) for vertical loads: (author, phi, coh, q, gam, B, [L], [D], [eB], [eL], [use], [out]). Omitted/0 = off. use: "sdi" default, "s" = no depth factors. out 1 = table, 2 = 3 terms. Inclined loads: bearing_capacity_inclined. */
 bearing_capacity = LAMBDA(author,phi,coh,q,gam,B,[L],[D],[eB],[eL],[use],[out],LET(L_,IF(ISOMITTED(L),0,L),D_,IF(ISOMITTED(D),0,D),eB_,IF(ISOMITTED(eB),0,eB),eL_,IF(ISOMITTED(eL),0,eL),u,IF(ISOMITTED(use),"sdi",IF(use=0,"sdi",LOWER(use))),o,IF(ISOMITTED(out),0,out),g,bearing_effective(B,L_,eB_,eL_),Bp,INDEX(g,1),BL,INDEX(g,4),one,{1;1;1},N,bearing_factors(phi,author),s,IF(ISNUMBER(SEARCH("s",u)),bearing_shapeFactors(BL,phi,author),one),d,IF(ISNUMBER(SEARCH("d",u)),bearing_depthFactors(D_/B,phi,author),one),ld,VSTACK(coh,q,gam*Bp/2),t,N*s*d*ld,SWITCH(o,0,SUM(t),2,t,VSTACK(HSTACK("term","N","s","d","load","q_i"),HSTACK({"c";"q";"γ"},N,s,d,ld,t),HSTACK("q_ult","","","","",SUM(t))))));
@@ -745,8 +747,8 @@ spacing_weights = LAMBDA(x,y,LET(xx,TOCOL(x),yy,TOCOL(y),seg,SQRT(((DROP(xx,1)-D
 /** Weighted least-squares line of y against x: {slope; intercept}. */
 weighted_slope = LAMBDA(y,x,weights,LET(yy,TOCOL(y),xx,TOCOL(x),w,TOCOL(weights),x_m,SUM(w*xx)/SUM(w),y_m,SUM(w*yy)/SUM(w),b,SUM(w*(xx-x_m)*(yy-y_m))/SUM(w*(xx-x_m)^2),VSTACK(b,y_m-b*x_m)));
 
-/** Stiffness of a loading curve: {initial slope fitted from 0 to a fraction (25%) of the peak; x where that line crosses y = 0; secant slope at half the peak measured from that x; x increment to half the peak}. #N/A with fewer than 2 readings in the window. */
-curve_stiffness = LAMBDA(y,x,[fraction],LET(f,IF(ISOMITTED(fraction),0.25,fraction),pk,peak(y,x),y_p,INDEX(pk,1),top,ABS(y_p),d,main_direction(x),xx,TOCOL(x)*d,yy,TOCOL(y)*SIGN(y_p),k_p,XMATCH(MAX(yy),yy),rx,TAKE(xx,k_p),ry,TAKE(yy,k_p),n,IFERROR(XMATCH(TRUE,ry>f*top)-1,k_p),IF(n<2,VSTACK(NA(),NA(),NA(),NA()),LET(ls,weighted_slope(TAKE(ry,n),TAKE(rx,n),TAKE(spacing_weights(rx,ry),n)),b,INDEX(ls,1),x_0,MAX(-INDEX(ls,2)/b,INDEX(rx,1)),x_50,first_crossing(top/2,ry,rx),VSTACK(b,x_0*d,(top/2)/(x_50-x_0),(x_50-x_0)*d)))));
+/** Stiffness of a loading curve (the tangent can only decrease): {initial slope = steepest weighted line over a rise of 25% of the peak, starting below half peak; x where it crosses y = 0 (end of seating); secant slope at half the peak from that x; x increment to half the peak}. #N/A if no window has 2 readings or the secant is steeper than the initial slope. */
+curve_stiffness = LAMBDA(y,x,[fraction],LET(f,IF(ISOMITTED(fraction),0.25,fraction),pk,peak(y,x),y_p,INDEX(pk,1),top,ABS(y_p),d,main_direction(x),xx,TOCOL(x)*d,yy,TOCOL(y)*SIGN(y_p),k_p,XMATCH(MAX(yy),yy),rx,TAKE(xx,k_p),ry,TAKE(yy,k_p),w,spacing_weights(rx,ry),r,SEQUENCE(k_p),window,LAMBDA(i,(r>=i)*(ry<=INDEX(ry,i)+f*top)),line,LAMBDA(i,LET(in,window(i),weighted_slope(FILTER(ry,in),FILTER(rx,in),FILTER(w,in)))),slopes,MAP(r,LAMBDA(i,IF(OR(INDEX(ry,i)>top/2,SUM(window(i))<2),-1E+99,INDEX(line(i),1)))),i_0,XMATCH(MAX(slopes),slopes),ls,line(i_0),b,INDEX(ls,1),x_0,MAX(-INDEX(ls,2)/b,INDEX(rx,1)),x_50,first_crossing(top/2,ry,rx),e_50,(top/2)/(x_50-x_0),IF(OR(MAX(slopes)<0,e_50>b),VSTACK(NA(),NA(),NA(),NA()),VSTACK(b,x_0*d,e_50,(x_50-x_0)*d))));
 
 /** Residual value: mean of y over the last fraction (10% by default) of the range of x, and the x where that part starts: {residual; x at its start}. */
 residual = LAMBDA(y,x,[fraction],LET(f,IF(ISOMITTED(fraction),0.1,fraction),xx,TOCOL(x),yy,TOCOL(y),u,xx*main_direction(xx),start,MAX(u)-f*(MAX(u)-MIN(u)),VSTACK(AVERAGE(FILTER(yy,u>=start)),XLOOKUP(TRUE,u>=start,xx))));
