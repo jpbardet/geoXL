@@ -2006,7 +2006,7 @@ returns: Column {γ; γd; e; Sr; γsat}.
 
 [triaxial_cd_chain]
 x: Column of the measurements of a drained triaxial test
-returns: Column of the 6 stiffness then 6 strength results of the test, for model_phi.
+returns: Column of the 4 stiffness then 6 strength results of the test, for model_phi.
 
 [triaxial_consolidation]
 initial_height: Initial height of the specimen (cm)
@@ -2026,8 +2026,7 @@ returns: Columns {ε1; εv; q; t; s′; t/s′}, one row per reading.
 
 [triaxial_stiffness]
 curves: Output of triaxial_drained or triaxial_undrained
-drained: TRUE for a drained test (Poisson's ratio from the volumetric strain); FALSE by default (ν = 0.5)
-returns: Column {reset strain at the end of seating (%); initial modulus Ei (MPa); secant modulus E50 (MPa); axial strain from the reset to q/2 (%); Poisson's ratio; G (MPa)}.
+returns: Column {reset strain at the end of seating (%); initial modulus Ei (MPa); secant modulus E50 (MPa); axial strain from the reset to q/2 (%)}.
 
 [triaxial_strength]
 curves: Output of triaxial_drained or triaxial_undrained
