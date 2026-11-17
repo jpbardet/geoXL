@@ -1600,3 +1600,469 @@ notes: Time and dial values stored as text are converted to numbers.
 [geolab_version]
 returns: Text with the GeoLabXL version and release date, for example "GeoLabXL 0.1 (2026-11-05)".
 notes: Separate from geoXL's version(), so a workbook can carry both libraries.
+
+# ---------------------------------------------------------------- geolabXL 0.4 (2026-11-16)
+[ASTM_tree_chart]
+trees: Table of the decision trees of ASTM D2487 (sheet of the classification workbook)
+symbol: Group symbol of the soil, e.g. CL or SW-SM
+name: Group name of the soil
+returns: Points (x, y) of the path of the soil through the decision tree, for a chart.
+
+[average_by_row]
+array: Block of numbers, one test per row
+returns: Column of the averages of each row (blank cells ignored).
+
+[chord_profile]
+x: Abscissas, e.g. log10 of time
+y: Ordinates, e.g. dial readings
+span: Length of the ruler (chord) along x, e.g. 0.5 log cycle
+n_pos: Number of positions of the ruler (default 200)
+returns: Table {start of the ruler, y at its start, y at its end}, y interpolated between the data.
+
+[combined_percent_finer]
+method: "sieve" for sieve data (unchanged), any other text for sedimentation data
+percent_finer: Percent finer of the sedimentation analysis (%)
+mass_passing_200: Dry mass passing the No. 200 sieve (g)
+mass_total: Dry mass of the whole sample (g)
+returns: Percent finer referred to the whole sample (%): sedimentation values are multiplied by W200/Wtot.
+
+[compaction_fit]
+w: Water contents of the compaction points (fraction, 0.12 for 12 %)
+gamma_d: Dry unit weights of the points (kN/m³)
+Gs: Specific gravity of solids
+gamma_w: Unit weight of water (kN/m³), default 9.81
+returns: Column {w_opt; γd,max; S of the wettest point; S at the optimum; w at the tangent point; c2; c3}, or an error message.
+notes: The dry branch is a cubic tangent to the saturation line of the wettest point (Chapter 3-4).
+
+[compaction_curve]
+w: Water contents of the compaction points (fraction)
+gamma_d: Dry unit weights of the points (kN/m³)
+Gs: Specific gravity of solids
+gamma_w: Unit weight of water (kN/m³), default 9.81
+points: Number of points of the curve (default 60)
+returns: Table with headers {w, fitted curve, S = 100 % line, saturation line of S} for a chart.
+
+[cone_penetration]
+initial: Dial readings before the cone is released (mm)
+final: Dial readings after 5 s (mm)
+returns: Penetrations |final − initial| (mm), one per specimen.
+
+[consolidation_chord]
+t: Times of the readings of one load step (min), starting at 0
+d: Changes of dial reading of the step, starting at 0
+H_dr: Drainage distance (cm); 1 gives cv/H²
+span: Length of the ruler in log cycles (default 0.5)
+returns: Column {cv; d0; d100; t50; t90; time at the peak of the ruler slope; creep slope per log cycle}.
+notes: Ruler method: the theoretical bell of the ruler slope is fitted to the measured one up to a quarter log cycle past its peak.
+
+[consolidation_creep_steps]
+loads: Load numbers to process (column)
+load_no: Load number of each reading
+t_all: Time of each reading (min)
+d_all: Dial reading of each reading
+h_0: Initial height of the specimen (cm)
+dial_0: Initial dial reading
+returns: Modified secondary compression index Cαε of each load step.
+
+[consolidation_ratios]
+d_0: Dial reading change at U = 0
+d_100: Dial reading change at U = 100 %
+d_end: Last dial reading change of the step
+returns: Column {ri; rp; rs}: initial, primary and secondary compression ratios.
+
+[consolidation_step]
+load: Load number
+load_no: Load number of each reading
+t_all: Time of each reading (min)
+d_all: Dial reading of each reading
+returns: Two columns {t, d} of the step, both starting at 0.
+
+[consolidation_steps]
+method: Method function: consolidation_log_time, consolidation_sqrt_time, consolidation_chord or consolidation_fitting
+loads: Load numbers to process (column)
+load_no: Load number of each reading
+t_all: Time of each reading (min)
+d_all: Dial reading of each reading
+h_0: Initial height of the specimen (cm)
+dial_0: Initial dial reading
+returns: One row per load step {cv; d0; d100; ri; rp; rs}.
+
+[consolidation_weight_volume]
+height_initial: Initial height of the specimen (cm)
+diameter: Diameter of the specimen (cm)
+mass_initial: Initial mass of the specimen (g)
+mass_final: Final mass of the specimen (g)
+mass_dry: Dry mass of the specimen (g)
+dial_initial: Initial dial reading (cm)
+dial_final: Final dial reading (cm)
+Sr_final: Final degree of saturation, default 1
+g: Gravity (m/s²), default 9.81
+returns: Column {w0; γd0; e0; Sr0; Gs; wf; γdf; ef}.
+
+[direct_shear_area]
+lateral_displacement: Horizontal displacements (mm)
+size: Side of a square box or diameter of a round box (mm)
+area: "square" or "round"
+returns: Corrected contact area of the two halves of the box (mm²).
+
+[direct_shear_results]
+lateral_displacement: Horizontal displacements (mm)
+vertical_displacement: Vertical displacements (mm)
+shear_force: Shear forces (N)
+normal_force: Normal force (N)
+size: Side or diameter of the box (mm)
+area: "square" or "round"
+n_res: Number of final readings averaged for the residual strength (optional)
+returns: Normal stress, peak and residual shear stresses, the displacement at the peak, and the dilatancy angle (degrees).
+
+[error_propagation]
+model: Function of one argument (a column of values) that returns the result
+values: Measured values, in the order expected by the model
+errors: Errors (uncertainties) of the measurements, same units
+returns: Column {result; change of the result due to the error of each measurement; change with all the errors together}.
+
+[field_unit_weight]
+mass: Mass of the soil removed from the hole (g)
+V: Volume of the hole (cm³)
+moisture: Water content (fraction)
+g: Gravity (m/s²), default 9.81
+returns: Column {γ; γd} (kN/m³).
+
+[filter_by_row]
+table: Table to filter
+key_column: Key of each row of the table
+keys: Keys to keep
+last: TRUE to keep the last matching row instead of the first (optional)
+returns: One row of the table for each key.
+
+[first_crossing]
+level: Level to reach
+y_values: Values of y, in order of x
+x_values: Values of x
+returns: x at which y first reaches the level, by linear interpolation; #N/A if never reached.
+
+[hydrometer_grain_size]
+time: Elapsed times (min)
+reading: Hydrometer readings
+temperature: Temperatures (°C)
+Gs: Specific gravity of solids
+slope: Slope of the calibration depth = intercept + slope × reading (cm per reading)
+intercept: Intercept of the calibration (cm)
+volume_bulb: Volume of the bulb (cm³)
+diameter_cylinder: Inside diameter of the cylinder (cm)
+Cm: Meniscus correction (optional)
+returns: Particle diameters (mm), Stokes' law.
+
+[hydrometer_percent_finer]
+W: Dry mass of soil in suspension (g)
+reading: Hydrometer readings
+temperature: Temperatures (°C)
+Gs: Specific gravity of solids
+Cm: Meniscus correction (optional)
+Cd: Dispersing agent correction (optional)
+returns: Percent finer (%).
+
+[liquid_limit]
+blows: Numbers of blows of the Casagrande cup
+moisture: Water contents (%)
+returns: Column {LL; slope of the flow line}.
+
+[liquid_limit_cone]
+penetration: Cone penetrations (mm)
+moisture: Water contents (%)
+d_ref: Reference penetration (mm), default 20
+returns: Column {LL; slope}.
+
+[model_phi]
+x: Column of the measurements of the drained triaxial chain
+returns: Friction angle φ′ (degrees), for error_propagation and monte_carlo.
+
+[model_specimen]
+x: Column {height; diameter; tare; wet; dry; Gs; mass}
+returns: Void ratio of the specimen, for error_propagation and monte_carlo.
+
+[model_water_content]
+x: Column {tare; wet; dry} (g)
+returns: Water content (%), for error_propagation and monte_carlo.
+
+[monte_carlo]
+model: Function of one argument (a column of values) that returns the result
+values: Measured values
+uncertainties: Standard uncertainties of the measurements
+trials: Number of random trials (default 1000)
+returns: One result per random trial (column); summarize it with AVERAGE and STDEV.
+
+[numeric_rows]
+table: Table with possibly incomplete rows
+returns: The rows in which every cell is a number.
+
+[permeability_constant_head]
+head_loss: Head losses between the taps (cm)
+tap_distance: Distance between the taps (cm)
+mass_full: Mass of the container with water (g)
+mass_tare: Mass of the empty container (g)
+duration: Duration of the collection (s)
+diameter: Diameter of the specimen (cm)
+returns: Columns {gradient i; velocity v (cm/s); k (cm/s)}.
+
+[permeability_darcy]
+gradient: Hydraulic gradients
+velocity: Discharge velocities (cm/s)
+returns: Hydraulic conductivity k (cm/s): slope of v versus i through the origin.
+
+[permeability_falling_head]
+elapsed_time: Elapsed times (s)
+head: Heads in the standpipe (cm)
+initial_head: Initial head (cm)
+standpipe_diameter: Inside diameter of the standpipe (cm)
+specimen_diameter: Diameter of the specimen (cm)
+specimen_length: Length of the specimen (cm)
+capillary_rise: Capillary rise in the standpipe (cm), default 0
+returns: Hydraulic conductivity k (cm/s) of each reading.
+
+[permeability_falling_head_fit]
+elapsed_time: Elapsed times (s)
+head: Heads in the standpipe (cm)
+initial_head: Initial head (cm)
+standpipe_diameter: Inside diameter of the standpipe (cm)
+specimen_diameter: Diameter of the specimen (cm)
+specimen_length: Length of the specimen (cm)
+capillary_rise: Capillary rise (cm), default 0
+returns: k (cm/s) from the line ln(h0/h) versus t through the origin.
+
+[permeability_falling_head_height]
+elapsed_time: Times (s)
+permeability: Hydraulic conductivity (cm/s)
+initial_head: Initial head (cm)
+standpipe_diameter: Inside diameter of the standpipe (cm)
+specimen_diameter: Diameter of the specimen (cm)
+specimen_length: Length of the specimen (cm)
+capillary_rise: Capillary rise (cm), default 0
+returns: Predicted heads in the standpipe (cm).
+
+[permeability_hazen]
+effective_size: Effective size D10 (mm)
+hazen_coefficient: Hazen coefficient C (default 1, k in cm/s with D10 in mm)
+returns: Hydraulic conductivity k = C D10² (cm/s).
+
+[permeability_kozeny_carman]
+sieve_opening: Sieve openings (mm)
+percent_finer: Percent finer (%)
+angularity: Shape factor of the grains
+void_ratio: Void ratio
+temperature: Temperature (°C), default 20
+returns: Hydraulic conductivity (cm/s), Kozeny-Carman.
+
+[permeability_specimen]
+dry_mass: Dry mass of the specimen (g)
+height: Height of the specimen (cm)
+diameter: Diameter of the specimen (cm)
+Gs: Specific gravity of solids
+g: Gravity (m/s²), default 9.81
+returns: Column {γd (kN/m³); e}.
+
+[permeability_viscosity_ratio]
+temperature: Temperature of the test (°C)
+returns: Ratio η(T)/η(20 °C), to correct k to 20 °C.
+
+[polynomial_fit]
+x_values: Values of x
+y_values: Values of y
+degree: Degree of the polynomial
+returns: Column {a0; a1; ...; an} of y = a0 + a1 x + ... + an xⁿ (least squares).
+
+[sand_cone_volume]
+jar_before: Mass of the jar with sand before filling the hole (g)
+jar_after: Mass of the jar after filling the hole (g)
+cone_before: Masses of the jar before filling the cone alone, one per trial (g)
+cone_after: Masses of the jar after filling the cone alone (g)
+gamma_sand: Unit weight of the sand (kN/m³)
+g: Gravity (m/s²), default 9.81
+returns: Volume of the hole (cm³).
+
+[sand_unit_weight]
+mold_sand: Mass of the mold filled with sand (g)
+mold: Mass of the empty mold (g)
+D: Diameter of the mold (cm)
+H: Height of the mold (cm)
+g: Gravity (m/s²), default 9.81
+returns: Unit weight of the sand (kN/m³).
+
+[saturation_line]
+w: Water contents (fraction)
+Gs: Specific gravity of solids
+S: Degree of saturation (fraction)
+gamma_w: Unit weight of water (kN/m³), default 9.81
+returns: Dry unit weight γd = Gs γw / (1 + Gs w / S) (kN/m³).
+
+[sedimentation_diameter]
+time: Elapsed times (min)
+depth: Effective depths (cm)
+temperature: Temperatures (°C)
+Gs: Specific gravity of solids
+returns: Particle diameters (mm), Stokes' law.
+
+[seepage_confined_block]
+block: The 3 × 3 cells around the node (the node in the middle)
+kind: Kind of the node (map of the kinds of nodes)
+omega: Relaxation factor ω; 0 resets the grid, a negative value holds it
+permeability_1: Permeability of layer 1 (default 1)
+permeability_2: Permeability of layer 2 (default 1)
+returns: New total head of the node (one iteration of Gauss-Seidel or over-relaxation).
+
+[seepage_face_weights]
+kind: Kind of the node
+permeability_1: Permeability of layer 1 (default 1)
+permeability_2: Permeability of layer 2 (default 1)
+returns: Weights of the four faces of the cell of the node.
+
+[seepage_free_surface]
+pressure_heads: Block of pressure heads (blank: no soil)
+elevations: Elevations of the rows
+returns: Points of the free surface (pressure head 0), for a chart.
+
+[seepage_permeability_ratio]
+pressure_head: Pressure heads (m)
+transition_width: Width of the transition from saturated to unsaturated (m)
+residual_ratio: Residual ratio of permeability (default 0.001)
+returns: Ratio k/ksat between the residual ratio and 1.
+
+[seepage_relax]
+node: Current value of the node
+average: Weighted average of the neighbors
+omega: Relaxation factor ω; 0 resets, a negative value holds
+returns: New value of the node.
+
+[seepage_switch]
+switch: "Calculate", "Hold" or "Reset"
+omega: Relaxation factor used when calculating
+other_switches: Switches of the other sheets (optional)
+returns: ω, 0 (reset) or a negative value (hold).
+
+[seepage_unconfined_block]
+block: The 3 × 3 cells of pressure heads around the node
+kind: Kind of the node
+parameters: Column {spacing; transition width; residual ratio; ω}
+permeability_1: Permeability of layer 1 (default 1)
+permeability_2: Permeability of layer 2 (default 1)
+returns: New pressure head of the node.
+
+[seepage_unconfined_flow]
+left: Pressure heads of the left column of a section
+right: Pressure heads of the right column
+transition_width: Width of the transition (m)
+residual_ratio: Residual ratio of permeability (default 0.001)
+face_lengths: Lengths of the faces (default the grid spacing)
+returns: Flow q/k through the section.
+
+[seepage_unconfined_flownet]
+block: Block of pressure heads: x in row 1, y in column 1
+h_levels: Total heads of the equipotential lines
+psi_levels: Values of q/k of the flow lines
+transition_width: Width of the transition (m)
+residual_ratio: Residual ratio of permeability (optional)
+permeability: Permeabilities of the columns (optional)
+returns: Four columns {x, y of equipotentials; x, y of flow lines}, lines separated by #N/A.
+
+[seepage_unconfined_psi]
+block: Block of pressure heads: x in row 1, y in column 1
+transition_width: Width of the transition (m)
+residual_ratio: Residual ratio of permeability (optional)
+permeability: Permeabilities of the columns (optional)
+returns: Stream function q/k with its coordinates.
+
+[series_direction]
+values: Series of values (e.g. stresses of the load steps)
+returns: 1 where the series increases, −1 where it decreases.
+
+[shrinkage_limit]
+dish: Mass of the empty dish (g)
+wet: Mass of the dish with wet soil (g)
+dry: Mass of the dish with dry soil (g)
+V: Volume of the dish (cm³)
+mass_waxed: Mass of the waxed dry pat (g)
+buoyant_waxed: Buoyant mass of the waxed pat (g)
+rho_wax: Density of the wax (g/cm³)
+returns: Column {V0; w; SL; SR; LS}: dry volume, water content, shrinkage limit, shrinkage ratio and linear shrinkage.
+
+[soil_weight_volume]
+mass: Mass of the specimen (g)
+volume: Volume of the specimen (cm³)
+specific_gravity: Specific gravity of solids
+water_content: Water content (fraction), optional
+unit_weight_water: Unit weight of water (kN/m³), default 9.81
+returns: Column {γ; γd; e; Sr; γsat}.
+
+[triaxial_cd_chain]
+x: Column of the measurements of a drained triaxial test
+returns: Intermediate results of the test and φ′, for model_phi.
+
+[triaxial_consolidation]
+initial_height: Initial height of the specimen (cm)
+initial_diameter: Initial diameter (cm)
+volume_change: Volume change during consolidation (cm³)
+returns: Column {height; volume; area} after consolidation.
+
+[triaxial_drained]
+axial_displacement: Axial displacements (cm)
+axial_force: Axial forces (kN)
+volume_change: Volume changes (cm³)
+height: Height after consolidation (cm)
+volume: Volume after consolidation (cm³)
+cell_pressure: Cell pressure (kPa)
+back_pressure: Back pressure (kPa), default 0
+returns: Columns {ε1; εv; q; t; s′; t/s′}, one row per reading.
+
+[triaxial_drained_results]
+curves: Output of triaxial_drained
+n_res: Number of final readings averaged (optional)
+returns: Peak and final values of the test, including φ′ at the peak, the strain at the peak and the residual φ′r.
+
+[triaxial_undrained]
+axial_displacement: Axial displacements (cm)
+axial_force: Axial forces (kN)
+pore_pressure: Pore pressures (kPa)
+height: Height after consolidation (cm)
+area: Area after consolidation (cm²)
+cell_pressure: Cell pressure (kPa)
+back_pressure: Back pressure (kPa), default 0
+returns: Columns {ε1; u; q; t; s′; t/s′}, one row per reading.
+
+[triaxial_undrained_results]
+curves: Output of triaxial_undrained
+n_res: Number of final readings averaged (optional)
+returns: Peak and final states of the undrained test.
+
+[trim_cols]
+out: Result to trim
+ref: Reference row; columns after its last filled cell are removed
+returns: The columns of out up to the last filled cell of ref.
+
+[trim_rows]
+out: Result to trim
+ref: Reference column; rows after its last filled cell are removed
+returns: The rows of out up to the last filled cell of ref.
+
+[uncertainty_budget]
+model: Function of one argument (a column of values) that returns the result
+values: Measured values
+uncertainties: Standard uncertainties of the measurements
+returns: One row per measurement {sensitivity; contribution; share of the variance}, then {result; combined uncertainty; 1}.
+
+[unit_weight_wax]
+soil: Mass of the soil specimen (g)
+waxed: Mass of the waxed specimen (g)
+immersed: Mass of the waxed specimen in water (g)
+gamma_p: Unit weight of the wax (kN/m³)
+wet: Mass of the container with wet soil (g)
+dry: Mass of the container with dry soil (g)
+tare: Mass of the container (g), default 0
+gamma_w: Unit weight of water (kN/m³), default 9.81
+returns: Rows {γ; w; γd}, one column per specimen.
+
+[wax_unit_weight]
+metal: Mass of the metal piece (g)
+wax: Mass of the wax (g)
+both: Mass of the metal and wax immersed in water (g)
+gamma_w: Unit weight of water (kN/m³), default 9.81
+returns: Unit weight of the wax (kN/m³).
