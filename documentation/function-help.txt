@@ -65,11 +65,11 @@ BL: Shape ratio B/L
 returns: Skempton Nc (dimensionless) for undrained bearing, qu = cu·Nc + q.
 
 [classify_AASHTO]
-pf10_: Percent passing No. 10 sieve (enter 40 for 40 %)
-pf40_: Percent passing No. 40 sieve (%)
-pf200_: Percent passing No. 200 sieve (%)
-LL_: Liquid limit LL (%), optional
-PL_: Plastic limit PL (%), optional
+percent_passing_no10: Percent passing No. 10 sieve (enter 40 for 40 %)
+percent_passing_no40: Percent passing No. 40 sieve (%)
+percent_passing_no200: Percent passing No. 200 sieve (%)
+liquid_limit: Liquid limit LL (%), optional
+plastic_limit: Plastic limit PL (%), optional
 returns: AASHTO group (e.g. A-2-4) with group index, as text.
 notes: Percentages are entered as numbers (40), not fractions (0.40).
 
@@ -90,19 +90,19 @@ returns: Text "symbol - group name", e.g. "CL - Lean clay with sand"; organic so
 notes: From 0.14 its group names agree with classify_ASTM2487, which follows the D2487 flow charts without a table.
 
 [classify_Plasticity]
-LL: Liquid limit LL (%)
-PL: Plastic limit PL (%)
+liquid_limit: Liquid limit LL (%)
+plastic_limit: Plastic limit PL (%)
 organic: Organic indicator: omit or 0 = inorganic, 1 = organic
 returns: Symbol from the plasticity chart: CL, CH, ML, MH, OL, OH or "CL & ML".
 
 [classify_USC]
-pf4_: Percent passing No. 4 sieve (%)
-pf200_: Percent passing No. 200 sieve (%)
-Cu_: Coefficient of uniformity Cu = D60/D10, optional
-Cc_: Coefficient of curvature Cc = D30²/(D10·D60), optional
-LL_: Liquid limit LL (%), optional
-PL_: Plastic limit PL (%), optional
-organic_: Organic indicator: omit or 0 = inorganic, 1 = organic
+percent_passing_no4: Percent passing No. 4 sieve (%)
+percent_passing_no200: Percent passing No. 200 sieve (%)
+uniformity_coefficient: Coefficient of uniformity Cu = D60/D10, optional
+curvature_coefficient: Coefficient of curvature Cc = D30²/(D10·D60), optional
+liquid_limit: Liquid limit LL (%), optional
+plastic_limit: Plastic limit PL (%), optional
+organic: Organic indicator: omit or 0 = inorganic, 1 = organic
 returns: USCS group symbol (e.g. SW-SM, CL).
 notes: Coarse soils with CL-ML fines give SC-SM or GC-GM. Equal sand and gravel fractions classify as sand.
 
@@ -116,12 +116,12 @@ returns: 10 × 2 labelled table: Cv, initial height, initial reading, d0, d100, 
 notes: As in the LAMBDA, tc and xc both come from the y value of the first intersection, so Cv = 0.848/xc². Check against a hand construction.
 
 [consolidation_Tv]
-U: Average degree of consolidation (fraction, 0 ≤ U < 1)
+degree_of_consolidation: Average degree of consolidation (fraction, 0 ≤ U < 1)
 returns: Time factor Tv.
 
 [consolidation_U]
-tv: Time factor Tv (single value or column)
-case_: Initial excess pore pressure shape: "uniform" (default), "triangular_top", "triangular_bottom", "vshape", "saw", "sine", "parabolic", "circular"
+time_factor: Time factor Tv (single value or column)
+initial_pressure_shape: Initial excess pore pressure shape: "uniform" (default), "triangular_top", "triangular_bottom", "vshape", "saw", "sine", "parabolic", "circular"
 returns: Average degree of consolidation U (fraction), one per tv.
 notes: The number of Fourier terms adapts to the smallest tv.
 
@@ -132,7 +132,7 @@ case_: Initial pore pressure shape (same choices as consolidation_U)
 returns: Column of u/u0 at each depth.
 
 [consolidation_U_approximate]
-tv: Time factor Tv
+time_factor: Time factor Tv
 returns: Average degree of consolidation U (fraction), closed-form approximation.
 
 [consolidation_U_variable]
@@ -386,31 +386,31 @@ returns: 3 × 3 table: force components, moment and point of application.
 notes: A zero mean normal stress makes the point of application undefined.
 
 [Stress_Mohr]
-sa: Normal stress at the pole (kPa)
-ta: Shear stress at the pole (kPa)
-alpha: Plane angle (degrees)
-sm: Centre of the Mohr circle (kPa)
+normal_stress: Normal stress at the pole (kPa)
+shear_stress: Shear stress at the pole (kPa)
+plane_angle: Plane angle (degrees)
+circle_centre: Centre of the Mohr circle (kPa)
 returns: Row {σ, τ} on the plane.
 
 [stress_Mohr_failure]
-sa: Known normal stress (kPa)
-ta: Known shear stress (kPa)
-A: Angle of the plane carrying (sa, ta) (degrees)
-phi: Friction angle φ (degrees)
-coh: Cohesion c (kPa)
+normal_stress: Known normal stress (kPa)
+shear_stress: Known shear stress (kPa)
+plane_angle: Angle of the plane carrying (sa, ta) (degrees)
+friction_angle: Friction angle φ (degrees)
+cohesion: Cohesion c (kPa)
 passive: Omit for active; any value for passive
 returns: 9 × 4 labelled table: centre, radius, pole, principal and failure-plane stresses.
 
 [stress_Mohr_pole]
-sa: Normal stress on plane A (kPa)
-ta: Shear stress on plane A (kPa)
-A: Angle of plane A (degrees)
-sb: Normal stress on the perpendicular plane (kPa)
+normal_stress: Normal stress on plane A (kPa)
+shear_stress: Shear stress on plane A (kPa)
+plane_angle: Angle of plane A (degrees)
+normal_stress_perpendicular: Normal stress on the perpendicular plane (kPa)
 returns: 7 × 4 labelled table: centre, radius, pole and principal stresses.
 
 [stress_Mohrcircle]
-sm: Centre of the circle (kPa)
-rValue: Radius of the circle (kPa)
+circle_centre: Centre of the circle (kPa)
+circle_radius: Radius of the circle (kPa)
 returns: 22 × 2 table: header + 21 points {σ, τ} for an XY scatter chart.
 
 [tand]
@@ -1033,13 +1033,13 @@ author: "bowles", "meyerhof" or "terzaghi"
 returns: Allowable bearing pressure (kPa).
 
 [classify_ASTM2487]
-pf4: Percent passing No. 4 sieve (%)
-pf200: Percent passing No. 200 sieve (%)
-cu_: Coefficient of uniformity Cu = D60/D10, optional
-cc_: Coefficient of curvature Cc = D30²/(D10·D60), optional
-ll_: Liquid limit LL (%), optional
-pl_: Plastic limit PL (%), optional
-ratio_: LL oven-dried / LL not dried, optional (below 0.75 = organic; blank = inorganic)
+percent_passing_no4: Percent passing No. 4 sieve (%)
+percent_passing_no200: Percent passing No. 200 sieve (%)
+uniformity_coefficient: Coefficient of uniformity Cu = D60/D10, optional
+curvature_coefficient: Coefficient of curvature Cc = D30²/(D10·D60), optional
+liquid_limit: Liquid limit LL (%), optional
+plastic_limit: Plastic limit PL (%), optional
+oven_dried_LL_ratio: LL oven-dried / LL not dried, optional (below 0.75 = organic; blank = inorganic)
 returns: Row {group symbol, group name}, e.g. {"SC", "Clayey sand with gravel"}.
 notes: Peat (Pt) is identified visually and is not returned.
 
@@ -1052,13 +1052,13 @@ returns: Four columns without header: depth, reaction, shear, moment.
 notes: Shared helper for the lateral-pile diagram functions. Uses shearMoment and preserves their moment sign convention.
 
 [seepage_eqline]
-xs: Strictly monotonic x coordinates, one per H column; row or column vector
-ys: Strictly monotonic y coordinates, one per H row; row or column vector
-H: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
-level: Scalar contour level
+x_coordinates: Strictly monotonic x coordinates, one per H column; row or column vector
+y_coordinates: Strictly monotonic y coordinates, one per H row; row or column vector
+total_heads: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
+head_level: Scalar contour level
 branch: Optional 1-based index of an active-domain boundary crossing, default 1; selects a start crossing, not all connected components
 smooth: Optional smoothing switch, default 1: 0 returns cell-edge crossings only; any nonzero value adds a projected interior point except in thin cells
-nmax: Optional positive maximum number of cell-tracing iterations; nonpositive or omitted uses 2 times the number of mesh cells
+max_steps: Optional positive maximum number of cell-tracing iterations; nonpositive or omitted uses 2 times the number of mesh cells
 returns: Two XY columns for a contour traced through connected soil cells. Missing boundary crossing/branch returns #N/A. Smoothing can add one interior point per traversed non-thin cell.
 notes: Traces cell-edge crossings from an active-domain boundary. With smooth enabled, the midpoint is projected twice toward the bilinear contour and clamped to the cell. This is not a user-selected step-size integrator.
 notes: The former sixth argument ds is now smooth; existing positional calls with a nonzero sixth value enable smoothing rather than setting a step length.
@@ -1066,12 +1066,12 @@ notes: Closed interior contours without a boundary seed and ambiguous saddle cel
 notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definitions are preserved, not a new solution of the head field.
 
 [seepage_eqlines]
-xs: Strictly monotonic x coordinates, one per H column; row or column vector
-ys: Strictly monotonic y coordinates, one per H row; row or column vector
-H: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
-levels: Vector of contour levels
+x_coordinates: Strictly monotonic x coordinates, one per H column; row or column vector
+y_coordinates: Strictly monotonic y coordinates, one per H row; row or column vector
+total_heads: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
+head_levels: Vector of contour levels
 smooth: Optional smoothing switch, default 1: 0 returns cell-edge crossings only; any nonzero value adds a projected interior point except in thin cells
-nmax: Optional positive maximum number of cell-tracing iterations; nonpositive or omitted uses 2 times the number of mesh cells
+max_steps: Optional positive maximum number of cell-tracing iterations; nonpositive or omitted uses 2 times the number of mesh cells
 returns: XY contour coordinates stacked with intentional #N/A separator rows; uses the first boundary crossing for each level.
 notes: The former fifth argument ds is now smooth. Uses seepage_eqline for each level and inherits its branch and truncation limits.
 notes: Intentional #N/A rows separate contours. Some Excel chart settings connect across gaps; use separate chart series for disconnected paths when needed.
@@ -1117,9 +1117,9 @@ notes: Boundary edge mode: 0 or 4 = finite-difference mass balance (default), 1 
 notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definitions are preserved, not a new solution of the head field.
 
 [seepage_hfield]
-xs: Strictly monotonic x coordinates, one per H column; row or column vector
-ys: Strictly monotonic y coordinates, one per H row; row or column vector
-H: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
+x_coordinates: Strictly monotonic x coordinates, one per H column; row or column vector
+y_coordinates: Strictly monotonic y coordinates, one per H row; row or column vector
+total_heads: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
 x: Scalar x query coordinate, or paired array for seepage_hxy
 y: Scalar y query coordinate, or paired array for seepage_hxy
 returns: One row {head, dh/dx, dh/dy} from a selected valid containing cell; {#N/A,#N/A,#N/A} if no suitable cell is found.
@@ -1128,9 +1128,9 @@ notes: Outside the active soil domain returns #N/A; the old nearest-edge-cell ex
 notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definitions are preserved, not a new solution of the head field.
 
 [seepage_hxy]
-xs: Strictly monotonic x coordinates, one per H column; row or column vector
-ys: Strictly monotonic y coordinates, one per H row; row or column vector
-H: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
+x_coordinates: Strictly monotonic x coordinates, one per H column; row or column vector
+y_coordinates: Strictly monotonic y coordinates, one per H row; row or column vector
+total_heads: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
 x: Scalar x query coordinate, or paired array for seepage_hxy
 y: Scalar y query coordinate, or paired array for seepage_hxy
 returns: Interpolated head at a scalar pair, or heads at paired x/y arrays; #N/A where no valid containing soil cell is selected.
@@ -1152,16 +1152,16 @@ notes: For x, y and H in m and k in m/s, psi is discharge per unit out-of-plane 
 notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definitions are preserved, not a new solution of the head field.
 
 [seepage_segprofile]
-xs: Strictly monotonic x coordinates, one per H column; row or column vector
-ys: Strictly monotonic y coordinates, one per H row; row or column vector
-H: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
-xA: Segment start x coordinate
-yA: Segment start y coordinate
-xB: Segment end x coordinate
-yB: Segment end y coordinate
-n: Optional positive integer subdivision count, default 50; returns n+1 sample points
-k: Optional positive uniform isotropic conductivity, default 1
-edge: Optional boundary derivative mode: 0 or 4 = finite-difference mass balance (default), 1 = zero normal derivative, 2 = two-point, 3 = three-point; {first,last} selects the two sides of the differentiation axis
+x_coordinates: Strictly monotonic x coordinates, one per H column; row or column vector
+y_coordinates: Strictly monotonic y coordinates, one per H row; row or column vector
+total_heads: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
+x_start: Segment start x coordinate
+y_start: Segment start y coordinate
+x_end: Segment end x coordinate
+y_end: Segment end y coordinate
+subdivisions: Optional positive integer subdivision count, default 50; returns n+1 sample points
+permeability: Optional positive uniform isotropic conductivity, default 1
+edge_rule: Optional boundary derivative mode: 0 or 4 = finite-difference mass balance (default), 1 = zero normal derivative, 2 = two-point, 3 = three-point; {first,last} selects the two sides of the differentiation axis
 returns: Eight columns {distance s, x, y, head, vx, vy, vn, psi}, without a header.
 notes: Uses the corrected geoXL 0.19 seepage_gradgrid; edge=3 supports ascending and descending coordinates. Other boundary-condition and stream-function assumptions still apply.
 notes: Darcy velocity v=-k grad(H); vn uses the right-hand normal (ty,-tx) from A to B. These are Darcy velocities, not pore-water velocities. Endpoints must be distinct.
@@ -1169,16 +1169,16 @@ notes: Gradient and stream-function grids are interpolated separately. Samples o
 notes: Updated in geoXL 0.18 from the supplied SeepageForce workbook; definitions are preserved, not a new solution of the head field.
 
 [seepage_segstats]
-xs: Strictly monotonic x coordinates, one per H column; row or column vector
-ys: Strictly monotonic y coordinates, one per H row; row or column vector
-H: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
-xA: Segment start x coordinate
-yA: Segment start y coordinate
-xB: Segment end x coordinate
-yB: Segment end y coordinate
-k: Optional positive uniform isotropic conductivity, default 1
-n: Optional positive integer subdivision count, default 50
-edge: Optional boundary derivative mode: 0 or 4 = finite-difference mass balance (default), 1 = zero normal derivative, 2 = two-point, 3 = three-point; {first,last} selects the two sides of the differentiation axis
+x_coordinates: Strictly monotonic x coordinates, one per H column; row or column vector
+y_coordinates: Strictly monotonic y coordinates, one per H row; row or column vector
+total_heads: Total-head matrix; numeric values mark active nodes, nonnumeric cells mark inactive soil; rows follow ys and columns follow xs
+x_start: Segment start x coordinate
+y_start: Segment start y coordinate
+x_end: Segment end x coordinate
+y_end: Segment end y coordinate
+permeability: Optional positive uniform isotropic conductivity, default 1
+subdivisions: Optional positive integer subdivision count, default 50
+edge_rule: Optional boundary derivative mode: 0 or 4 = finite-difference mass balance (default), 1 = zero normal derivative, 2 = two-point, 3 = three-point; {first,last} selects the two sides of the differentiation axis
 returns: One row {length, mean head, minimum head, maximum head, Q=psi(B)-psi(A), mean normal velocity=Q/length}.
 notes: Uses the corrected geoXL 0.19 seepage_gradgrid; edge=3 supports ascending and descending coordinates. Other boundary-condition and stream-function assumptions still apply.
 notes: Mean head uses trapezoidal samples; minimum and maximum are sampled extrema. Q=psi(B)-psi(A), not an independent quadrature of vn. Endpoints must be distinct.
@@ -1434,9 +1434,9 @@ returns: A single value, a column without its heading, or "not found: key".
 notes: Lets worksheet formulas pick results by name instead of by row or column number, so they keep working if the table layout changes.
 
 [water_content]
-tare: Mass of the empty container (g); a single value or a column
-wet: Mass of container + moist soil (g), same size as tare
-dry: Mass of container + oven-dried soil (g), same size as tare
+mass_container: Mass of the empty container (g); a single value or a column
+mass_container_wet_soil: Mass of container + moist soil (g), same size as tare
+mass_container_dry_soil: Mass of container + oven-dried soil (g), same size as tare
 returns: Water content w as a fraction, (wet - dry)/(dry - tare), one value per row; format the cell as % to show percent.
 notes: Returns "" where a mass is missing or dry = tare, so partly filled data sheets stay clean.
 notes: Argument order is tare, wet, dry. Check the order of the columns you select.
@@ -1447,11 +1447,12 @@ y: Ordinates of the readings
 returns: Weight of each reading: half the scaled length of the curve to its two neighbors.
 
 [specific_gravity]
-Ws: Mass of oven-dried soil (g)
-Wfw: Mass of pycnometer filled with water at the test temperature (g)
-Wfws: Mass of pycnometer filled with water and soil at the test temperature (g)
-returns: Specific gravity of solids Gs = Ws/(Ws + Wfw - Wfws), at the test temperature.
-notes: Returns "" when the inputs are missing or inconsistent. To refer Gs to 20 °C, multiply by water_density(T)/water_density(20).
+mass_dry_soil: Mass of oven-dried soil (g)
+mass_pycnometer_water: Mass of pycnometer filled with water at the test temperature (g)
+mass_pycnometer_water_soil: Mass of pycnometer filled with water and soil at the test temperature (g)
+temperature: Test temperature (°C), optional; Gs is then referred to 20 °C
+returns: Specific gravity of solids Gs = Ms/(Ms + Mpw − Mpws), at the test temperature or referred to 20 °C.
+notes: Returns "" when the inputs are missing or inconsistent.
 
 [sieve_passing]
 retained: Column of masses retained on each sieve (g), from the coarsest sieve down to the pan
@@ -1502,19 +1503,19 @@ returns: Three columns per reading: fall depth (cm), equivalent diameter (mm) an
 notes: Combines hydrometer_hfall, hydrometer_grainSize and hydrometer_percentFiner in one call.
 
 [buoyancy_grain_size]
-time: Elapsed times since the start of sedimentation (min), one value or a column
+elapsed_time: Elapsed times since the start of sedimentation (min), one value or a column
 temperature: Suspension temperatures (°C), same size as time
-depth: Depth of the centre of the immersed sphere below the suspension surface (cm)
-Gs: Specific gravity of the soil solids
-volume: Volume of the sphere (cm³), for example (Ma - Mw)/water_density(T)
-diameter_cylinder: Inside diameter of the sedimentation cylinder (cm)
+sphere_depth: Depth of the centre of the immersed sphere below the suspension surface (cm)
+specific_gravity: Specific gravity of the soil solids
+sphere_volume: Volume of the sphere (cm³), for example (Ma - Mw)/water_density(T)
+cylinder_diameter: Inside diameter of the sedimentation cylinder (cm)
 returns: Equivalent particle diameter (mm) from Stokes' law: SQRT(30·η·Hr/((Gs - 1)·981·ρw·time)), with Hr = depth - volume/(2·Ac).
 notes: The volume term corrects the fall depth for the rise of the suspension surface when the sphere is immersed. η and ρw come from water_viscosity and water_density.
 
 [buoyancy_percent_finer]
 mass_immersed: Mass of the sphere weighed in the suspension (g), one value or a column
 temperature: Suspension temperatures (°C), same size as mass_immersed
-Gs: Specific gravity of the soil solids
+specific_gravity: Specific gravity of the soil solids
 concentration: Initial concentration of the suspension, mass of soil / volume of suspension (g/cm³)
 mass_in_air: Mass of the sphere in air Ma (g)
 mass_in_water: Mass of the sphere immersed in water Mw (g)
@@ -1537,39 +1538,31 @@ mass_dispersing: Mass of the blank (dispersing agent, or water and dispersing ag
 mass_dispersing_dish: Mass of the dish of the blank (g)
 volume_pipette: Volume of the pipette (mL)
 concentration: Initial concentration of the suspension, mass of soil / volume of suspension (g/mL)
-Gs: Optional. Specific gravity of the soil solids; needed for the wet method only
+specific_gravity: Optional. Specific gravity of the soil solids; needed for the wet method only
 temperature: Optional. Suspension temperature (°C); give it, with Gs, for the wet method only
 returns: Fraction finer by weight (0 to 1) = (Ms - Md)/(concentration·V), with Ms and Md the net masses of the sample and of the blank.
 notes: Dry method (temperature omitted): V is the pipette volume. Wet method: V = volume_pipette - Md/(Gs·ρw), which accounts for the water displaced by the soil in the sample. Returns a fraction, not a percent (multiply by 100 for %).
 
 [consolidation_log_time]
-t: Elapsed times since the start of the increment (min), a column; t = 0 rows are ignored
-d: Dial changes since the start of the increment (cm), same size as t; settlement may be negative or positive
-H_dr: Drainage path length (cm); use 1 to get cv/H_dr² (1/min)
-n_sec: Optional number of readings in the secondary line, default 4
-frac: Optional fraction of the peak slope that marks the start of the plateau (fallback rule), default 0.25
-details: Optional; TRUE returns the construction values
-returns: cv (H_dr² per min). With details: {cv; d0; d100; d50; t50; t100; t_inflection; m_primary; m_secondary}.
-notes: Casagrande construction: d0 from the parabola rule d0 = 2·d(t1) - d(4·t1) with t1 the first reading; tangent at the steepest central slope before the secondary line; secondary line through the last n_sec readings.
-notes: If the tail is steeper than 0.6 × the primary slope, the plateau rule is used instead; if neither applies the function returns #N/A.
-notes: t100 is a construction point (theory U ≈ 95 %), not the time of 100 % consolidation. cv = 0.197·H_dr²/t50.
+elapsed_time: Elapsed times since the start of the load step (min), a column; t = 0 rows are ignored
+dial_change: Dial changes since the start of the step (cm), same size as elapsed_time
+drainage_length: Drainage path length (cm); use 1 to get cv/H_dr² (1/min)
+ruler_span: Length of the ruler (chord) in log cycles, default 0.5
+returns: Column {cv; d0; d100; d50; t50; t100; t at the inflection; primary slope; creep slope}.
+notes: Casagrande construction: the tangent is the steepest chord of the ruler; the creep line comes from consolidation_creep.
 
 [consolidation_sqrt_time]
-t: Elapsed times since the start of the increment (min), a column including t = 0
-d: Dial changes since the start of the increment (cm), same size as t
-H_dr: Drainage path length (cm); use 1 to get cv/H_dr² (1/min)
-skip: Optional number of first readings excluded from the initial line, default 1
-n_min: Optional minimum number of readings in the initial line, default 5
-k_sig: Optional stop threshold in standard errors for extending the initial line, default 2
-details: Optional; TRUE returns the construction values
-returns: cv (H_dr² per min). With details: {cv; d0; d100; t90; slope of the initial line (per √min); number of readings in the line}.
-notes: Taylor construction: the initial straight line in d vs √t is grown reading by reading until the next reading departs by more than k_sig standard errors on the flattening side; the line with slope ÷ 1.15 then crosses the data at √t90.
-notes: d0 is the intercept of the initial line (corrected zero); d100 = d0 + (d90 - d0)/0.9. cv = 0.848·H_dr²/t90.
+elapsed_time: Elapsed times since the start of the load step (min), a column including t = 0
+dial_change: Dial changes since the start of the step (cm), same size as elapsed_time
+drainage_length: Drainage path length (cm); use 1 to get cv/H_dr² (1/min)
+tolerance: Largest sag of the initial line, as a fraction of the settlement of the step, default 0.02
+returns: Column {cv; d0; d100; t90; slope of the initial line (per √min); number of readings in the line}.
+notes: Taylor construction: the initial line d = d0 + b√t goes through the most first readings whose sag stays within the tolerance; t90 is where (d − d0)/√t = b/1.15.
 
 [consolidation_fitting]
-t: Elapsed times since the start of the increment (min), a column including t = 0
-d: Dial changes since the start of the increment (cm), same size as t
-H_dr: Drainage path length (cm); use 1 to get cv/H_dr² (1/min)
+elapsed_time: Elapsed times since the start of the increment (min), a column including t = 0
+dial_change: Dial changes since the start of the increment (cm), same size as t
+drainage_length: Drainage path length (cm); use 1 to get cv/H_dr² (1/min)
 skip: Optional number of first readings excluded from the fit, default 1
 n_min: Optional minimum number of readings before t_start; with fewer, all readings are fitted, default 6
 details: Optional; TRUE returns the fit values
@@ -1578,16 +1571,12 @@ notes: Secondary compression is located first with consolidation_creep (its t_st
 notes: If t_start is detected late, creep readings enter the fit and cv is underestimated; compare with the log-time and square-root-time results.
 
 [consolidation_creep]
-t: Elapsed times since the start of the increment (min), a column; t = 0 rows are ignored
-d: Dial changes since the start of the increment (cm), same size as t
-H_0: Optional specimen height for the strain (cm); omitted returns the slope instead of C_alpha_epsilon
-n_min: Optional number of last readings that start the secondary line, default 3
-k_sig: Optional stop threshold in standard errors, default 3
-details: Optional; TRUE returns the secondary-line values
-frac: Optional stop threshold as a fraction of the increment's total settlement, default 0.05
-returns: C_alpha_epsilon = |slope|/H_0 (strain per log cycle), or the slope (cm per log cycle). With details: {value; slope; n readings; t_start; d_start}.
-notes: The secondary line d = d_start + slope·log10(t/t_start) is grown back from the last reading; it stops at the first earlier reading off the line by more than k_sig standard errors or frac of the total settlement.
-notes: For unloading increments, or tails that are still curving, the slope describes the end of swelling rather than true creep.
+elapsed_time: Elapsed times since the start of the load step (min), a column; t = 0 rows are ignored
+dial_change: Dial changes since the start of the step (cm), same size as elapsed_time
+specimen_height: Specimen height for the strain (cm); 1 gives the slope instead of Cαε
+ruler_span: Length of the ruler in log cycles, default 0.5
+leveling_fraction: Fraction of the range of ruler slopes that marks where the ruler levels off, default 0.2
+returns: Column {Cαε; slope per log cycle; readings on the creep line; t where it starts; d on the line there}.
 
 [consolidation_table]
 loads: Column of load numbers to report
@@ -1634,64 +1623,64 @@ mass_total: Dry mass of the whole sample (g)
 returns: Percent finer referred to the whole sample (%): sedimentation values are multiplied by W200/Wtot.
 
 [compaction_fit]
-w: Water contents of the compaction points (fraction, 0.12 for 12 %)
-gamma_d: Dry unit weights of the points (kN/m³)
-Gs: Specific gravity of solids
-gamma_w: Unit weight of water (kN/m³), default 9.81
+water_content: Water contents of the compaction points (fraction, 0.12 for 12 %)
+dry_unit_weight: Dry unit weights of the points (kN/m³)
+specific_gravity: Specific gravity of solids
+water_unit_weight: Unit weight of water (kN/m³), default 9.81
 returns: Column {w_opt; γd,max; S of the wet branch; S at the optimum; w at the tangent point; c2; c3}, or an error message.
 notes: The wet branch is the saturation line of the most saturated point, which lies on it; the dry branch is a cubic tangent to it (Chapter 3-4).
 
 [compaction_curve]
-w: Water contents of the compaction points (fraction)
-gamma_d: Dry unit weights of the points (kN/m³)
-Gs: Specific gravity of solids
-gamma_w: Unit weight of water (kN/m³), default 9.81
+water_content: Water contents of the compaction points (fraction)
+dry_unit_weight: Dry unit weights of the points (kN/m³)
+specific_gravity: Specific gravity of solids
+water_unit_weight: Unit weight of water (kN/m³), default 9.81
 points: Number of points of the curve (default 60)
 returns: Table with headers {w, fitted curve, S = 100 % line, saturation line of S} for a chart.
 
 [cone_penetration]
-initial: Dial readings before the cone is released (mm)
-final: Dial readings after 5 s (mm)
+dial_before: Dial readings before the cone is released (mm)
+dial_after: Dial readings after 5 s (mm)
 returns: Penetrations |final − initial| (mm), one per specimen.
 
 [consolidation_chord]
-t: Times of the readings of one load step (min), starting at 0
-d: Changes of dial reading of the step, starting at 0
-H_dr: Drainage distance (cm); 1 gives cv/H²
-span: Length of the ruler in log cycles (default 0.5)
+elapsed_time: Times of the readings of one load step (min), starting at 0
+dial_change: Changes of dial reading of the step, starting at 0
+drainage_length: Drainage distance (cm); 1 gives cv/H²
+ruler_span: Length of the ruler in log cycles (default 0.5)
 returns: Column {cv; d0; d100; t50; t90; time at the peak of the ruler slope; creep slope per log cycle}.
 notes: Ruler method: the theoretical bell of the ruler slope is fitted to the measured one up to a quarter log cycle past its peak.
 
 [consolidation_creep_steps]
-loads: Load numbers to process (column)
-load_no: Load number of each reading
-t_all: Time of each reading (min)
-d_all: Dial reading of each reading
-h_0: Initial height of the specimen (cm)
-dial_0: Initial dial reading
+load_numbers: Load numbers to process (column)
+reading_load_numbers: Load number of each reading
+reading_times: Time of each reading (min)
+dial_readings: Dial reading of each reading
+initial_height: Initial height of the specimen (cm)
+initial_dial: Initial dial reading
 returns: Modified secondary compression index Cαε of each load step.
 
 [consolidation_ratios]
-d_0: Dial reading change at U = 0
-d_100: Dial reading change at U = 100 %
-d_end: Last dial reading change of the step
+dial_U0: Dial reading change at U = 0
+dial_U100: Dial reading change at U = 100 %
+dial_end: Last dial reading change of the step
 returns: Column {ri; rp; rs}: initial, primary and secondary compression ratios.
 
 [consolidation_step]
-load: Load number
-load_no: Load number of each reading
-t_all: Time of each reading (min)
-d_all: Dial reading of each reading
+load_number: Load number
+reading_load_numbers: Load number of each reading
+reading_times: Time of each reading (min)
+dial_readings: Dial reading of each reading
 returns: Two columns {t, d} of the step, both starting at 0.
 
 [consolidation_steps]
 method: Method function: consolidation_log_time, consolidation_sqrt_time, consolidation_chord or consolidation_fitting
-loads: Load numbers to process (column)
-load_no: Load number of each reading
-t_all: Time of each reading (min)
-d_all: Dial reading of each reading
-h_0: Initial height of the specimen (cm)
-dial_0: Initial dial reading
+load_numbers: Load numbers to process (column)
+reading_load_numbers: Load number of each reading
+reading_times: Time of each reading (min)
+dial_readings: Dial reading of each reading
+initial_height: Initial height of the specimen (cm)
+initial_dial: Initial dial reading
 returns: One row per load step {cv; d0; d100; ri; rp; rs}.
 
 [consolidation_weight_volume]
@@ -1702,8 +1691,8 @@ mass_final: Final mass of the specimen (g)
 mass_dry: Dry mass of the specimen (g)
 dial_initial: Initial dial reading (cm)
 dial_final: Final dial reading (cm)
-Sr_final: Final degree of saturation, default 1
-g: Gravity (m/s²), default 9.81
+final_saturation: Final degree of saturation, default 1
+gravity: Gravity (m/s²), default 9.81
 returns: Column {w0; γd0; e0; Sr0; Gs; wf; γdf; ef}.
 
 [curve_stiffness]
@@ -1714,8 +1703,8 @@ returns: Column {initial slope (steepest window); x where it crosses y = 0, the 
 
 [direct_shear_area]
 lateral_displacement: Horizontal displacements (mm)
-size: Side of a square box or diameter of a round box (mm)
-area: "square" or "round"
+box_size: Side of a square box or diameter of a round box (mm)
+box_shape: "square" or "round"
 returns: Corrected contact area of the two halves of the box (mm²).
 
 [direct_shear_results]
@@ -1723,9 +1712,9 @@ lateral_displacement: Horizontal displacements (mm)
 vertical_displacement: Vertical displacements (mm)
 shear_force: Shear forces (N)
 normal_force: Normal force (N)
-size: Side or diameter of the box (mm)
-area: "square" or "round"
-res_fraction: Last part of the lateral displacement averaged for the residual (0.1 by default)
+box_size: Side or diameter of the box (mm)
+box_shape: "square" or "round"
+residual_fraction: Last part of the lateral displacement averaged for the residual (0.1 by default)
 returns: Normal stress, peak and residual shear stresses, the displacement at the peak, and the dilatancy angle (degrees).
 
 [error_propagation]
@@ -1735,10 +1724,10 @@ errors: Errors (uncertainties) of the measurements, same units
 returns: Column {result; change of the result due to the error of each measurement; change with all the errors together}.
 
 [field_unit_weight]
-mass: Mass of the soil removed from the hole (g)
-V: Volume of the hole (cm³)
-moisture: Water content (fraction)
-g: Gravity (m/s²), default 9.81
+mass_soil: Mass of the soil removed from the hole (g)
+hole_volume: Volume of the hole (cm³)
+water_content: Water content (fraction)
+gravity: Gravity (m/s²), default 9.81
 returns: Column {γ; γd} (kN/m³).
 
 [filter_by_row]
@@ -1755,29 +1744,29 @@ x_values: Values of x
 returns: x at which y first reaches the level, by linear interpolation; #N/A if never reached.
 
 [hydrometer_grain_size]
-time: Elapsed times (min)
-reading: Hydrometer readings
+elapsed_time: Elapsed times (min)
+hydrometer_reading: Hydrometer readings
 temperature: Temperatures (°C)
-Gs: Specific gravity of solids
-slope: Slope of the calibration depth = intercept + slope × reading (cm per reading)
-intercept: Intercept of the calibration (cm)
-volume_bulb: Volume of the bulb (cm³)
-diameter_cylinder: Inside diameter of the cylinder (cm)
-Cm: Meniscus correction (optional)
+specific_gravity: Specific gravity of solids
+calibration_slope: Slope of the calibration depth = intercept + slope × reading (cm per reading)
+calibration_intercept: Intercept of the calibration (cm)
+bulb_volume: Volume of the bulb (cm³)
+cylinder_diameter: Inside diameter of the cylinder (cm)
+meniscus_correction: Meniscus correction (optional)
 returns: Particle diameters (mm), Stokes' law.
 
 [hydrometer_percent_finer]
-W: Dry mass of soil in suspension (g)
-reading: Hydrometer readings
+dry_mass: Dry mass of soil in suspension (g)
+hydrometer_reading: Hydrometer readings
 temperature: Temperatures (°C)
-Gs: Specific gravity of solids
-Cm: Meniscus correction (optional)
-Cd: Dispersing agent correction (optional)
+specific_gravity: Specific gravity of solids
+meniscus_correction: Meniscus correction (optional)
+dispersant_correction: Dispersing agent correction (optional)
 returns: Percent finer (%).
 
 [liquid_limit]
-blows: Numbers of blows of the Casagrande cup
-moisture: Water contents (%)
+number_of_blows: Numbers of blows of the Casagrande cup
+water_content: Water contents (%)
 returns: Column {LL; slope of the flow line}.
 
 [liquid_limit_cone]
@@ -1870,8 +1859,8 @@ returns: Hydraulic conductivity (cm/s), Kozeny-Carman.
 dry_mass: Dry mass of the specimen (g)
 height: Height of the specimen (cm)
 diameter: Diameter of the specimen (cm)
-Gs: Specific gravity of solids
-g: Gravity (m/s²), default 9.81
+specific_gravity: Specific gravity of solids
+gravity: Gravity (m/s²), default 9.81
 returns: Column {γd (kN/m³); e}.
 
 [permeability_viscosity_ratio]
@@ -1890,35 +1879,35 @@ jar_after: Mass of the jar after filling the hole (g)
 cone_before: Masses of the jar before filling the cone alone, one per trial (g)
 cone_after: Masses of the jar after filling the cone alone (g)
 gamma_sand: Unit weight of the sand (kN/m³)
-g: Gravity (m/s²), default 9.81
+gravity: Gravity (m/s²), default 9.81
 returns: Volume of the hole (cm³).
 
 [sand_unit_weight]
-mold_sand: Mass of the mold filled with sand (g)
-mold: Mass of the empty mold (g)
-D: Diameter of the mold (cm)
-H: Height of the mold (cm)
-g: Gravity (m/s²), default 9.81
+mass_mold_sand: Mass of the mold filled with sand (g)
+mass_mold: Mass of the empty mold (g)
+mold_diameter: Diameter of the mold (cm)
+mold_height: Height of the mold (cm)
+gravity: Gravity (m/s²), default 9.81
 returns: Unit weight of the sand (kN/m³).
 
 [saturation_line]
-w: Water contents (fraction)
-Gs: Specific gravity of solids
-S: Degree of saturation (fraction)
-gamma_w: Unit weight of water (kN/m³), default 9.81
+water_content: Water contents (fraction)
+specific_gravity: Specific gravity of solids
+saturation: Degree of saturation (fraction)
+water_unit_weight: Unit weight of water (kN/m³), default 9.81
 returns: Dry unit weight γd = Gs γw / (1 + Gs w / S) (kN/m³).
 
 [sedimentation_diameter]
-time: Elapsed times (min)
-depth: Effective depths (cm)
+elapsed_time: Elapsed times (min)
+effective_depth: Effective depths (cm)
 temperature: Temperatures (°C)
-Gs: Specific gravity of solids
+specific_gravity: Specific gravity of solids
 returns: Particle diameters (mm), Stokes' law.
 
 [seepage_confined_block]
 block: The 3 × 3 cells around the node (the node in the middle)
-kind: Kind of the node (map of the kinds of nodes)
-omega: Relaxation factor ω; 0 resets the grid, a negative value holds it
+node_kinds: Kind of the node (map of the kinds of nodes)
+relaxation: Relaxation factor ω; 0 resets the grid, a negative value holds it
 permeability_1: Permeability of layer 1 (default 1)
 permeability_2: Permeability of layer 2 (default 1)
 returns: New total head of the node (one iteration of Gauss-Seidel or over-relaxation).
@@ -1954,7 +1943,7 @@ returns: ω, 0 (reset) or a negative value (hold).
 
 [seepage_unconfined_block]
 block: The 3 × 3 cells of pressure heads around the node
-kind: Kind of the node
+node_kinds: Kind of the node
 parameters: Column {spacing; transition width; residual ratio; ω}
 permeability_1: Permeability of layer 1 (default 1)
 permeability_2: Permeability of layer 2 (default 1)
@@ -1989,13 +1978,13 @@ values: Series of values (e.g. stresses of the load steps)
 returns: 1 where the series increases, −1 where it decreases.
 
 [shrinkage_limit]
-dish: Mass of the empty dish (g)
-wet: Mass of the dish with wet soil (g)
-dry: Mass of the dish with dry soil (g)
-V: Volume of the dish (cm³)
-mass_waxed: Mass of the waxed dry pat (g)
-buoyant_waxed: Buoyant mass of the waxed pat (g)
-rho_wax: Density of the wax (g/cm³)
+mass_dish: Mass of the empty dish (g)
+mass_dish_wet_soil: Mass of the dish with wet soil (g)
+mass_dish_dry_soil: Mass of the dish with dry soil (g)
+dish_volume: Volume of the dish (cm³)
+mass_waxed_pat: Mass of the waxed dry pat (g)
+buoyant_mass_waxed_pat: Buoyant mass of the waxed pat (g)
+wax_density: Density of the wax (g/cm³)
 returns: Column {V0; w; SL; SR; LS}: dry volume, water content, shrinkage limit, shrinkage ratio and linear shrinkage.
 
 [soil_weight_volume]
@@ -2032,8 +2021,8 @@ returns: Column {reset strain at the end of seating (%); initial modulus Ei (MPa
 
 [triaxial_strength]
 curves: Output of triaxial_drained or triaxial_undrained
-reset: Reset strain (%) from triaxial_stiffness; 0 by default
-res_fraction: Last part of the axial strain averaged for the residual (0.1 by default)
+reset_strain: Reset strain (%) from triaxial_stiffness; 0 by default
+residual_fraction: Last part of the axial strain averaged for the residual (0.1 by default)
 returns: Column {peak t (kPa), Su if undrained; axial strain at the peak from the reset (%); residual t (kPa); axial strain where the residual starts, from the reset (%); φ′p; φ′r}.
 
 [triaxial_undrained]
@@ -2063,14 +2052,14 @@ uncertainties: Standard uncertainties of the measurements
 returns: One row per measurement {sensitivity; contribution; share of the variance}, then {result; combined uncertainty; 1}.
 
 [unit_weight_wax]
-soil: Mass of the soil specimen (g)
-waxed: Mass of the waxed specimen (g)
-immersed: Mass of the waxed specimen in water (g)
-gamma_p: Unit weight of the wax (kN/m³)
-wet: Mass of the container with wet soil (g)
-dry: Mass of the container with dry soil (g)
-tare: Mass of the container (g), default 0
-gamma_w: Unit weight of water (kN/m³), default 9.81
+mass_specimen: Mass of the soil specimen (g)
+mass_waxed: Mass of the waxed specimen (g)
+mass_waxed_in_water: Mass of the waxed specimen in water (g)
+wax_unit_weight: Unit weight of the wax (kN/m³)
+mass_container_wet_soil: Mass of the container with wet soil (g)
+mass_container_dry_soil: Mass of the container with dry soil (g)
+mass_container: Mass of the container (g), default 0
+water_unit_weight: Unit weight of water (kN/m³), default 9.81
 returns: Rows {γ; w; γd}, one column per specimen.
 
 [weighted_slope]
@@ -2080,10 +2069,10 @@ weights: Weight of each value
 returns: Column {slope; intercept} of the weighted least-squares line.
 
 [wax_unit_weight]
-metal: Mass of the metal piece (g)
-wax: Mass of the wax (g)
-both: Mass of the metal and wax immersed in water (g)
-gamma_w: Unit weight of water (kN/m³), default 9.81
+mass_metal: Mass of the metal piece (g)
+mass_wax: Mass of the wax (g)
+mass_metal_wax_in_water: Mass of the metal and wax immersed in water (g)
+water_unit_weight: Unit weight of water (kN/m³), default 9.81
 returns: Unit weight of the wax (kN/m³).
 
 [peak]
