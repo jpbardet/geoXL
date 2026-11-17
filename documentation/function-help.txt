@@ -2066,3 +2066,20 @@ wax: Mass of the wax (g)
 both: Mass of the metal and wax immersed in water (g)
 gamma_w: Unit weight of water (kN/m³), default 9.81
 returns: Unit weight of the wax (kN/m³).
+
+[peak]
+y: Values in which the peak is searched (the largest magnitude)
+x: Values at which y is measured (same length)
+returns: Column {y at the peak; x at the peak}; first occurrence; incomplete pairs ignored.
+
+[tail_mean]
+values: Series of values
+n: Number of last values averaged
+returns: Mean of the last n values.
+
+[local_slope]
+y: Values
+x: Abscissas of the values
+row: Row at the centre of the window
+half_width: Number of readings on each side
+returns: Least-squares slope of y against x over the window.
