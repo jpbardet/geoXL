@@ -1,4 +1,4 @@
-// GeoEXCEL version 0.41 — complete consolidated named-LAMBDA library (documented)
+// GeoEXCEL version 0.42 — complete consolidated named-LAMBDA library (documented)
 // Module name: GeoEXCEL
 // Paste this entire file into the GeoEXCEL module in Excel Labs.
 // Local names use underscores. Worksheet example: =GeoEXCEL.water_pressure(3, 2)
@@ -98,9 +98,13 @@
 // 0.40 (2026-11-17): specific_gravity arguments name the volumetric flask used in the test (mass_flask_water, mass_flask_water_soil).
 // 0.41 (2026-11-17): compression_stiffness and compression_strength (stress, strain) for the unconfined compression test;
 //                    triaxial_stiffness and triaxial_strength call them.
+// 0.42 (2026-11-18): Broms lateral piles reorganized into one API with explicit argument names, for clay (cohesive) and sand
+//                    (cohesionless): _design, _short, _intermediate, _long, _Pult and _profile. Removed lateralpile_Broms_cohesive,
+//                    lateralpile_Broms_cohesionless and the two _reaction_shear_moment functions (now _design and _profile);
+//                    the sand design takes the load and returns the embedment (no Goal Seek). Added Rankine_Kp and min_by_row.
 
 /** Library version and release date, as text. Use =GeoEXCEL.version() to check which version is installed. */
-version = LAMBDA("GeoEXCEL 0.41 (2026-11-17)");
+version = LAMBDA("GeoEXCEL 0.42 (2026-11-18)");
 
 /** q_ult (kPa) for vertical loads: (author, phi, coh, q, gam, B, [L], [D], [eB], [eL], [use], [out]). Omitted/0 = off. use: "sdi" default, "s" = no depth factors. out 1 = table, 2 = 3 terms. Inclined loads: bearing_capacity_inclined. */
 bearing_capacity = LAMBDA(author,phi,coh,q,gam,B,[L],[D],[eB],[eL],[use],[out],LET(L_,IF(ISOMITTED(L),0,L),D_,IF(ISOMITTED(D),0,D),eB_,IF(ISOMITTED(eB),0,eB),eL_,IF(ISOMITTED(eL),0,eL),u,IF(ISOMITTED(use),"sdi",IF(use=0,"sdi",LOWER(use))),o,IF(ISOMITTED(out),0,out),g,bearing_effective(B,L_,eB_,eL_),Bp,INDEX(g,1),BL,INDEX(g,4),one,{1;1;1},N,bearing_factors(phi,author),s,IF(ISNUMBER(SEARCH("s",u)),bearing_shapeFactors(BL,phi,author),one),d,IF(ISNUMBER(SEARCH("d",u)),bearing_depthFactors(D_/B,phi,author),one),ld,VSTACK(coh,q,gam*Bp/2),t,N*s*d*ld,SWITCH(o,0,SUM(t),2,t,VSTACK(HSTACK("term","N","s","d","load","q_i"),HSTACK({"c";"q";"γ"},N,s,d,ld,t),HSTACK("q_ult","","","","",SUM(t))))));
@@ -591,6 +595,10 @@ Rankine_K = LAMBDA(phi, beta,
         b, RADIANS(beta),
         (COS(b)-SQRT(COS(b)^2-COS(f)^2))/(COS(b)+SQRT(COS(b)^2-COS(f)^2))
     ));
+
+/** Rankine passive earth pressure coefficient Kp = tan^2(45 + phi/2). */
+Rankine_Kp = LAMBDA(friction_angle,
+    (1+SIN(RADIANS(friction_angle)))/(1-SIN(RADIANS(friction_angle))));
 
 /** Rankine stresses on a wall from the Mohr circle (labelled table). Inputs: phi, coh, alpha wall angle, beta slope (deg), gz vertical stress, passive (omit = active). */
 Rankine_stress = LAMBDA(phi, coh, alpha, beta, gz, [passive],
@@ -1149,52 +1157,126 @@ intersection_spiral_segment = LAMBDA(AB_, pt, rValue, phi, [x_], [iter_],
         IF(iter>niter, pt+HSTACK(xn, yn), intersection_spiral_segment(AB_, pt, rValue, phi, xn, iter+1))
     ));
 
-/** Broms lateral capacity of a short pile in cohesionless soil: {V; depth of max moment; Mmax}. Inputs: D embedment, phi, g, B diameter, e load eccentricity. */
-lateralpile_Broms_cohesionless = LAMBDA(D, phi, g, B, e,
+/** Broms SHORT free-head pile in sand, DESIGN: returns {embedment; depth of Mmax f; Mmax} for a lateral load. */
+lateralpile_Broms_cohesionless_design = LAMBDA(load, load_height, friction_angle, unit_weight, diameter,
     LET(
-        f, RADIANS(phi),
-        Kp, (1+SIN(f))/(1-SIN(f)),
-        V, B*D^3*g*Kp/2/(D+e),
-        dm, SQRT(6*V/(B*g*Kp))/3,
-        m, (e+2/3*dm)*V,
-        VSTACK(V, dm, m)
+        k, unit_weight*diameter*Rankine_Kp(friction_angle),
+        ratio, 2*load/k,
+        embed, REDUCE(SQRT(ratio)+load_height,SEQUENCE(30),LAMBDA(x,i,x-(x^3-ratio*(load_height+x))/(3*x^2-ratio))),
+        f, SQRT(2*load/(3*k)),
+        VSTACK(embed,f,load*(load_height+2*f/3))
     ));
 
-/** Broms short pile in cohesive soil: {required D; rotation depth Dr; depth of max moment; Mmax}. Inputs: V load, e eccentricity, Su, B diameter. */
-lateralpile_Broms_cohesive = LAMBDA(V, e, Su, B,
+/** Broms SHORT pile in sand, CAPACITY: Pult for an embedment (may be a column). */
+lateralpile_Broms_cohesionless_short = LAMBDA(embedment, load_height, friction_angle, unit_weight, diameter, [fixed_head],
     LET(
-        SuB, 9*Su*B,
-        f, ABS(V)/SuB,
-        Bd, 1.5*B,
-        D, 2*SQRT(f*(e+Bd+f/2))+Bd+f,
-        Dr, (Bd+f+D)/2,
-        m, (e+Bd+f/2)*V,
-        dm, f+Bd,
-        VSTACK(D, Dr, dm, m)
+        k, unit_weight*diameter*Rankine_Kp(friction_angle),
+        fixed, IF(ISOMITTED(fixed_head),FALSE,fixed_head),
+        IF(fixed,1.5*k*embedment^2,k*embedment^3/(2*(load_height+embedment)))
     ));
 
-/** Reaction, shear and moment along a Broms short pile in cohesionless soil, with exact integration of piecewise-linear reaction using shearMoment. Inputs: D, phi (degrees), g, B, e. Header plus 101 profile rows when e>0, 51 when e=0. */
-lateralpile_cohesionless_reaction_shear_moment = LAMBDA(D,phi,g,B,e,
- LET(angle,RADIANS(phi),
- Kp,(1+SIN(angle))/(1-SIN(angle)),
- gradient,3*g*B*Kp,
- load,g*B*D^3*Kp/(2*(D+e)),
- depth,IF(e=0,VSTACK(0,-D),VSTACK(e,0,-D)),
- reaction,IF(depth>0,0,-gradient*depth),
- VSTACK({"Depth","Reaction","Shear","Moment"},
- lateralpile_integrate(depth,reaction,load,50))));
+/** Broms INTERMEDIATE fixed-head pile in sand (plastic hinge at the cap): Pult = yield_moment/embedment + 0.5 gamma B Kp embedment^2 (may be a column; #N/A if embedment <= 0). */
+lateralpile_Broms_cohesionless_intermediate = LAMBDA(embedment, yield_moment, friction_angle, unit_weight, diameter,
+    LET(
+        k, unit_weight*diameter*Rankine_Kp(friction_angle),
+        IF(embedment>0,yield_moment/embedment+0.5*k*embedment^2,NA())
+    ));
 
-/** Reaction, shear and moment along a Broms short pile in cohesive soil. Exact pressure jumps at 1.5B and Dr; integrates with shearMoment, without epsilon ramps. Inputs: V,e,Su,B,[D_],[Dr_] (Broms depth defaults). Header plus 121 profile rows. */
-lateralpile_cohesive_reaction_shear_moment = LAMBDA(V,e,Su,B,[D_],[Dr_],
- LET(ultimate,9*Su*B,
- loadLength,ABS(V)/ultimate,
- inactive,1.5*B,
- embedment,IF(ISOMITTED(D_),2*SQRT(loadLength*(e+inactive+loadLength/2))+inactive+loadLength,D_),
- rotation,IF(ISOMITTED(Dr_),(inactive+loadLength+embedment)/2,Dr_),
- depth,VSTACK(e,0,-inactive,-inactive,-rotation,-rotation,-embedment),
- reaction,VSTACK(0,0,0,ultimate,ultimate,-ultimate,-ultimate),
- VSTACK({"Depth","Reaction","Shear","Moment"},
- lateralpile_integrate(depth,reaction,V,20))));
+/** Broms LONG pile in sand (plastic hinge): returns {Pult; hinge depth f}; solves Pult(load_height + 0.544 sqrt(Pult/(gamma B Kp))) = yield_moment (2x if fixed). */
+lateralpile_Broms_cohesionless_long = LAMBDA(yield_moment, load_height, friction_angle, unit_weight, diameter, [fixed_head],
+    LET(
+        k, unit_weight*diameter*Rankine_Kp(friction_angle),
+        coef, 2/3*SQRT(2/3)/SQRT(k),
+        moment, IF(IF(ISOMITTED(fixed_head),FALSE,fixed_head),2,1)*yield_moment,
+        load, REDUCE((moment/coef)^(2/3),SEQUENCE(30),LAMBDA(x,i,x-(x*(load_height+coef*SQRT(x))-moment)/(load_height+1.5*coef*SQRT(x)))),
+        f, SQRT(2*load/(3*k)),
+        VSTACK(load,f)
+    ));
+
+/** Broms Pult in sand, all mechanisms: one row per embedment with {short, intermediate, long, governing}; intermediate is #N/A for a free head. */
+lateralpile_Broms_cohesionless_Pult = LAMBDA(embedment, yield_moment, load_height, friction_angle, unit_weight, diameter, [fixed_head],
+    LET(
+        fixed, IF(ISOMITTED(fixed_head),FALSE,fixed_head),
+        short, lateralpile_Broms_cohesionless_short(embedment,load_height,friction_angle,unit_weight,diameter,fixed),
+        inter, IF(fixed,lateralpile_Broms_cohesionless_intermediate(embedment,yield_moment,friction_angle,unit_weight,diameter),NA()+0*embedment),
+        long, INDEX(lateralpile_Broms_cohesionless_long(yield_moment,load_height,friction_angle,unit_weight,diameter,fixed),1)+0*embedment,
+        HSTACK(short,inter,long,min_by_row(HSTACK(short,inter,long)))
+    ));
+
+/** Broms SHORT free-head pile in sand: profile {Depth, Reaction, Shear, Moment} (header + profile rows). */
+lateralpile_Broms_cohesionless_profile = LAMBDA(load, load_height, friction_angle, unit_weight, diameter, [embedment_depth],
+    LET(
+        k, unit_weight*diameter*Rankine_Kp(friction_angle),
+        embed, IF(ISOMITTED(embedment_depth),INDEX(lateralpile_Broms_cohesionless_design(load,load_height,friction_angle,unit_weight,diameter),1),embedment_depth),
+        depth, IF(load_height=0,VSTACK(0,-embed),VSTACK(load_height,0,-embed)),
+        reaction, IF(depth>0,0,-3*k*depth),
+        VSTACK({"Depth","Reaction","Shear","Moment"},lateralpile_integrate(depth,reaction,load,50))
+    ));
+
+/** Broms SHORT free-head pile in clay, DESIGN: returns {embedment; rotation depth; depth of Mmax; Mmax} for a lateral load. */
+lateralpile_Broms_cohesive_design = LAMBDA(load, load_height, undrained_strength, diameter,
+    LET(
+        ultimate, 9*undrained_strength*diameter,
+        f, ABS(load)/ultimate,
+        inactive, 1.5*diameter,
+        embed, 2*SQRT(f*(load_height+inactive+f/2))+inactive+f,
+        VSTACK(embed,(inactive+f+embed)/2,f+inactive,(load_height+inactive+f/2)*load)
+    ));
+
+/** Broms SHORT pile in clay, CAPACITY: Pult for an embedment (may be a column; 0 if embedment <= 1.5 diameter). */
+lateralpile_Broms_cohesive_short = LAMBDA(embedment, load_height, undrained_strength, diameter, [fixed_head],
+    LET(
+        ultimate, 9*undrained_strength*diameter,
+        inactive, 1.5*diameter,
+        fixed, IF(ISOMITTED(fixed_head),FALSE,fixed_head),
+        G, embedment-inactive,
+        w, load_height+inactive+G/2,
+        IF(embedment<=inactive,0,IF(fixed,ultimate*G,2*ultimate*(-w+SQRT(w^2+G^2/4))))
+    ));
+
+/** Broms INTERMEDIATE fixed-head pile in clay (plastic hinge at the cap): Pult for an embedment (may be a column; #N/A if embedment <= 1.5 diameter). */
+lateralpile_Broms_cohesive_intermediate = LAMBDA(embedment, yield_moment, undrained_strength, diameter,
+    LET(
+        ultimate, 9*undrained_strength*diameter,
+        inactive, 1.5*diameter,
+        G, embedment-inactive,
+        w, inactive+G/2,
+        IF(embedment<=inactive,NA(),2*ultimate*(-w+SQRT(w^2+yield_moment/ultimate+G^2/4)))
+    ));
+
+/** Broms LONG pile in clay (plastic hinge): returns {Pult; f; hinge depth 1.5 diameter + f}. */
+lateralpile_Broms_cohesive_long = LAMBDA(yield_moment, load_height, undrained_strength, diameter, [fixed_head],
+    LET(
+        ultimate, 9*undrained_strength*diameter,
+        inactive, 1.5*diameter,
+        fixed, IF(ISOMITTED(fixed_head),FALSE,fixed_head),
+        load, IF(fixed,ultimate*(-inactive+SQRT(inactive^2+4*yield_moment/ultimate)),ultimate*(-(load_height+inactive)+SQRT((load_height+inactive)^2+2*yield_moment/ultimate))),
+        f, load/ultimate,
+        VSTACK(load,f,inactive+f)
+    ));
+
+/** Broms Pult in clay for all mechanisms: one row per embedment with {short, intermediate, long, governing}; intermediate is #N/A for a free head. */
+lateralpile_Broms_cohesive_Pult = LAMBDA(embedment, yield_moment, load_height, undrained_strength, diameter, [fixed_head],
+    LET(
+        fixed, IF(ISOMITTED(fixed_head),FALSE,fixed_head),
+        short, lateralpile_Broms_cohesive_short(embedment,load_height,undrained_strength,diameter,fixed),
+        inter, IF(fixed,lateralpile_Broms_cohesive_intermediate(embedment,yield_moment,undrained_strength,diameter),NA()+0*embedment),
+        long, INDEX(lateralpile_Broms_cohesive_long(yield_moment,load_height,undrained_strength,diameter,fixed),1)+0*embedment,
+        HSTACK(short,inter,long,min_by_row(HSTACK(short,inter,long)))
+    ));
+
+/** Broms SHORT free-head pile in clay: profile {Depth, Reaction, Shear, Moment} (header + 121 rows). */
+lateralpile_Broms_cohesive_profile = LAMBDA(load, load_height, undrained_strength, diameter, [embedment_depth], [rotation_depth],
+    LET(
+        ultimate, 9*undrained_strength*diameter,
+        loadLength, ABS(load)/ultimate,
+        inactive, 1.5*diameter,
+        embedment, IF(ISOMITTED(embedment_depth),2*SQRT(loadLength*(load_height+inactive+loadLength/2))+inactive+loadLength,embedment_depth),
+        rotation, IF(ISOMITTED(rotation_depth),(inactive+loadLength+embedment)/2,rotation_depth),
+        depth, VSTACK(load_height,0,-inactive,-inactive,-rotation,-rotation,-embedment),
+        reaction, VSTACK(0,0,0,ultimate,ultimate,-ultimate,-ultimate),
+        VSTACK({"Depth","Reaction","Shear","Moment"},lateralpile_integrate(depth,reaction,load,20))
+    ));
 
 /** Plotting points of a log spiral r = rValue·exp(−θ·tanφ). Inputs: pt centre, rValue, phi (deg), optional ta_, tb_ angles (deg), n_ points (default 100). */
 logSpiral = LAMBDA(pt, rValue, phi, [ta_], [tb_], [n_],
@@ -2423,6 +2505,10 @@ ASTM_tree_chart = LAMBDA(trees,symbol,name,LET(tree,IFS(symbol="Pt",0,LEFT(symbo
 
 /** Average of each row of a range or array, across its columns: returns one value per row. Empty cells are ignored, as in AVERAGE. */
 average_by_row = LAMBDA(array,BYROW(array,LAMBDA(rw,AVERAGE(rw))));
+
+/** Minimum of each row of an array (spills one value per row). Error and text cells are ignored; a row with no numbers returns #N/A. */
+min_by_row = LAMBDA(array,
+    BYROW(array,LAMBDA(rw,LET(vals,IFERROR(rw,""),IF(COUNT(vals)=0,NA(),MIN(vals))))));
 
 /** Chord of fixed length span slid along x (n_pos positions, 200 by default): {start; y at start; y at end} for each position, y interpolated between the points. */
 chord_profile = LAMBDA(x,y,span,[n_pos],LET(n_g,IF(ISOMITTED(n_pos),200,n_pos),g,MIN(x)+(MAX(x)-span-MIN(x))*(SEQUENCE(n_g)-1)/(n_g-1),lo,MAP(g,LAMBDA(v,interpolate(v,x,y))),hi,MAP(g,LAMBDA(v,interpolate(v+span,x,y))),HSTACK(g,lo,hi)));

@@ -584,45 +584,6 @@ x_: Optional starting guess
 iter_: Leave empty (internal counter)
 returns: Intersection point {x, y} (Newton iteration).
 
-[lateralpile_Broms_cohesionless]
-D: Embedded length of the pile (m)
-phi: Friction angle φ (degrees)
-g: Unit weight γ (kN/m³)
-B: Pile diameter (m)
-e: Height of the load above the ground (m)
-returns: Column {ultimate lateral load V; depth of maximum moment; Mmax}.
-
-[lateralpile_Broms_cohesive]
-V: Lateral load (kN)
-e: Height of the load above the ground (m)
-Su: Undrained shear strength (kPa)
-B: Pile diameter (m)
-returns: Column {required embedment D; rotation depth Dr; depth of max moment; Mmax}.
-
-[lateralpile_cohesionless_reaction_shear_moment]
-D: Embedded length (m)
-phi: Friction angle φ (degrees)
-g: Unit weight γ (kN/m³)
-B: Pile diameter (m)
-e: Height of the load above the ground (m)
-returns: Header + depth, line reaction, shear and moment: 101 profile rows for e>0; 51 for e=0.
-notes: Version 0.16 replaces the former integration under the same function name and arguments; former _v2 calls migrate to this name.
-notes: Reaction is force per unit pile length (kN/m in SI), including the pile width. Depth is positive above ground and negative below.
-notes: Output row counts differ from earlier releases. Use the complete spill range for tables and charts.
-
-[lateralpile_cohesive_reaction_shear_moment]
-V: Lateral load (kN)
-e: Height of the load above the ground (m)
-Su: Undrained shear strength (kPa)
-B: Pile diameter (m)
-D_: Embedded length (m), optional (default from Broms)
-Dr_: Rotation depth (m), optional (default from Broms)
-returns: Header + 121 profile rows of depth, line reaction, shear and moment. Repeated depths represent exact pressure jumps.
-notes: Version 0.16 replaces the former integration under the same function name and arguments; former _v2 calls migrate to this name.
-notes: Reaction is force per unit pile length (kN/m in SI), including the pile width. Depth is positive above ground and negative below.
-notes: Positive-load Broms convention; use V>=0, e>=0, Su>0, B>0 and D>=Dr>=1.5B. Repeated-depth rows may show intermediate reaction values at a zero-thickness jump.
-notes: Output row counts differ from earlier releases. Use the complete spill range for tables and charts.
-
 [logSpiral]
 pt: Centre {x, y}
 rValue: Initial radius r0
@@ -998,6 +959,135 @@ soil: "peat", "clay", "silt", "sand", "gravel" or "rock"
 ft_: Optional units flag: omit for B0 = 0.6 m; any value for B0 = 2 ft
 returns: Labelled table: total, volumetric and deviatoric settlement, α, λ, Ec, Ed.
 notes: Supplying ft_ (even FALSE) selects B0 = 2; omitting it selects B0 = 0.6.
+
+[lateralpile_Broms_cohesionless_design]
+load: Lateral load applied to the pile head (kN)
+load_height: Height of the load above the ground surface, e (m); 0 for a load at the ground
+friction_angle: Friction angle of the sand φ (degrees)
+unit_weight: Unit weight of the sand γ (kN/m³); use the submerged unit weight γ' below the water table
+diameter: Pile diameter or width B (m)
+returns: Column {required embedment D; depth of maximum moment f; Mmax} of a short free-head pile.
+notes: Sand: soil resistance 3·γ·B·Kp·z, with Kp = Rankine_Kp(friction_angle).
+notes: Solves the cubic moment equilibrium internally (Newton, 30 steps): no Goal Seek. Replaces lateralpile_Broms_cohesionless, which took D and returned the load.
+
+[lateralpile_Broms_cohesionless_short]
+embedment: Embedded length of the pile L (m); a single value or a column of lengths
+load_height: Height of the load above the ground surface, e (m); 0 for a load at the ground
+friction_angle: Friction angle of the sand φ (degrees)
+unit_weight: Unit weight of the sand γ (kN/m³); use the submerged unit weight γ' below the water table
+diameter: Pile diameter or width B (m)
+fixed_head: TRUE for a fixed (restrained) head; omit or FALSE for a free head
+returns: Ultimate lateral load Pult (kN) of a short (rigid) pile, one value per embedment.
+notes: Sand: soil resistance 3·γ·B·Kp·z, with Kp = Rankine_Kp(friction_angle).
+notes: Soil failure, the pile does not yield.
+
+[lateralpile_Broms_cohesionless_intermediate]
+embedment: Embedded length of the pile L (m); a single value or a column of lengths
+yield_moment: Yield (plastic) moment of the pile section My (kN·m)
+friction_angle: Friction angle of the sand φ (degrees)
+unit_weight: Unit weight of the sand γ (kN/m³); use the submerged unit weight γ' below the water table
+diameter: Pile diameter or width B (m)
+returns: Ultimate lateral load Pult (kN) of an intermediate fixed-head pile, one value per embedment; #N/A where undefined.
+notes: Sand: soil resistance 3·γ·B·Kp·z, with Kp = Rankine_Kp(friction_angle).
+notes: Fixed head only: a plastic hinge forms at the cap (moment My) while the soil fails along the pile.
+
+[lateralpile_Broms_cohesionless_long]
+yield_moment: Yield (plastic) moment of the pile section My (kN·m)
+load_height: Height of the load above the ground surface, e (m); 0 for a load at the ground
+friction_angle: Friction angle of the sand φ (degrees)
+unit_weight: Unit weight of the sand γ (kN/m³); use the submerged unit weight γ' below the water table
+diameter: Pile diameter or width B (m)
+fixed_head: TRUE for a fixed (restrained) head; omit or FALSE for a free head
+returns: Column {Pult; hinge depth f}.
+notes: Sand: soil resistance 3·γ·B·Kp·z, with Kp = Rankine_Kp(friction_angle).
+notes: Long (flexible) pile: a plastic hinge forms where the shear is zero and the moment reaches My; a fixed head adds a second hinge at the cap. Pult does not depend on the embedment.
+notes: Solves Pult(e + 0.544·√(Pult/(γ·B·Kp))) = My (2My for a fixed head) internally: no Goal Seek.
+
+[lateralpile_Broms_cohesionless_Pult]
+embedment: Embedded length of the pile L (m); a single value or a column of lengths
+yield_moment: Yield (plastic) moment of the pile section My (kN·m)
+load_height: Height of the load above the ground surface, e (m); 0 for a load at the ground
+friction_angle: Friction angle of the sand φ (degrees)
+unit_weight: Unit weight of the sand γ (kN/m³); use the submerged unit weight γ' below the water table
+diameter: Pile diameter or width B (m)
+fixed_head: TRUE for a fixed (restrained) head; omit or FALSE for a free head
+returns: One row per embedment: {short, intermediate, long, governing Pult} (kN). Intermediate is #N/A for a free head.
+notes: Calls _short, _intermediate, _long and min_by_row: the governing Pult is the smallest. One formula fills the four columns of a Pult–length chart.
+
+[lateralpile_Broms_cohesionless_profile]
+load: Lateral load applied to the pile head (kN)
+load_height: Height of the load above the ground surface, e (m); 0 for a load at the ground
+friction_angle: Friction angle of the sand φ (degrees)
+unit_weight: Unit weight of the sand γ (kN/m³); use the submerged unit weight γ' below the water table
+diameter: Pile diameter or width B (m)
+embedment_depth: Embedded length (m), optional; default: Broms design value from lateralpile_Broms_cohesionless_design
+returns: Header + depth, line reaction, shear and moment of a short free-head pile: 101 profile rows for load_height > 0; 51 for 0.
+notes: Replaces lateralpile_cohesionless_reaction_shear_moment: it now takes the load (not the embedment) first.
+notes: Reaction is force per unit pile length (kN/m), including the pile width. Depth is positive above ground and negative below.
+
+[lateralpile_Broms_cohesive_design]
+load: Lateral load applied to the pile head (kN)
+load_height: Height of the load above the ground surface, e (m); 0 for a load at the ground
+undrained_strength: Undrained shear strength of the clay, su or cu (kPa)
+diameter: Pile diameter or width B (m)
+returns: Column {required embedment D; rotation depth; depth of maximum moment; Mmax} of a short free-head pile.
+notes: Clay: soil resistance 9·su·B below 1.5B (no resistance in the top 1.5B).
+notes: Broms short-pile design: the embedment needed to carry the load. Same results as the former lateralpile_Broms_cohesive.
+
+[lateralpile_Broms_cohesive_short]
+embedment: Embedded length of the pile L (m); a single value or a column of lengths
+load_height: Height of the load above the ground surface, e (m); 0 for a load at the ground
+undrained_strength: Undrained shear strength of the clay, su or cu (kPa)
+diameter: Pile diameter or width B (m)
+fixed_head: TRUE for a fixed (restrained) head; omit or FALSE for a free head
+returns: Ultimate lateral load Pult (kN) of a short (rigid) pile, one value per embedment.
+notes: Clay: soil resistance 9·su·B below 1.5B (no resistance in the top 1.5B).
+notes: Soil failure, the pile does not yield. Returns 0 when the embedment is at most 1.5B.
+
+[lateralpile_Broms_cohesive_intermediate]
+embedment: Embedded length of the pile L (m); a single value or a column of lengths
+yield_moment: Yield (plastic) moment of the pile section My (kN·m)
+undrained_strength: Undrained shear strength of the clay, su or cu (kPa)
+diameter: Pile diameter or width B (m)
+returns: Ultimate lateral load Pult (kN) of an intermediate fixed-head pile, one value per embedment; #N/A where undefined.
+notes: Clay: soil resistance 9·su·B below 1.5B (no resistance in the top 1.5B).
+notes: Fixed head only: a plastic hinge forms at the cap (moment My) while the soil fails along the pile.
+
+[lateralpile_Broms_cohesive_long]
+yield_moment: Yield (plastic) moment of the pile section My (kN·m)
+load_height: Height of the load above the ground surface, e (m); 0 for a load at the ground
+undrained_strength: Undrained shear strength of the clay, su or cu (kPa)
+diameter: Pile diameter or width B (m)
+fixed_head: TRUE for a fixed (restrained) head; omit or FALSE for a free head
+returns: Column {Pult; f; hinge depth 1.5B + f}.
+notes: Clay: soil resistance 9·su·B below 1.5B (no resistance in the top 1.5B).
+notes: Long (flexible) pile: a plastic hinge forms where the shear is zero and the moment reaches My; a fixed head adds a second hinge at the cap. Pult does not depend on the embedment.
+
+[lateralpile_Broms_cohesive_Pult]
+embedment: Embedded length of the pile L (m); a single value or a column of lengths
+yield_moment: Yield (plastic) moment of the pile section My (kN·m)
+load_height: Height of the load above the ground surface, e (m); 0 for a load at the ground
+undrained_strength: Undrained shear strength of the clay, su or cu (kPa)
+diameter: Pile diameter or width B (m)
+fixed_head: TRUE for a fixed (restrained) head; omit or FALSE for a free head
+returns: One row per embedment: {short, intermediate, long, governing Pult} (kN). Intermediate is #N/A for a free head.
+notes: Calls _short, _intermediate, _long and min_by_row: the governing Pult is the smallest. One formula fills the four columns of a Pult–length chart.
+
+[lateralpile_Broms_cohesive_profile]
+load: Lateral load applied to the pile head (kN)
+load_height: Height of the load above the ground surface, e (m); 0 for a load at the ground
+undrained_strength: Undrained shear strength of the clay, su or cu (kPa)
+diameter: Pile diameter or width B (m)
+embedment_depth: Embedded length (m), optional; default: Broms design value
+rotation_depth: Depth of the point of rotation (m), optional; default: Broms design value
+returns: Header + 121 profile rows of depth, line reaction, shear and moment of a short free-head pile. Repeated depths represent exact pressure jumps.
+notes: Replaces lateralpile_cohesive_reaction_shear_moment (same results, same argument order).
+notes: Reaction is force per unit pile length (kN/m), including the pile width. Depth is positive above ground and negative below.
+
+[Rankine_Kp]
+friction_angle: Friction angle φ (degrees)
+returns: Rankine passive earth pressure coefficient Kp = (1 + sin φ)/(1 − sin φ) = tan²(45° + φ/2).
+notes: Rankine_K gives the active coefficient for a sloping backfill.
 
 [shearMoment]
 d: Column of depths (m)
@@ -1603,6 +1693,10 @@ trees: Table of the decision trees of ASTM D2487 (sheet of the classification wo
 symbol: Group symbol of the soil, e.g. CL or SW-SM
 name: Group name of the soil
 returns: Points (x, y) of the path of the soil through the decision tree, for a chart.
+
+[min_by_row]
+array: Range or array; the minimum is taken across the columns of each row
+returns: Column with the minimum of each row. Errors (such as #N/A) and text are ignored; a row with no number returns #N/A.
 
 [average_by_row]
 array: Block of numbers, one test per row
